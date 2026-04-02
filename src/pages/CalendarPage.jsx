@@ -164,6 +164,7 @@ export default function CalendarPage() {
             getPromosForDate={getPromosForDate}
             isPromoStart={isPromoStart}
             onDayClick={handleDayClick}
+            onDayDoubleClick={openAddModal}
             onPostClick={handlePostClick}
           />
         ) : (
@@ -346,7 +347,7 @@ function DailyNoteColumn({ date, author, label, accentColor, currentUser }) {
 }
 
 /* ─── Month Grid ─── */
-function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onPostClick }) {
+function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onDayDoubleClick, onPostClick }) {
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
@@ -371,6 +372,7 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay,
               ${weekend && isCurrentMonth ? 'weekend' : ''}
               ${isSelected ? 'selected' : ''}`}
             onClick={() => onDayClick(day)}
+            onDoubleClick={(e) => { e.stopPropagation(); onDayDoubleClick(day) }}
           >
             <span className={`day-number ${todayFlag ? 'today-number' : ''}`}>
               {format(day, 'd')}

@@ -115,7 +115,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 24px;
   margin-bottom: 32px;
+  min-height: 80px;
 }
 
 /* ───── BUTTONS ───── */
@@ -355,10 +357,10 @@ input[type=number]::-webkit-outer-spin-button {
   gap: 0;
 }
 .view-toggle button {
-  padding: 6px 16px;
+  padding: 7px 18px;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--ink-mid);
   background: transparent;
@@ -366,6 +368,8 @@ input[type=number]::-webkit-outer-spin-button {
   transition: all 150ms ease;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
 }
 .view-toggle button.active {
   background: var(--ink);

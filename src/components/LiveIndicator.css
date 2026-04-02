@@ -1,7 +1,7 @@
 .live-indicator {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .live-dot {

@@ -1,7 +1,8 @@
 .calendar-controls {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 /* Month Grid */
