@@ -109,15 +109,7 @@ export default function App() {
       <div className="app-layout">
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} />
         <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-          <div style={{
-            position: 'fixed',
-            top: 16,
-            right: 24,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            zIndex: 40,
-          }}>
+          <div className="global-status">
             <PresenceAvatars users={onlineUsers} currentUser={currentUser} />
             <LiveIndicator />
           </div>
@@ -129,6 +121,7 @@ export default function App() {
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/calendar" replace />} />
           </Routes>
+          <div className="forme-footer">powered by forme</div>
         </div>
       </div>
     </>

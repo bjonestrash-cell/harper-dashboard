@@ -139,5 +139,5 @@
   .stats-row { grid-template-columns: 1fr 1fr; }
   .order-input-row { flex-wrap: wrap; }
   .order-input-row input { min-width: calc(50% - 4px); }
-  .fab-add { bottom: 80px; right: 16px; width: 48px; height: 48px; font-size: 24px; }
+  .fab-add { bottom: 88px; right: 16px; width: 48px; height: 48px; font-size: 24px; }
 }

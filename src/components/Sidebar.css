@@ -146,7 +146,10 @@
   background: var(--ink);
   display: flex;
   z-index: 50;
-  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  padding: 10px 0 env(safe-area-inset-bottom, 12px);
+  min-height: 64px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 -2px 12px rgba(26,20,18,0.1);
 }
 
 .mobile-nav-item {
@@ -154,8 +157,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   padding: 8px 4px;
+  min-height: 44px;
+  min-width: 44px;
   text-decoration: none;
   color: rgba(255,255,255,0.4);
   transition: color 150ms ease;
@@ -163,9 +169,13 @@
 .mobile-nav-item.active {
   color: var(--pink);
 }
+.mobile-nav-item svg {
+  width: 24px;
+  height: 24px;
+}
 
 .mobile-nav-label {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 1px;
   text-transform: uppercase;

@@ -348,12 +348,13 @@ function DailyNoteColumn({ date, author, label, accentColor, currentUser }) {
 
 /* ─── Month Grid ─── */
 function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onDayDoubleClick, onPostClick }) {
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const isMobileGrid = window.innerWidth < 768
+  const weekDays = isMobileGrid ? ['S','M','T','W','T','F','S'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div className="calendar-grid">
-      {weekDays.map(d => (
-        <div key={d} className="calendar-header-cell">{d}</div>
+      {weekDays.map((d, i) => (
+        <div key={i} className="calendar-header-cell">{d}</div>
       ))}
       {days.map(day => {
         const dayPosts = getPostsForDate(day)

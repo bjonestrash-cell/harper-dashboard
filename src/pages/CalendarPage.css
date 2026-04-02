@@ -1,6 +1,6 @@
 .calendar-controls {
   display: flex;
-  gap: 16px;
+  gap: 24px;
   align-items: center;
   flex-shrink: 0;
 }
@@ -221,42 +221,40 @@
 
 /* ───── MOBILE ───── */
 @media (max-width: 767px) {
-  /* Controls: horizontal scroll instead of stacking */
+  /* Controls: stack into two centered rows */
   .calendar-controls {
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-  }
-  .calendar-controls .view-toggle {
-    flex-shrink: 0;
+    align-items: center;
   }
 
-  /* Month grid: 44px min tap targets */
+  /* Calendar grid: 100% width, no horizontal scroll */
+  .calendar-grid {
+    width: 100%;
+    overflow: hidden;
+  }
   .calendar-cell {
-    min-height: 48px;
-    padding: 4px 2px;
+    min-height: 44px;
+    padding: 3px 1px;
   }
   .calendar-header-cell {
-    padding: 8px 2px;
-    font-size: 9px;
-    letter-spacing: 1px;
+    padding: 6px 0;
+    font-size: 10px;
+    letter-spacing: 0;
   }
   .day-number {
-    font-size: 12px;
-    width: 28px;
-    height: 28px;
+    font-size: 11px;
+    width: 24px;
+    height: 24px;
   }
   /* Hide promos, show post dots via PostPill mobile CSS */
   .cell-promos { display: none; }
   .calendar-cell .cell-posts {
     flex-direction: row;
-    gap: 3px;
+    gap: 2px;
     flex-wrap: wrap;
-    margin-top: 2px;
+    margin-top: 1px;
   }
 
   /* Week view: compact for mobile */
@@ -309,7 +307,7 @@
 
   /* FAB position above bottom nav */
   .fab-add-post {
-    bottom: 80px;
+    bottom: 88px;
     right: 16px;
     width: 48px;
     height: 48px;
