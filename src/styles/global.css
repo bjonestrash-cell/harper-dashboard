@@ -148,6 +148,7 @@ button:active { transform: scale(0.98); }
 .btn-outline {
   padding: 12px 32px;
   border: none;
+  border-radius: 24px;
   background: var(--ink);
   color: var(--cream);
   font-size: 11px;
@@ -161,6 +162,7 @@ button:active { transform: scale(0.98); }
 .btn-outline:hover {
   background: var(--pink-deep);
   color: var(--white);
+  transform: scale(1.02);
 }
 
 /* ───── INPUTS ───── */

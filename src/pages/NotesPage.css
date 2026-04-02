@@ -27,18 +27,22 @@
 
 .new-meeting-btn {
   margin: 0 16px 16px;
-  padding: 12px;
+  padding: 12px 24px;
   background: var(--ink);
   color: var(--cream);
   border: none;
+  border-radius: 24px;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
-.new-meeting-btn:hover { background: var(--pink-deep); }
+.new-meeting-btn:hover {
+  background: var(--pink-deep);
+  transform: scale(1.02);
+}
 
 .meeting-list {
   flex: 1;

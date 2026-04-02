@@ -268,6 +268,8 @@ function PromoModal({ promo, setPromotions, onClose }) {
     status: promo?.status || 'upcoming',
   })
   const [saving, setSaving] = useState(false)
+  const [startOpen, setStartOpen] = useState(false)
+  const [endOpen, setEndOpen] = useState(false)
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -313,10 +315,14 @@ function PromoModal({ promo, setPromotions, onClose }) {
 
         <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
           <div style={{ flex: 1 }}>
-            <DatePicker label="Start Date" value={form.start_date} onChange={(v) => update('start_date', v)} />
+            <DatePicker label="Start Date" value={form.start_date}
+              isOpen={startOpen} onOpen={() => setStartOpen(true)} onClose={() => setStartOpen(false)}
+              onChange={(v) => { update('start_date', v); setStartOpen(false); setTimeout(() => setEndOpen(true), 150) }} />
           </div>
           <div style={{ flex: 1 }}>
-            <DatePicker label="End Date" value={form.end_date} onChange={(v) => update('end_date', v)} />
+            <DatePicker label="End Date" value={form.end_date} minDate={form.start_date}
+              isOpen={endOpen} onOpen={() => setEndOpen(true)} onClose={() => setEndOpen(false)}
+              onChange={(v) => { update('end_date', v); setEndOpen(false) }} />
           </div>
         </div>
 

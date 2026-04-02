@@ -1,15 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   format, addMonths, subMonths, startOfMonth,
   endOfMonth, eachDayOfInterval, isSameDay,
-  isSameMonth, startOfWeek, endOfWeek
+  isSameMonth, startOfWeek, endOfWeek, isBefore, startOfDay
 } from 'date-fns'
 
-export default function DatePicker({ value, onChange, label }) {
-  const [open, setOpen] = useState(false)
+export default function DatePicker({ value, onChange, label, isOpen, onOpen, onClose, minDate }) {
+  const [internalOpen, setInternalOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(
     value ? new Date(value + 'T12:00:00') : new Date()
   )
+
+  // Use controlled or internal open state
+  const open = isOpen !== undefined ? isOpen : internalOpen
+  const handleOpen = () => { onOpen ? onOpen() : setInternalOpen(true) }
+  const handleClose = () => { onClose ? onClose() : setInternalOpen(false) }
+
+  // When opening with minDate, navigate to that month
+  useEffect(() => {
+    if (open && minDate) {
+      setViewMonth(new Date(minDate + 'T12:00:00'))
+    } else if (open && value) {
+      setViewMonth(new Date(value + 'T12:00:00'))
+    }
+  }, [open])
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(viewMonth)),
@@ -17,6 +31,7 @@ export default function DatePicker({ value, onChange, label }) {
   })
 
   const selected = value ? new Date(value + 'T12:00:00') : null
+  const minDateObj = minDate ? startOfDay(new Date(minDate + 'T12:00:00')) : null
 
   return (
     <div style={{ position: 'relative' }}>
@@ -29,7 +44,7 @@ export default function DatePicker({ value, onChange, label }) {
       )}
 
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => open ? handleClose() : handleOpen()}
         style={{
           background: 'transparent', border: 'none',
           borderBottom: '1px solid var(--cream-deep)',
@@ -44,7 +59,7 @@ export default function DatePicker({ value, onChange, label }) {
 
       {open && (
         <>
-          <div onClick={() => setOpen(false)}
+          <div onClick={handleClose}
             style={{ position: 'fixed', inset: 0, zIndex: 299 }} />
           <div style={{
             position: 'absolute', top: '100%', left: 0, zIndex: 300,
@@ -77,19 +92,27 @@ export default function DatePicker({ value, onChange, label }) {
                 const isSelected = selected && isSameDay(day, selected)
                 const isCurrentMonth = isSameMonth(day, viewMonth)
                 const isToday = isSameDay(day, new Date())
+                const isDisabled = minDateObj && isBefore(startOfDay(day), minDateObj)
 
                 return (
                   <button key={i}
-                    onClick={() => { onChange(format(day, 'yyyy-MM-dd')); setOpen(false) }}
+                    onClick={() => {
+                      if (isDisabled) return
+                      onChange(format(day, 'yyyy-MM-dd'))
+                      handleClose()
+                    }}
+                    disabled={isDisabled}
                     style={{
                       width: '100%', aspectRatio: '1', border: 'none', borderRadius: '50%',
-                      backgroundColor: isSelected ? 'var(--ink)' : isToday ? 'var(--pink-light)' : 'transparent',
-                      color: isSelected ? 'var(--cream)' : isCurrentMonth ? 'var(--ink)' : 'var(--cream-deep)',
+                      backgroundColor: isSelected ? 'var(--ink)' : isToday && !isDisabled ? 'var(--pink-light)' : 'transparent',
+                      color: isDisabled ? 'var(--cream-deep)' : isSelected ? 'var(--cream)' : isCurrentMonth ? 'var(--ink)' : 'var(--cream-deep)',
                       fontSize: 12, fontWeight: isSelected ? 500 : 300,
                       fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+                      cursor: isDisabled ? 'default' : 'pointer',
+                      pointerEvents: isDisabled ? 'none' : 'auto',
                     }}
-                    onMouseEnter={e => { if (!isSelected) e.target.style.backgroundColor = 'var(--cream-mid)' }}
-                    onMouseLeave={e => { if (!isSelected) e.target.style.backgroundColor = isToday ? 'var(--pink-light)' : 'transparent' }}
+                    onMouseEnter={e => { if (!isSelected && !isDisabled) e.target.style.backgroundColor = 'var(--cream-mid)' }}
+                    onMouseLeave={e => { if (!isSelected && !isDisabled) e.target.style.backgroundColor = isToday ? 'var(--pink-light)' : 'transparent' }}
                   >{format(day, 'd')}</button>
                 )
               })}
