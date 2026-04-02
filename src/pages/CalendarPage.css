@@ -81,7 +81,7 @@
   margin-top: 4px;
 }
 
-/* Week View */
+/* Week View — Desktop */
 .week-view {
   border: 1px solid var(--cream-deep);
   overflow-x: auto;
@@ -201,10 +201,11 @@
   transform: scale(1.08);
 }
 
-/* Inline Add Post button in day detail panel */
+/* Inline Add Post button */
 .add-post-inline {
   background-color: var(--ink);
   border: none;
+  border-radius: 9999px;
   color: var(--cream);
   padding: 8px 20px;
   font-size: 10px;
@@ -218,30 +219,96 @@
   background-color: var(--pink-deep);
 }
 
-/* Mobile */
+/* ───── MOBILE ───── */
 @media (max-width: 767px) {
+  /* Controls: horizontal scroll instead of stacking */
   .calendar-controls {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
   }
-  .calendar-cell { min-height: 60px; padding: 4px; }
-  .day-number { font-size: 11px; width: 20px; height: 20px; }
+  .calendar-controls .view-toggle {
+    flex-shrink: 0;
+  }
+
+  /* Month grid: 44px min tap targets */
+  .calendar-cell {
+    min-height: 48px;
+    padding: 4px 2px;
+  }
+  .calendar-header-cell {
+    padding: 8px 2px;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .day-number {
+    font-size: 12px;
+    width: 28px;
+    height: 28px;
+  }
+  /* Hide full promos and pills, show color dots */
   .cell-promos { display: none; }
   .cell-posts .post-pill { display: none; }
-  .cell-posts::after {
-    content: '';
-    display: block;
-  }
-  /* On mobile, show colored dots instead of full pills */
   .calendar-cell .cell-posts {
     flex-direction: row;
     gap: 3px;
     flex-wrap: wrap;
+    margin-top: 2px;
   }
-}
 
-@media (max-width: 767px) {
+  /* Week view: compact for mobile */
+  .week-view {
+    overflow-x: hidden;
+  }
+  .week-header {
+    grid-template-columns: 36px repeat(7, 1fr);
+  }
+  .week-day-header {
+    padding: 8px 2px;
+    gap: 2px;
+  }
+  .week-day-name {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  .week-day-number {
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+  }
+  .week-body {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .week-row {
+    grid-template-columns: 36px repeat(7, 1fr);
+    min-height: 44px;
+  }
+  .week-time-col { width: 36px; }
+  .week-time-label {
+    font-size: 9px;
+    padding: 4px;
+    text-align: center;
+  }
+  .week-cell {
+    min-height: 44px;
+    padding: 2px;
+  }
+  .week-cell .post-pill {
+    font-size: 8px;
+    padding: 2px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* FAB position above bottom nav */
   .fab-add-post {
     bottom: 80px;
     right: 16px;
@@ -250,6 +317,7 @@
     font-size: 24px;
   }
 }
+
 @media (min-width: 768px) {
   .mobile-day-overlay { display: none; }
 }

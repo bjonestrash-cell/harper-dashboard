@@ -85,7 +85,7 @@ export default function PromotionsPage() {
             backgroundColor: 'var(--ink)',
             color: 'var(--cream)',
             border: 'none',
-            borderRadius: '24px',
+            borderRadius: 9999,
             padding: '12px 32px',
             fontSize: '11px',
             fontWeight: 500,

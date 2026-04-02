@@ -111,7 +111,7 @@ export default function NotesPage() {
               backgroundColor: 'var(--ink)',
               color: 'var(--cream)',
               border: 'none',
-              borderRadius: '24px',
+              borderRadius: 9999,
               padding: '12px 28px',
               fontSize: '11px',
               fontWeight: 500,
