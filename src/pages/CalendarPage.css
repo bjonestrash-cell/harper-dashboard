@@ -175,22 +175,46 @@
   padding: 16px;
 }
 
-/* Mobile FAB */
-.mobile-fab {
+/* Floating Add Post button */
+.fab-add-post {
   position: fixed;
-  bottom: 80px;
-  right: 16px;
-  width: 48px;
-  height: 48px;
-  background: var(--pink);
-  color: var(--white);
+  bottom: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  font-size: 24px;
+  background-color: var(--ink);
+  color: var(--cream);
+  border: none;
+  font-size: 28px;
+  font-weight: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(244,167,185,0.4);
-  z-index: 40;
+  box-shadow: 0 4px 24px rgba(26,20,18,0.2);
+  z-index: 60;
+  transition: all 0.2s ease;
+}
+.fab-add-post:hover {
+  background-color: var(--pink-deep);
+  transform: scale(1.08);
+}
+
+/* Inline Add Post button in day detail panel */
+.add-post-inline {
+  background-color: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  padding: 6px 16px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+.add-post-inline:hover {
+  background-color: var(--ink);
+  color: var(--cream);
 }
 
 /* Mobile */
@@ -216,7 +240,15 @@
   }
 }
 
+@media (max-width: 767px) {
+  .fab-add-post {
+    bottom: 80px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+}
 @media (min-width: 768px) {
-  .mobile-fab { display: none; }
   .mobile-day-overlay { display: none; }
 }
