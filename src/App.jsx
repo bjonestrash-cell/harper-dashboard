@@ -6,6 +6,7 @@ import PresenceAvatars from './components/PresenceAvatars'
 import CalendarPage from './pages/CalendarPage'
 import PromotionsPage from './pages/PromotionsPage'
 import TasksPage from './pages/TasksPage'
+import IdeasPage from './pages/IdeasPage'
 import NotesPage from './pages/NotesPage'
 import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
@@ -133,6 +134,7 @@ export default function App() {
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/ideas" element={<IdeasPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/calendar" replace />} />
           </Routes>
