@@ -9,7 +9,7 @@ import Modal from '../components/Modal'
 import './PromotionsPage.css'
 
 const PLATFORM_OPTIONS = ['instagram', 'tiktok', 'email']
-const PROMO_COLORS = ['#F4A7B9', '#D4849A', '#A8D4A8', '#8EC5E8', '#C4A882', '#C4A8E8']
+const PROMO_COLORS = ['#F4A7B9', '#D4C4A8', '#A8C4D4', '#C4D4A8', '#D4A8C4', '#1A1412']
 
 export default function PromotionsPage() {
   const { currentMonth } = useMonth()
@@ -159,10 +159,55 @@ export default function PromotionsPage() {
         </div>
       </div>
 
+      {/* Floating + button */}
+      <button className="fab-add" onClick={() => { setEditingPromo(null); setShowModal(true) }}>+</button>
+
       {showModal && (
         <PromoModal promo={editingPromo} setPromotions={setPromotions}
           onClose={() => { setShowModal(false); setEditingPromo(null) }} />
       )}
+    </div>
+  )
+}
+
+function PillSelect({ options, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+      {options.map(opt => {
+        const isActive = value === opt
+        return (
+          <button key={opt} onClick={() => onChange(opt)}
+            style={{
+              padding: '6px 16px', borderRadius: 20, border: '1px solid',
+              borderColor: isActive ? 'var(--ink)' : 'var(--cream-deep)',
+              backgroundColor: isActive ? 'var(--ink)' : 'transparent',
+              color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
+              fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
+              fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
+            }}>{opt}</button>
+        )
+      })}
+    </div>
+  )
+}
+
+function MultiPillSelect({ options, values, onToggle }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+      {options.map(opt => {
+        const isActive = values.includes(opt)
+        return (
+          <button key={opt} onClick={() => onToggle(opt)}
+            style={{
+              padding: '6px 16px', borderRadius: 20, border: '1px solid',
+              borderColor: isActive ? 'var(--ink)' : 'var(--cream-deep)',
+              backgroundColor: isActive ? 'var(--ink)' : 'transparent',
+              color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
+              fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
+              fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
+            }}>{opt}</button>
+        )
+      })}
     </div>
   )
 }
@@ -203,82 +248,71 @@ function PromoModal({ promo, setPromotions, onClose }) {
         if (!error && data?.[0]) setPromotions(prev => [...prev, data[0]])
       }
       onClose()
-    } catch (err) {
-      console.error('Error saving promotion:', err)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { console.error('Error saving promotion:', err) }
+    finally { setSaving(false) }
   }
 
   return (
     <Modal onClose={onClose}>
-      <div style={{ padding: '32px' }}>
+      <div style={{ padding: 32, position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
+          onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>&times;</button>
+
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
           {promo ? 'Edit Promotion' : 'New Promotion'}
         </h2>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Name</label>
-          <input type="text" value={form.name} onChange={(e) => update('name', e.target.value)}
-            placeholder="Mother's Day Sale" style={{ width: '100%' }} />
+          <input type="text" value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="Mother's Day Sale" />
         </div>
 
-        <div className="form-row">
-          <div className="form-group" style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <div style={{ flex: 1 }}>
             <label className="form-label">Start Date</label>
-            <input type="date" value={form.start_date} onChange={(e) => update('start_date', e.target.value)} style={{ width: '100%' }} />
+            <input type="date" value={form.start_date} onChange={(e) => update('start_date', e.target.value)} />
           </div>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div style={{ flex: 1 }}>
             <label className="form-label">End Date</label>
-            <input type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} style={{ width: '100%' }} />
+            <input type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} />
           </div>
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Discount / Offer</label>
-          <input type="text" value={form.discount} onChange={(e) => update('discount', e.target.value)}
-            placeholder="20% off everything" style={{ width: '100%' }} />
+          <input type="text" value={form.discount} onChange={(e) => update('discount', e.target.value)} placeholder="20% off everything" />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Platforms</label>
-          <div className="pill-group">
-            {PLATFORM_OPTIONS.map(p => (
-              <button key={p} className={`pill ${form.platforms.includes(p) ? 'active' : ''}`}
-                onClick={() => togglePlatform(p)}>{p}</button>
-            ))}
-          </div>
+          <MultiPillSelect options={PLATFORM_OPTIONS} values={form.platforms} onToggle={togglePlatform} />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Color</label>
-          <div className="color-picker">
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             {PROMO_COLORS.map(c => (
-              <button key={c} className={`color-swatch ${form.color === c ? 'selected' : ''}`}
-                style={{ background: c }} onClick={() => update('color', c)} />
+              <button key={c} onClick={() => update('color', c)}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%', background: c, border: 'none',
+                  boxShadow: form.color === c ? `0 0 0 2px var(--white), 0 0 0 4px ${c}` : 'none',
+                  transition: 'box-shadow 0.2s ease', flexShrink: 0,
+                }} />
             ))}
           </div>
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Notes</label>
-          <textarea rows={3} value={form.notes} onChange={(e) => update('notes', e.target.value)}
-            placeholder="Campaign details..." style={{ width: '100%' }} />
+          <textarea rows={3} value={form.notes} onChange={(e) => update('notes', e.target.value)} placeholder="Campaign details..." />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 32 }}>
           <label className="form-label">Status</label>
-          <div className="pill-group">
-            {['upcoming', 'active', 'ended'].map(s => (
-              <button key={s} className={`pill ${form.status === s ? 'active' : ''}`}
-                onClick={() => update('status', s)}>{s}</button>
-            ))}
-          </div>
+          <PillSelect options={['upcoming', 'active', 'ended']} value={form.status} onChange={(v) => update('status', v)} />
         </div>
 
-        <button className="btn-save" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save'}
-        </button>
+        <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
       </div>
     </Modal>
   )

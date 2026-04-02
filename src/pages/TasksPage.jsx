@@ -12,6 +12,7 @@ import './TasksPage.css'
 export default function TasksPage() {
   const { currentMonth } = useMonth()
   const monthStr = format(currentMonth, 'yyyy-MM-01')
+  const currentUser = localStorage.getItem('harper-user') || 'natalie'
   const [isMobile] = useState(() => window.innerWidth < 768)
 
   const [draggedTask, setDraggedTask] = useState(null)
@@ -195,10 +196,36 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {/* Floating + button */}
+      <button className="fab-add" onClick={() => handleAddTaskModal(currentUser)}>+</button>
+
       {showTaskModal && (
         <TaskModal task={editingTask} defaultUser={taskColumn} month={monthStr} setTasks={setTasks}
           onClose={() => { setShowTaskModal(false); setEditingTask(null) }} />
       )}
+    </div>
+  )
+}
+
+function PillSelect({ options, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+      {options.map(opt => {
+        const val = typeof opt === 'string' ? opt : opt.value
+        const label = typeof opt === 'string' ? opt : opt.label
+        const isActive = value === val
+        return (
+          <button key={val} onClick={() => onChange(val)}
+            style={{
+              padding: '6px 16px', borderRadius: 20, border: '1px solid',
+              borderColor: isActive ? 'var(--ink)' : 'var(--cream-deep)',
+              backgroundColor: isActive ? 'var(--ink)' : 'transparent',
+              color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
+              fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
+              fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
+            }}>{label}</button>
+        )
+      })}
     </div>
   )
 }
@@ -213,7 +240,6 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     status: task?.status || 'todo',
   })
   const [saving, setSaving] = useState(false)
-
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
   const handleSave = async () => {
@@ -228,11 +254,8 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         if (!error && data?.[0]) setTasks(prev => [...prev, data[0]])
       }
       onClose()
-    } catch (err) {
-      console.error('Error saving task:', err)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { console.error('Error saving task:', err) }
+    finally { setSaving(false) }
   }
 
   const handleDelete = async () => {
@@ -244,54 +267,42 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
 
   return (
     <Modal onClose={onClose}>
-      <div style={{ padding: '32px' }}>
+      <div style={{ padding: 32, position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
+          onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>&times;</button>
+
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
           {task ? 'Edit Task' : 'New Task'}
         </h2>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Title</label>
-          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Task title" style={{ width: '100%' }} />
+          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Task title" />
         </div>
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Description</label>
-          <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Details..." style={{ width: '100%' }} />
+          <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Details..." />
         </div>
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Assigned to</label>
-          <div className="pill-group">
-            {['natalie', 'grace'].map(a => (
-              <button key={a} className={`pill ${form.assigned_to === a ? 'active' : ''}`}
-                onClick={() => update('assigned_to', a)}>{a.charAt(0).toUpperCase() + a.slice(1)}</button>
-            ))}
-          </div>
+          <PillSelect options={['natalie', 'grace']} value={form.assigned_to} onChange={(v) => update('assigned_to', v)} />
         </div>
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Due Date</label>
-          <input type="date" value={form.due_date} onChange={(e) => update('due_date', e.target.value)} style={{ width: '100%' }} />
+          <input type="date" value={form.due_date} onChange={(e) => update('due_date', e.target.value)} />
         </div>
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Priority</label>
-          <div className="pill-group">
-            {['high', 'normal', 'low'].map(p => (
-              <button key={p} className={`pill ${form.priority === p ? 'active' : ''}`}
-                onClick={() => update('priority', p)}>{p}</button>
-            ))}
-          </div>
+          <PillSelect options={['high', 'normal', 'low']} value={form.priority} onChange={(v) => update('priority', v)} />
         </div>
-        <div className="form-group">
+        <div style={{ marginBottom: 32 }}>
           <label className="form-label">Status</label>
-          <div className="pill-group">
-            {['todo', 'in-progress', 'done'].map(s => (
-              <button key={s} className={`pill ${form.status === s ? 'active' : ''}`}
-                onClick={() => update('status', s)}>{s}</button>
-            ))}
-          </div>
+          <PillSelect options={['todo', 'in-progress', 'done']} value={form.status} onChange={(v) => update('status', v)} />
         </div>
 
         <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {task && (
-          <button style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%', fontSize: 12 }}
+          <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none' }}
             onClick={handleDelete}>Delete task</button>
         )}
       </div>

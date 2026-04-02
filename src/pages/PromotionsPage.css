@@ -109,9 +109,35 @@
 .order-input-row input { flex: 1; }
 .order-input-row input[type="number"] { max-width: 100px; }
 
+/* FAB */
+.fab-add {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--ink);
+  color: var(--cream);
+  border: none;
+  font-size: 28px;
+  font-weight: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(26,20,18,0.2);
+  z-index: 60;
+  transition: all 0.2s ease;
+}
+.fab-add:hover {
+  background-color: var(--pink-deep);
+  transform: scale(1.08);
+}
+
 /* Mobile */
 @media (max-width: 767px) {
   .stats-row { grid-template-columns: 1fr 1fr; }
   .order-input-row { flex-wrap: wrap; }
   .order-input-row input { min-width: calc(50% - 4px); }
+  .fab-add { bottom: 80px; right: 16px; width: 48px; height: 48px; font-size: 24px; }
 }
