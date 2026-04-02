@@ -182,22 +182,42 @@ export default function TasksPage() {
               <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
             ))}
           </div>
-          <div className="todo-add-row">
+          <div className="todo-add-row" style={{ flexWrap: 'wrap', gap: 10 }}>
             <input placeholder="Add a checklist item..." value={todoInput}
               onChange={(e) => setTodoInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
-              style={{ flex: 1 }} />
-            <select value={todoAssignee} onChange={(e) => setTodoAssignee(e.target.value)}>
-              <option value="both">Both</option>
-              <option value="natalie">Natalie</option>
-              <option value="grace">Grace</option>
-            </select>
-            <select value={todoPriority} onChange={(e) => setTodoPriority(e.target.value)}>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-              <option value="low">Low</option>
-            </select>
-            <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddTodo}>Add</button>
+              style={{ flex: 1, minWidth: 180 }} />
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {['both', 'natalie', 'grace'].map(v => (
+                <button key={v} onClick={() => setTodoAssignee(v)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 9999, border: 'none',
+                    backgroundColor: todoAssignee === v ? 'var(--ink)' : 'var(--cream-mid)',
+                    color: todoAssignee === v ? 'var(--cream)' : 'var(--ink-mid)',
+                    fontSize: 10, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+                  }}>{v === 'both' ? 'Both' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {['normal', 'high', 'low'].map(v => (
+                <button key={v} onClick={() => setTodoPriority(v)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 9999, border: 'none',
+                    backgroundColor: todoPriority === v ? 'var(--ink)' : 'var(--cream-mid)',
+                    color: todoPriority === v ? 'var(--cream)' : 'var(--ink-mid)',
+                    fontSize: 10, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+                  }}>{v.charAt(0).toUpperCase() + v.slice(1)}</button>
+              ))}
+            </div>
+            <button onClick={handleAddTodo}
+              style={{
+                padding: '8px 20px', borderRadius: 9999, border: 'none',
+                backgroundColor: 'var(--ink)', color: 'var(--cream)',
+                fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
+                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+              }}>Add</button>
           </div>
         </div>
       </div>

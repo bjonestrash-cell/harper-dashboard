@@ -215,7 +215,13 @@ export default function PromotionsPage() {
               <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Notes</span>
               <input type="text" placeholder="Notes" value={orderForm.notes} onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))} />
             </div>
-            <button onClick={handleAddOrder} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink)', padding: '8px 0' }}>Add</button>
+            <button onClick={handleAddOrder}
+              style={{
+                padding: '8px 20px', borderRadius: 9999, border: 'none',
+                backgroundColor: 'var(--ink)', color: 'var(--cream)',
+                fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
+                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease', flexShrink: 0,
+              }}>Add</button>
           </div>
         </div>
       </div>
