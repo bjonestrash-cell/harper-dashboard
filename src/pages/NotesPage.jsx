@@ -1,18 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { format, parseISO } from 'date-fns'
 import { supabase } from '../lib/supabase'
-import { useMonth } from '../hooks/useMonth'
-import { useRealtime } from '../hooks/useRealtime'
-import MonthSelector from '../components/MonthSelector'
 import './NotesPage.css'
 
 export default function NotesPage() {
-  const { currentMonth, setCurrentMonth } = useMonth()
-  const monthStr = format(currentMonth, 'yyyy-MM-01')
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [content, setContent] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
   const [lastEditor, setLastEditor] = useState(null)
   const [lastEditTime, setLastEditTime] = useState(null)
+  const [recentDates, setRecentDates] = useState([])
   const [quickNotes, setQuickNotes] = useState(() => {
     const saved = localStorage.getItem('harper-quick-notes')
     return saved ? JSON.parse(saved) : []
@@ -22,18 +19,28 @@ export default function NotesPage() {
   const saveTimer = useRef(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
-  const fetchAllNotes = useCallback(() =>
-    supabase.from('notes').select('month, updated_at, updated_by').order('month', { ascending: false }),
-    []
-  )
+  // Fetch recent meeting dates
+  useEffect(() => {
+    const fetchRecent = async () => {
+      const { data } = await supabase
+        .from('notes')
+        .select('month, updated_at, updated_by, content')
+        .order('month', { ascending: false })
+        .limit(20)
+      if (data) setRecentDates(data)
+    }
+    fetchRecent()
+  }, [])
 
-  const { data: allNotes } = useRealtime('notes', fetchAllNotes)
-
-  // Fetch current month note
+  // Fetch note for selected date
   useEffect(() => {
     const fetchNote = async () => {
+      // Try by date first, fall back to month
       const { data } = await supabase
-        .from('notes').select('*').eq('month', monthStr).single()
+        .from('notes')
+        .select('*')
+        .eq('month', selectedDate)
+        .single()
       if (data) {
         setContent(data.content || '')
         setLastEditor(data.updated_by)
@@ -45,14 +52,14 @@ export default function NotesPage() {
       }
     }
     fetchNote()
-  }, [monthStr])
+  }, [selectedDate])
 
-  // Real-time subscription for notes
+  // Real-time subscription
   useEffect(() => {
     const channel = supabase
-      .channel(`notes-${monthStr}`)
+      .channel(`notes-${selectedDate}`)
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${monthStr}` },
+        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${selectedDate}` },
         (payload) => {
           if (payload.new && payload.new.updated_by !== currentUser) {
             setContent(payload.new.content || '')
@@ -63,7 +70,7 @@ export default function NotesPage() {
       )
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [monthStr, currentUser])
+  }, [selectedDate, currentUser])
 
   // Auto-save
   const handleContentChange = (newContent) => {
@@ -72,15 +79,18 @@ export default function NotesPage() {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       try {
-        const { data: existing } = await supabase.from('notes').select('id').eq('month', monthStr).single()
+        const { data: existing } = await supabase.from('notes').select('id').eq('month', selectedDate).single()
         if (existing) {
           await supabase.from('notes').update({ content: newContent, updated_at: new Date().toISOString(), updated_by: currentUser }).eq('id', existing.id)
         } else {
-          await supabase.from('notes').insert({ month: monthStr, content: newContent, updated_by: currentUser })
+          await supabase.from('notes').insert({ month: selectedDate, content: newContent, updated_by: currentUser })
         }
         setSaveStatus('saved')
         setLastEditor(currentUser)
         setLastEditTime(new Date().toISOString())
+        // Refresh recent dates
+        const { data } = await supabase.from('notes').select('month, updated_at, updated_by, content').order('month', { ascending: false }).limit(20)
+        if (data) setRecentDates(data)
       } catch (err) {
         console.error('Error saving note:', err)
         setSaveStatus('error')
@@ -105,7 +115,7 @@ export default function NotesPage() {
   }
 
   const handleClear = () => {
-    if (window.confirm('Clear all notes for this month?')) handleContentChange('')
+    if (window.confirm('Clear all notes for this date?')) handleContentChange('')
   }
 
   const applyFormat = (type) => {
@@ -123,33 +133,78 @@ export default function NotesPage() {
     handleContentChange(newText)
   }
 
+  const handleNewMeeting = () => {
+    setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+    setContent('')
+  }
+
+  const dateLabel = selectedDate ? format(parseISO(selectedDate), 'EEEE, MMMM d yyyy') : ''
+
   return (
     <div className="notes-page">
       <div className="page-header">
-        <h1 className="page-title">Notes</h1>
+        <h1 className="page-title">Meeting Notes</h1>
       </div>
 
       <div className="page-container">
-        {/* Mobile: month dropdown instead of sidebar */}
-        {isMobile && <MonthSelector />}
+        {/* Date selector */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32,
+          paddingBottom: 20, borderBottom: '1px solid var(--cream-deep)', flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
+            Meeting Date
+          </span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            style={{
+              border: 'none', borderBottom: '1px solid var(--cream-deep)', background: 'transparent',
+              fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 300, color: 'var(--ink)',
+              outline: 'none', padding: '4px 0',
+            }}
+          />
+          <select
+            onChange={e => { if (e.target.value) setSelectedDate(e.target.value) }}
+            value=""
+            style={{
+              border: 'none', borderBottom: '1px solid var(--cream-deep)', background: 'transparent',
+              fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 400, letterSpacing: 1,
+              color: 'var(--ink-light)', outline: 'none', padding: '4px 0', appearance: 'none',
+            }}
+          >
+            <option value="">Recent meetings...</option>
+            {recentDates.map(d => (
+              <option key={d.month} value={d.month}>
+                {format(parseISO(d.month), 'MMM d, yyyy')}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="notes-layout">
-          {/* Left panel */}
+          {/* Left panel — Recent meetings */}
           {!isMobile && (
             <div className="notes-sidebar">
-              <div className="notes-sidebar-header section-header">Months</div>
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--cream-deep)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="section-header">Recent</span>
+                <button onClick={handleNewMeeting} style={{ fontSize: 10, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pink-deep)' }}>
+                  + New
+                </button>
+              </div>
               <div className="month-list">
-                {allNotes.map(note => (
+                {recentDates.map(note => (
                   <button key={note.month}
-                    className={`month-list-item ${note.month === monthStr ? 'active' : ''}`}
-                    onClick={() => setCurrentMonth(parseISO(note.month))}>
-                    <span className="month-list-name">{format(parseISO(note.month), 'MMMM yyyy')}</span>
-                    {note.updated_at && (
-                      <span className="month-list-time caption">{format(parseISO(note.updated_at), 'MMM d, h:mm a')}</span>
-                    )}
+                    className={`month-list-item ${note.month === selectedDate ? 'active' : ''}`}
+                    onClick={() => setSelectedDate(note.month)}>
+                    <span className="month-list-name">{format(parseISO(note.month), 'MMM d, yyyy')}</span>
+                    <span className="month-list-time caption" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {note.content ? note.content.substring(0, 30) + (note.content.length > 30 ? '...' : '') : 'Empty'}
+                    </span>
                   </button>
                 ))}
-                {allNotes.length === 0 && <p className="caption" style={{ padding: 16 }}>No notes yet</p>}
+                {recentDates.length === 0 && <p className="caption" style={{ padding: 16 }}>No meetings yet</p>}
               </div>
             </div>
           )}
@@ -157,8 +212,8 @@ export default function NotesPage() {
           {/* Center editor */}
           <div className="notes-editor-panel">
             <div className="notes-toolbar">
-              <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
-                {format(currentMonth, 'MMMM yyyy')}
+              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 1, color: 'var(--ink)' }}>
+                {dateLabel}
               </span>
               <div className="toolbar-actions">
                 <button className="toolbar-btn" onClick={() => applyFormat('bold')} title="Bold">B</button>
@@ -173,7 +228,7 @@ export default function NotesPage() {
 
             <textarea id="notes-editor" className="notes-textarea"
               value={content} onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="Start writing..." />
+              placeholder="Start writing meeting notes..." />
 
             {lastEditor && lastEditTime && (
               <div className="last-edited caption">
