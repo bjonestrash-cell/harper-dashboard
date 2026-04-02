@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, parseISO, subDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import PageHeader from '../components/PageHeader'
 import DatePicker from '../components/DatePicker'
 import Modal from '../components/Modal'
 import './NotesPage.css'
@@ -97,6 +98,7 @@ export default function NotesPage() {
 
   return (
     <div className="notes-page">
+      <PageHeader title="Meeting Notes" />
       <div className="meeting-layout">
         {/* LEFT PANEL */}
         <div className="meeting-sidebar">

@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
+import PageHeader from '../components/PageHeader'
 import MonthSelector from '../components/MonthSelector'
 import TaskCard from '../components/TaskCard'
 import TodoItem from '../components/TodoItem'
@@ -131,9 +132,7 @@ export default function TasksPage() {
 
   return (
     <div className="tasks-page">
-      <div className="page-header">
-        <h1 className="page-title">Tasks</h1>
-      </div>
+      <PageHeader title="Tasks" />
 
       <div className="page-container">
         <MonthSelector />

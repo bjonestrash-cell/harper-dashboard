@@ -3,6 +3,7 @@ import { format, parseISO, addDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
+import PageHeader from '../components/PageHeader'
 import MonthSelector from '../components/MonthSelector'
 import PromotionCard from '../components/PromotionCard'
 import Modal from '../components/Modal'
@@ -78,27 +79,17 @@ export default function PromotionsPage() {
 
   return (
     <div className="promotions-page">
-      <div className="page-header">
-        <h1 className="page-title">Promotions</h1>
+      <PageHeader title="Promotions">
         <button onClick={() => { setEditingPromo(null); setShowModal(true) }}
           style={{
-            backgroundColor: 'var(--ink)',
-            color: 'var(--cream)',
-            border: 'none',
-            borderRadius: 9999,
-            padding: '12px 32px',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-            transition: 'all 0.2s ease',
-            whiteSpace: 'nowrap',
+            backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
+            borderRadius: 9999, padding: '12px 32px', fontSize: 11, fontWeight: 500,
+            letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Inter, sans-serif',
+            transition: 'all 0.2s ease', whiteSpace: 'nowrap',
           }}>
           + Add Promotion
         </button>
-      </div>
+      </PageHeader>
 
       <div className="page-container">
         <MonthSelector />

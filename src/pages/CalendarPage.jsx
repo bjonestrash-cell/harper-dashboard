@@ -7,6 +7,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
+import PageHeader from '../components/PageHeader'
 import MonthSelector from '../components/MonthSelector'
 import PostPill from '../components/PostPill'
 import Modal from '../components/Modal'
@@ -129,26 +130,23 @@ export default function CalendarPage() {
 
   return (
     <div className="calendar-page">
-      <div className="page-header">
-        <h1 className="page-title">Calendar</h1>
-        <div className="calendar-controls">
-          <div className="view-toggle">
-            <button className={calendarView === 'mine' ? 'active' : ''} onClick={() => setCalendarView('mine')}>
-              {capitalize(currentUser)}
-            </button>
-            <button className={calendarView === 'theirs' ? 'active' : ''} onClick={() => setCalendarView('theirs')}>
-              {capitalize(otherUser)}
-            </button>
-            <button className={calendarView === 'master' ? 'active' : ''} onClick={() => setCalendarView('master')}>
-              Master
-            </button>
-          </div>
-          <div className="view-toggle">
-            <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>Month</button>
-            <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Week</button>
-          </div>
+      <PageHeader title="Calendar">
+        <div className="view-toggle">
+          <button className={calendarView === 'mine' ? 'active' : ''} onClick={() => setCalendarView('mine')}>
+            {capitalize(currentUser)}
+          </button>
+          <button className={calendarView === 'theirs' ? 'active' : ''} onClick={() => setCalendarView('theirs')}>
+            {capitalize(otherUser)}
+          </button>
+          <button className={calendarView === 'master' ? 'active' : ''} onClick={() => setCalendarView('master')}>
+            Master
+          </button>
         </div>
-      </div>
+        <div className="view-toggle">
+          <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>Month</button>
+          <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Week</button>
+        </div>
+      </PageHeader>
 
       <div className="page-container">
         <MonthSelector />
