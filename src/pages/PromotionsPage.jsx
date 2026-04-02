@@ -185,9 +185,8 @@ function PillSelect({ options, value, onChange }) {
         return (
           <button key={opt} onClick={() => onChange(opt)}
             style={{
-              padding: '6px 16px', borderRadius: 20, border: '1px solid',
-              borderColor: isActive ? 'var(--ink)' : 'var(--cream-deep)',
-              backgroundColor: isActive ? 'var(--ink)' : 'transparent',
+              padding: '6px 16px', borderRadius: 20, border: 'none',
+              backgroundColor: isActive ? 'var(--ink)' : 'var(--cream-mid)',
               color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
               fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
               fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
@@ -206,9 +205,8 @@ function MultiPillSelect({ options, values, onToggle }) {
         return (
           <button key={opt} onClick={() => onToggle(opt)}
             style={{
-              padding: '6px 16px', borderRadius: 20, border: '1px solid',
-              borderColor: isActive ? 'var(--ink)' : 'var(--cream-deep)',
-              backgroundColor: isActive ? 'var(--ink)' : 'transparent',
+              padding: '6px 16px', borderRadius: 20, border: 'none',
+              backgroundColor: isActive ? 'var(--ink)' : 'var(--cream-mid)',
               color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
               fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
               fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',

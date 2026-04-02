@@ -241,9 +241,8 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
             {quickDates.map(qd => (
               <button key={qd.value} onClick={() => setDate(qd.value)}
                 style={{
-                  padding: '6px 14px', borderRadius: 20, border: '1px solid',
-                  borderColor: date === qd.value ? 'var(--ink)' : 'var(--cream-deep)',
-                  backgroundColor: date === qd.value ? 'var(--ink)' : 'transparent',
+                  padding: '6px 14px', borderRadius: 20, border: 'none',
+                  backgroundColor: date === qd.value ? 'var(--ink)' : 'var(--cream-mid)',
                   color: date === qd.value ? 'var(--cream)' : 'var(--ink-mid)',
                   fontSize: 11, fontWeight: 500, letterSpacing: 0.5, transition: 'all 0.2s ease',
                   fontFamily: 'Inter, sans-serif',

@@ -509,9 +509,8 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
       {options.map(opt => (
         <button key={opt} onClick={() => onChange(opt)}
           style={{
-            padding: '6px 16px', borderRadius: 20, border: '1px solid',
-            borderColor: value === opt ? 'var(--ink)' : 'var(--cream-deep)',
-            backgroundColor: value === opt ? 'var(--ink)' : 'transparent',
+            padding: '6px 16px', borderRadius: 20, border: 'none',
+            backgroundColor: value === opt ? 'var(--ink)' : 'var(--cream-mid)',
             color: value === opt ? 'var(--cream)' : 'var(--ink-mid)',
             fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease',
           }}>{opt}</button>
