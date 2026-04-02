@@ -57,12 +57,31 @@
   background: none;
   font-family: inherit;
   transition: all 0.15s ease;
+  position: relative;
+  cursor: pointer;
 }
 .meeting-item:hover { background: var(--cream-mid); }
 .meeting-item.active {
   border-left-color: var(--pink);
   background: var(--white);
 }
+
+.meeting-delete-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--ink-light);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  padding: 4px;
+  line-height: 1;
+}
+.meeting-item:hover .meeting-delete-btn { opacity: 1; }
+.meeting-delete-btn:hover { color: #B85450; }
 
 .meeting-item-date {
   font-size: 13px;
@@ -146,45 +165,10 @@
   margin: 0 40px;
 }
 
-.meeting-content {
-  padding: 24px 40px;
-  font-size: 15px;
-  font-weight: 300;
-  line-height: 1.9;
-  color: var(--ink);
-  white-space: pre-wrap;
+.meeting-content-area {
+  padding: 0 40px;
   flex: 1;
 }
-
-.meeting-content-edit { padding: 24px 40px; }
-
-.meeting-textarea {
-  width: 100%;
-  min-height: 300px;
-  border: none;
-  outline: none;
-  resize: none;
-  font-family: 'Inter', sans-serif;
-  font-size: 15px;
-  font-weight: 300;
-  line-height: 1.9;
-  color: var(--ink);
-  background: transparent;
-}
-
-.meeting-save-btn {
-  background: var(--ink);
-  color: var(--cream);
-  border: none;
-  padding: 10px 24px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-family: 'Inter', sans-serif;
-  transition: background 0.2s ease;
-}
-.meeting-save-btn:hover { background: var(--pink-deep); }
 
 /* Mobile */
 @media (max-width: 767px) {

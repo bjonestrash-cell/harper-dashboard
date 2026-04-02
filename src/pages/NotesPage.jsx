@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format, parseISO, subDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import DatePicker from '../components/DatePicker'
@@ -10,8 +10,9 @@ export default function NotesPage() {
   const [meetings, setMeetings] = useState([])
   const [selectedMeeting, setSelectedMeeting] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState('')
+  const [saveStatus, setSaveStatus] = useState('saved')
+  const saveTimer = useRef(null)
 
   // Load all meetings
   useEffect(() => {
@@ -51,24 +52,37 @@ export default function NotesPage() {
     return () => supabase.removeChannel(channel)
   }, [selectedMeeting?.id])
 
+  // When selecting a meeting, load its content into the editor
+  useEffect(() => {
+    if (selectedMeeting) {
+      setEditContent(selectedMeeting.content || '')
+      setSaveStatus('saved')
+    }
+  }, [selectedMeeting?.id])
+
   const deleteMeeting = async (id) => {
     if (!window.confirm('Delete this meeting note?')) return
-    await supabase.from('notes').delete().eq('id', id)
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (!error) {
+      setMeetings(prev => prev.filter(m => m.id !== id))
+      if (selectedMeeting?.id === id) setSelectedMeeting(null)
+    }
   }
 
-  const startEdit = () => {
-    setEditContent(selectedMeeting?.content || '')
-    setEditing(true)
-  }
-
-  const saveEdit = async () => {
-    if (!selectedMeeting) return
-    await supabase.from('notes').update({
-      content: editContent,
-      updated_at: new Date().toISOString(),
-      updated_by: currentUser,
-    }).eq('id', selectedMeeting.id)
-    setEditing(false)
+  // Inline auto-save
+  const handleContentChange = (val) => {
+    setEditContent(val)
+    setSaveStatus('saving')
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      if (!selectedMeeting) return
+      await supabase.from('notes').update({
+        content: val,
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser,
+      }).eq('id', selectedMeeting.id)
+      setSaveStatus('saved')
+    }, 2000)
   }
 
   const formatMeetingDate = (m) => {
@@ -98,11 +112,15 @@ export default function NotesPage() {
 
           <div className="meeting-list">
             {meetings.map(m => (
-              <button
+              <div
                 key={m.id}
                 className={`meeting-item ${selectedMeeting?.id === m.id ? 'active' : ''}`}
-                onClick={() => { setSelectedMeeting(m); setEditing(false) }}
+                onClick={() => setSelectedMeeting(m)}
               >
+                <button
+                  className="meeting-delete-btn"
+                  onClick={(e) => { e.stopPropagation(); deleteMeeting(m.id) }}
+                >&times;</button>
                 <span className="meeting-item-date">{formatMeetingDate(m)}</span>
                 <div className="meeting-item-row">
                   <span className={`meeting-author-chip ${m.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
@@ -112,7 +130,7 @@ export default function NotesPage() {
                     {m.content ? m.content.substring(0, 40) + (m.content.length > 40 ? '...' : '') : 'Empty'}
                   </span>
                 </div>
-              </button>
+              </div>
             ))}
             {meetings.length === 0 && (
               <p style={{ padding: 16, fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>No meetings yet</p>
@@ -139,41 +157,44 @@ export default function NotesPage() {
                     by {capitalize(selectedMeeting.updated_by || 'unknown')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  {!editing && (
-                    <button onClick={startEdit} className="meeting-edit-btn">Edit</button>
-                  )}
-                  <button onClick={() => deleteMeeting(selectedMeeting.id)}
-                    style={{ background: 'none', border: 'none', fontSize: 18, color: 'var(--ink-light)', padding: 4, lineHeight: 1, transition: 'color 0.2s' }}
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 400, letterSpacing: 1,
+                    color: saveStatus === 'saved' ? 'var(--ink-light)' : 'var(--pink-deep)',
+                    fontFamily: 'Inter, sans-serif',
+                  }}>
+                    {saveStatus === 'saved' ? 'Saved \u2713' : 'Saving...'}
+                  </span>
+                  <button
+                    onClick={() => deleteMeeting(selectedMeeting.id)}
+                    style={{
+                      background: 'none', border: 'none', fontSize: 11,
+                      fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                      color: 'var(--ink-light)', fontFamily: 'Inter, sans-serif',
+                      padding: '8px 0', transition: 'color 0.2s',
+                    }}
                     onMouseEnter={e => e.target.style.color = '#B85450'}
                     onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}
-                  >&times;</button>
+                  >Delete</button>
                 </div>
               </div>
 
               <div className="meeting-divider" />
 
-              {editing ? (
-                <div className="meeting-content-edit">
-                  <textarea
-                    value={editContent}
-                    onChange={e => setEditContent(e.target.value)}
-                    autoFocus
-                    placeholder="What was discussed..."
-                    className="meeting-textarea"
-                  />
-                  <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                    <button onClick={() => setEditing(false)} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 400, color: 'var(--ink-light)' }}>
-                      Cancel
-                    </button>
-                    <button onClick={saveEdit} className="meeting-save-btn">Save</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="meeting-content">
-                  {selectedMeeting.content || <span style={{ color: 'var(--ink-light)' }}>No notes yet.</span>}
-                </div>
-              )}
+              <div className="meeting-content-area">
+                <textarea
+                  value={editContent}
+                  onChange={e => handleContentChange(e.target.value)}
+                  placeholder="Start typing your meeting notes..."
+                  style={{
+                    width: '100%', minHeight: 'calc(100vh - 200px)',
+                    border: 'none', outline: 'none', resize: 'none',
+                    fontFamily: 'Inter, sans-serif', fontSize: 15,
+                    fontWeight: 300, lineHeight: 1.9, color: 'var(--ink)',
+                    backgroundColor: 'transparent', padding: '24px 0',
+                  }}
+                />
+              </div>
             </>
           )}
         </div>
@@ -226,16 +247,16 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
 
   return (
     <Modal onClose={onClose}>
-      <div style={{ padding: 32, position: 'relative', maxWidth: 440 }}>
+      <div style={{ padding: 40, position: 'relative', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
         <button onClick={onClose}
-          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
+          style={{ position: 'absolute', top: 24, right: 24, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
           onMouseEnter={e => e.target.style.color = 'var(--ink)'}
           onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}
         >&times;</button>
 
-        <h2 style={{ fontSize: 14, fontWeight: 500, letterSpacing: 1, marginBottom: 28, color: 'var(--ink)' }}>New Meeting</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 500, letterSpacing: 1, marginBottom: 32, color: 'var(--ink)' }}>New Meeting</h2>
 
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 10 }}>Date</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
             {quickDates.map(qd => (
@@ -255,7 +276,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
           </div>
         </div>
 
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 36 }}>
           <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Notes</span>
           <textarea
             value={notes}
@@ -263,18 +284,18 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
             placeholder="What was discussed..."
             autoFocus
             style={{
-              width: '100%', minHeight: 160, border: 'none',
+              width: '100%', minHeight: 280, border: 'none',
               borderBottom: '1px solid var(--cream-deep)',
               outline: 'none', resize: 'none',
-              fontFamily: 'Inter, sans-serif', fontSize: 14,
-              fontWeight: 300, lineHeight: 1.8, color: 'var(--ink)',
-              backgroundColor: 'transparent', marginTop: 8, padding: '8px 0',
+              fontFamily: 'Inter, sans-serif', fontSize: 15,
+              fontWeight: 300, lineHeight: 1.9, color: 'var(--ink)',
+              backgroundColor: 'transparent', marginTop: 8, padding: '12px 0',
             }}
           />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 400, color: 'var(--ink-light)' }}>Cancel</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--ink-light)' }}>Cancel</button>
           <button onClick={handleDone} disabled={saving}
             style={{
               backgroundColor: 'var(--ink)', color: 'var(--cream)',
