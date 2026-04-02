@@ -106,7 +106,24 @@ export default function NotesPage() {
             </span>
           </div>
 
-          <button className="new-meeting-btn" onClick={() => setShowAddModal(true)}>
+          <button onClick={() => setShowAddModal(true)}
+            style={{
+              backgroundColor: 'var(--ink)',
+              color: 'var(--cream)',
+              border: 'none',
+              borderRadius: '24px',
+              padding: '12px 28px',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              width: 'auto',
+              display: 'inline-block',
+              transition: 'all 0.2s ease',
+              margin: '0 16px 16px',
+            }}>
             + New Meeting
           </button>
 

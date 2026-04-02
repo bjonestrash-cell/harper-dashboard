@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, addDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
@@ -80,7 +80,22 @@ export default function PromotionsPage() {
     <div className="promotions-page">
       <div className="page-header">
         <h1 className="page-title">Promotions</h1>
-        <button className="btn-outline" onClick={() => { setEditingPromo(null); setShowModal(true) }}>
+        <button onClick={() => { setEditingPromo(null); setShowModal(true) }}
+          style={{
+            backgroundColor: 'var(--ink)',
+            color: 'var(--cream)',
+            border: 'none',
+            borderRadius: '24px',
+            padding: '12px 32px',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif',
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap',
+          }}>
           + Add Promotion
         </button>
       </div>
@@ -317,7 +332,15 @@ function PromoModal({ promo, setPromotions, onClose }) {
           <div style={{ flex: 1 }}>
             <DatePicker label="Start Date" value={form.start_date}
               isOpen={startOpen} onOpen={() => setStartOpen(true)} onClose={() => setStartOpen(false)}
-              onChange={(v) => { update('start_date', v); setStartOpen(false); setTimeout(() => setEndOpen(true), 150) }} />
+              onChange={(v) => {
+                update('start_date', v)
+                // If end date is empty or before new start, suggest one week later
+                if (!form.end_date || form.end_date <= v) {
+                  update('end_date', format(addDays(new Date(v + 'T12:00:00'), 7), 'yyyy-MM-dd'))
+                }
+                setStartOpen(false)
+                setTimeout(() => setEndOpen(true), 150)
+              }} />
           </div>
           <div style={{ flex: 1 }}>
             <DatePicker label="End Date" value={form.end_date} minDate={form.start_date}
