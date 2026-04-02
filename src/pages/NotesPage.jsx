@@ -157,7 +157,7 @@ export default function NotesPage() {
                     by {capitalize(selectedMeeting.updated_by || 'unknown')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                   <span style={{
                     fontSize: 10, fontWeight: 400, letterSpacing: 1,
                     color: saveStatus === 'saved' ? 'var(--ink-light)' : 'var(--pink-deep)',
@@ -166,7 +166,23 @@ export default function NotesPage() {
                     {saveStatus === 'saved' ? 'Saved \u2713' : 'Saving...'}
                   </span>
                   <button
-                    onClick={() => deleteMeeting(selectedMeeting.id)}
+                    onClick={() => setSelectedMeeting(null)}
+                    style={{
+                      background: 'none', border: 'none', fontSize: 11,
+                      fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                      color: 'var(--ink-light)', fontFamily: 'Inter, sans-serif',
+                      padding: '8px 0', transition: 'color 0.2s',
+                    }}
+                  >Close</button>
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Delete this meeting note? This cannot be undone.')) return
+                      const { error } = await supabase.from('notes').delete().eq('id', selectedMeeting.id)
+                      if (!error) {
+                        setMeetings(prev => prev.filter(m => m.id !== selectedMeeting.id))
+                        setSelectedMeeting(null)
+                      }
+                    }}
                     style={{
                       background: 'none', border: 'none', fontSize: 11,
                       fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
