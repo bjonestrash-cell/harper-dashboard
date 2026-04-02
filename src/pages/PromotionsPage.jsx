@@ -88,24 +88,25 @@ export default function PromotionsPage() {
       <div className="page-container">
         <MonthSelector />
 
-        <div className="stats-row">
+        {/* Stats — borderless inline */}
+        <div style={{ display: 'flex', gap: 0, borderTop: '1px solid var(--cream-deep)', borderBottom: '1px solid var(--cream-deep)', marginBottom: 48 }}>
           {[
             { label: 'Active Now', value: stats.active },
             { label: 'Upcoming', value: stats.upcoming },
             { label: 'This Month', value: stats.thisMonth },
             { label: 'Total', value: stats.total },
-          ].map(s => (
-            <div key={s.label} className="stat-card card">
-              <div className="stat-value">{s.value}</div>
-              <div className="stat-label">{s.label}</div>
+          ].map((s, i) => (
+            <div key={s.label} style={{ flex: 1, padding: '32px 0', textAlign: 'center', borderRight: i < 3 ? '1px solid var(--cream-deep)' : 'none' }}>
+              <div style={{ fontSize: 36, fontWeight: 300, color: 'var(--ink)', lineHeight: 1, marginBottom: 8 }}>{s.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>{s.label}</div>
             </div>
           ))}
         </div>
 
-        {/* Timeline */}
-        <div className="timeline-section">
-          <h2 className="section-header" style={{ marginBottom: 16 }}>Timeline</h2>
-          <div className="timeline-bar">
+        {/* Timeline — flat bar */}
+        <div style={{ marginBottom: 48 }}>
+          <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 16 }}>Timeline</span>
+          <div style={{ height: 4, backgroundColor: 'var(--cream-deep)', borderRadius: 2, position: 'relative' }}>
             {monthPromos.map(promo => {
               const monthStart = parseISO(format(currentMonth, 'yyyy-MM-01'))
               const daysInMonth = 30
@@ -113,55 +114,93 @@ export default function PromotionsPage() {
               const endDay = Math.min(daysInMonth, (parseISO(promo.end_date).getTime() - monthStart.getTime()) / 86400000)
               const left = (startDay / daysInMonth) * 100
               const width = ((endDay - startDay) / daysInMonth) * 100
-
               return (
-                <div key={promo.id} className="timeline-promo"
-                  style={{ left: `${Math.max(0, left)}%`, width: `${Math.max(2, Math.min(100, width))}%`, background: promo.color || '#F4A7B9' }}
-                  title={promo.name}>
-                  <span className="timeline-promo-label">{promo.name}</span>
-                </div>
+                <div key={promo.id} title={promo.name} style={{
+                  position: 'absolute', top: -2, height: 8, borderRadius: 4,
+                  left: `${Math.max(0, left)}%`, width: `${Math.max(2, Math.min(100, width))}%`,
+                  background: promo.color || '#F4A7B9',
+                }} />
               )
             })}
           </div>
         </div>
 
-        {/* Promotion Cards */}
-        <div className="promos-list">
-          {monthPromos.length === 0 && <p className="caption" style={{ textAlign: 'center', padding: 40 }}>No promotions this month</p>}
-          {monthPromos.map(promo => (
-            <PromotionCard key={promo.id} promotion={promo} onEdit={handleEdit} onDuplicate={handleDuplicate} onArchive={handleArchive} onDelete={deletePromotion} />
-          ))}
+        {/* Promotions — flat rows */}
+        <div style={{ marginBottom: 48 }}>
+          {monthPromos.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', padding: '24px 0' }}>No promotions this month</p>}
+          {monthPromos.map(promo => {
+            const statusStyle = promo.status === 'active'
+              ? { backgroundColor: 'var(--pink-light)', color: 'var(--pink-deep)' }
+              : promo.status === 'upcoming'
+              ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
+              : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' }
+            return (
+              <div key={promo.id} style={{
+                paddingTop: 24, paddingBottom: 24,
+                borderBottom: '1px solid var(--cream-deep)',
+                borderLeft: `2px solid ${promo.color || '#F4A7B9'}`,
+                paddingLeft: 20,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+              }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--ink)' }}>{promo.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginTop: 4 }}>
+                    {promo.start_date && format(new Date(promo.start_date + 'T00:00:00'), 'MMM d')}
+                    {promo.end_date && ` \u2013 ${format(new Date(promo.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
+                    {promo.discount && <span style={{ marginLeft: 12, color: 'var(--pink-deep)' }}>{promo.discount}</span>}
+                  </div>
+                  {promo.notes && <div style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-mid)', marginTop: 8 }}>{promo.notes}</div>}
+                  <div style={{ marginTop: 12, display: 'flex', gap: 4, fontSize: 11, fontWeight: 400, color: 'var(--ink-light)' }}>
+                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
+                      onClick={() => handleEdit(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Edit</button>
+                    <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
+                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
+                      onClick={() => handleDuplicate(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Duplicate</button>
+                    <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
+                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
+                      onClick={() => deletePromotion(promo.id)} onMouseEnter={e => e.target.style.color = '#B85450'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Delete</button>
+                  </div>
+                </div>
+                <span style={{ ...statusStyle, borderRadius: 20, padding: '4px 14px', fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>
+                  {promo.status}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Order Volume */}
-        <div className="order-volume-section card">
-          <h2 className="section-header" style={{ marginBottom: 8 }}>Order Volume Tracker</h2>
-          <div className="caption" style={{ marginBottom: 16 }}>Track daily order counts during active promotions (baseline: 300+/day)</div>
+        {/* Order Volume — flat, no box */}
+        <div style={{ paddingTop: 32, borderTop: '1px solid var(--cream-deep)' }}>
+          <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 24 }}>Order Volume</span>
+
+          {orderLog.map(o => (
+            <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--cream-deep)' }}>
+              <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', width: 80 }}>{format(parseISO(o.date), 'MMM d')}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', width: 60 }}>{o.orders}</span>
+              <span style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', flex: 1 }}>{o.notes}</span>
+            </div>
+          ))}
 
           {orderLog.length > 0 && (
-            <>
-              <table className="order-table">
-                <thead>
-                  <tr><th>Date</th><th>Orders</th><th>Notes</th></tr>
-                </thead>
-                <tbody>
-                  {orderLog.map(o => (
-                    <tr key={o.id}><td>{format(parseISO(o.date), 'MMM d')}</td><td>{o.orders}</td><td>{o.notes}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="order-summary">
-                <span>Total: <strong>{totalOrders}</strong></span>
-                {peakDay && <span>Peak: <strong>{peakDay.orders}</strong> on {format(parseISO(peakDay.date), 'MMM d')}</span>}
-              </div>
-            </>
+            <div style={{ display: 'flex', gap: 24, fontSize: 12, fontWeight: 300, color: 'var(--ink-mid)', padding: '12px 0' }}>
+              <span>Total: <strong>{totalOrders}</strong></span>
+              {peakDay && <span>Peak: <strong>{peakDay.orders}</strong> on {format(parseISO(peakDay.date), 'MMM d')}</span>}
+            </div>
           )}
 
-          <div className="order-input-row">
-            <input type="date" value={orderForm.date} onChange={(e) => setOrderForm(prev => ({ ...prev, date: e.target.value }))} />
-            <input type="number" placeholder="Orders" value={orderForm.orders} onChange={(e) => setOrderForm(prev => ({ ...prev, orders: e.target.value }))} />
-            <input type="text" placeholder="Notes" value={orderForm.notes} onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))} />
-            <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddOrder}>Add</button>
+          <div style={{ display: 'flex', gap: 24, padding: '16px 0', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <DatePicker label="Date" value={orderForm.date} onChange={(v) => setOrderForm(prev => ({ ...prev, date: v }))} />
+            </div>
+            <div style={{ width: 80 }}>
+              <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Orders</span>
+              <input type="number" placeholder="#" value={orderForm.orders} onChange={(e) => setOrderForm(prev => ({ ...prev, orders: e.target.value }))} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Notes</span>
+              <input type="text" placeholder="Notes" value={orderForm.notes} onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))} />
+            </div>
+            <button onClick={handleAddOrder} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink)', padding: '8px 0' }}>Add</button>
           </div>
         </div>
       </div>

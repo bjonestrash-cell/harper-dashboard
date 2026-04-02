@@ -244,15 +244,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* ───── CARDS ───── */
 .card {
-  background: var(--white);
-  padding: 20px 24px;
-  border: 1px solid var(--cream-deep);
-  box-shadow: 0 1px 3px var(--shadow), 0 4px 16px var(--shadow-lg);
+  padding: 20px 0;
   transition: all 150ms ease;
-}
-.card:hover {
-  box-shadow: 0 2px 8px var(--shadow), 0 8px 24px var(--shadow-lg);
-  transform: translateY(-1px);
 }
 
 /* ───── STATUS CHIPS ───── */
