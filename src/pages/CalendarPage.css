@@ -307,7 +307,7 @@
 
   /* FAB position above bottom nav */
   .fab-add-post {
-    bottom: 88px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
     right: 16px;
     width: 48px;
     height: 48px;

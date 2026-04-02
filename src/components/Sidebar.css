@@ -149,7 +149,7 @@
   background: var(--ink);
   display: flex;
   z-index: 50;
-  height: 56px;
+  height: calc(56px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(255,255,255,0.06);
   box-shadow: 0 -2px 12px rgba(26,20,18,0.1);

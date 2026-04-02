@@ -398,7 +398,7 @@ input[type=number]::-webkit-outer-spin-button {
 @media (max-width: 767px) {
   .main-content {
     margin-left: 0 !important;
-    padding-bottom: 120px;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 32px);
   }
   .global-status {
     padding: 8px 16px 0;
