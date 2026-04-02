@@ -1,0 +1,16 @@
+:root {
+  --cream: #FAF7F2;
+  --cream-mid: #F2EDE4;
+  --cream-deep: #E8E0D5;
+  --pink: #F4A7B9;
+  --pink-light: #FDE8EE;
+  --pink-deep: #E8839A;
+  --ink: #1A1412;
+  --ink-mid: #5C4A42;
+  --ink-light: #8C7A72;
+  --white: #FFFFFF;
+  --shadow: rgba(26, 20, 18, 0.08);
+
+  --sidebar-width: 200px;
+  --spacing: 8px;
+}

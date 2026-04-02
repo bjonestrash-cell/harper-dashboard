@@ -1,0 +1,92 @@
+.promotion-card {
+  background: var(--white);
+  border-left: 4px solid var(--pink);
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: all 200ms ease;
+}
+
+.promotion-card:hover {
+  box-shadow: 0 4px 12px var(--shadow);
+  transform: translateY(-1px);
+}
+
+.promo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.promo-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.promo-details {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.promo-dates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.promo-discount {
+  background: var(--pink-light);
+  color: var(--pink-deep);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.promo-platforms {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.platform-chip {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: var(--cream);
+  color: var(--ink-mid);
+  border-radius: 4px;
+}
+
+.promo-notes {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.promo-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.promo-action {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-light);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 200ms ease;
+}
+
+.promo-action:hover {
+  color: var(--pink-deep);
+}

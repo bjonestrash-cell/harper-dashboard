@@ -1,0 +1,31 @@
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.month-arrow {
+  color: var(--ink-mid);
+  font-size: 18px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color 200ms ease;
+  user-select: none;
+}
+
+.month-arrow:hover {
+  color: var(--ink);
+}
+
+.month-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--ink);
+  min-width: 160px;
+  text-align: center;
+}

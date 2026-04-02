@@ -1,0 +1,25 @@
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  transition: background 200ms ease;
+}
+
+.live-dot.connected {
+  background: #4CAF50;
+}
+
+.live-text {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--ink-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}

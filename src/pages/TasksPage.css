@@ -1,0 +1,144 @@
+.tasks-page .page-title {
+  margin-bottom: 24px;
+}
+
+.kanban {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.kanban-column {
+  background: var(--cream-mid);
+  padding: 16px;
+  min-height: 400px;
+}
+
+.kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.kanban-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.avatar.natalie {
+  background: var(--pink);
+}
+
+.avatar.grace {
+  background: var(--ink);
+}
+
+.kanban-add {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--ink-light);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.kanban-add:hover {
+  background: var(--pink-light);
+  color: var(--pink-deep);
+}
+
+.quick-add-row {
+  margin-bottom: 12px;
+}
+
+.quick-add-row input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid transparent;
+  background: var(--white);
+}
+
+.quick-add-row input:focus {
+  border-color: var(--pink);
+}
+
+.kanban-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Done section */
+.done-section {
+  margin-bottom: 32px;
+}
+
+.done-toggle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.done-toggle:hover {
+  color: var(--ink);
+}
+
+.done-tasks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Monthly Todos */
+.monthly-todos {
+  background: var(--white);
+  padding: 24px;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.monthly-todos .section-header {
+  margin-bottom: 16px;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.todo-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.todo-add-row select {
+  padding: 10px;
+  font-size: 12px;
+  min-width: 80px;
+}

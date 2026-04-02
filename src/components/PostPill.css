@@ -1,0 +1,54 @@
+.post-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 200ms ease;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.post-pill:hover {
+  box-shadow: 0 2px 6px var(--shadow);
+  transform: translateY(-1px);
+}
+
+.post-pill-icon {
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.post-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.platform-instagram {
+  background: var(--pink-light);
+  border-color: var(--pink);
+  color: var(--pink-deep);
+}
+
+.platform-tiktok {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #ffffff;
+}
+
+.platform-email {
+  background: #E8F4E8;
+  border-color: #A8D4A8;
+  color: #2C5C2C;
+}
+
+.platform-other {
+  background: var(--cream-mid);
+  border-color: var(--cream-deep);
+  color: var(--ink-mid);
+}

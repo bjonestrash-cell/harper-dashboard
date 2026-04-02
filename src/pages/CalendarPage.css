@@ -1,0 +1,201 @@
+.calendar-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+/* Month Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--cream-mid);
+}
+
+.calendar-header-cell {
+  padding: 12px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  background: var(--white);
+  border-bottom: 1px solid var(--cream-mid);
+}
+
+.calendar-cell {
+  min-height: 120px;
+  padding: 8px;
+  border: 1px solid var(--cream-mid);
+  background: var(--white);
+  cursor: pointer;
+  transition: background 200ms ease;
+  position: relative;
+}
+
+.calendar-cell:hover {
+  background: var(--cream);
+}
+
+.calendar-cell.other-month {
+  background: var(--cream-mid);
+}
+
+.calendar-cell.other-month .day-number {
+  color: var(--ink-light);
+}
+
+.calendar-cell.today {
+  background: rgba(253, 232, 238, 0.3);
+}
+
+.calendar-cell.weekend {
+  background: var(--cream);
+}
+
+.day-number {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.today-number {
+  background: var(--pink);
+  color: var(--white);
+  border-radius: 50%;
+}
+
+.cell-promos {
+  margin-top: 4px;
+}
+
+.promo-banner {
+  font-size: 10px;
+  color: white;
+  padding: 2px 6px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.promo-banner-continue {
+  height: 4px;
+  margin-bottom: 2px;
+  opacity: 0.6;
+}
+
+.cell-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* Week View */
+.week-view {
+  border: 1px solid var(--cream-mid);
+  overflow-x: auto;
+}
+
+.week-header {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  border-bottom: 1px solid var(--cream-mid);
+  background: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.week-day-header {
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.week-day-name {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+.week-day-number {
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+}
+
+.week-body {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  min-height: 48px;
+}
+
+.week-time-col {
+  width: 60px;
+}
+
+.week-time-label {
+  font-size: 10px;
+  color: var(--ink-light);
+  padding: 8px;
+  text-align: right;
+  border-right: 1px solid var(--cream-mid);
+}
+
+.week-cell {
+  border: 1px solid var(--cream-mid);
+  padding: 4px;
+  cursor: pointer;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.week-cell:hover {
+  background: var(--cream);
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}

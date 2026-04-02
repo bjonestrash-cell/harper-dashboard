@@ -1,0 +1,72 @@
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cream-mid);
+  transition: opacity 200ms ease;
+}
+
+.todo-item.completed {
+  opacity: 0.5;
+  order: 1;
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.todo-assignee {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.assignee-natalie {
+  background: var(--pink-light);
+  color: var(--pink-deep);
+}
+
+.assignee-grace {
+  background: var(--cream-mid);
+  color: var(--ink-mid);
+}
+
+.assignee-both {
+  background: var(--cream-deep);
+  color: var(--ink-mid);
+}
+
+.priority-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.priority-dot.high {
+  background: var(--pink-deep);
+}
+
+.todo-delete {
+  font-size: 16px;
+  color: var(--cream-deep);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  opacity: 0;
+  transition: all 200ms ease;
+}
+
+.todo-item:hover .todo-delete {
+  opacity: 1;
+}
+
+.todo-delete:hover {
+  color: var(--pink-deep);
+}

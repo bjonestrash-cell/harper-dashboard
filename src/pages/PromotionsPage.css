@@ -1,0 +1,154 @@
+.promotions-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 24px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+/* Timeline */
+.timeline-section {
+  margin-bottom: 32px;
+}
+
+.timeline-bar {
+  position: relative;
+  height: 48px;
+  background: var(--cream-mid);
+  overflow: hidden;
+}
+
+.timeline-promo {
+  position: absolute;
+  top: 8px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+}
+
+.timeline-promo-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Promos list */
+.promos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+/* Form */
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+/* Color picker */
+.color-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.color-swatch.selected {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--ink);
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+/* Order Volume */
+.order-volume-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: var(--white);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.order-table th {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cream-mid);
+}
+
+.order-table td {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cream-mid);
+}
+
+.order-summary {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: var(--ink-mid);
+  margin-bottom: 16px;
+}
+
+.order-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.order-input-row input {
+  flex: 1;
+}
+
+.order-input-row input[type="number"] {
+  max-width: 100px;
+}
