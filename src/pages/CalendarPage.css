@@ -250,9 +250,8 @@
     width: 28px;
     height: 28px;
   }
-  /* Hide full promos and pills, show color dots */
+  /* Hide promos, show post dots via PostPill mobile CSS */
   .cell-promos { display: none; }
-  .cell-posts .post-pill { display: none; }
   .calendar-cell .cell-posts {
     flex-direction: row;
     gap: 3px;

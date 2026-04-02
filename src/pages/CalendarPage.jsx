@@ -410,14 +410,15 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
   const weekEnd = endOfWeek(currentMonth)
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
   const hours = Array.from({ length: 12 }, (_, i) => i + 9)
+  const isMobileView = window.innerWidth < 768
 
   return (
     <div className="week-view">
       <div className="week-header">
         <div className="week-time-col" />
         {weekDays.map(day => (
-          <div key={day.toString()} className="week-day-header">
-            <span className="week-day-name">{format(day, 'EEE')}</span>
+          <div key={day.toString()} className={`week-day-header ${isToday(day) ? 'week-today' : ''}`}>
+            <span className="week-day-name">{isMobileView ? format(day, 'EEEEE') : format(day, 'EEE')}</span>
             <span className={`week-day-number ${isToday(day) ? 'today-number' : ''}`}>{format(day, 'd')}</span>
           </div>
         ))}
@@ -425,7 +426,12 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
       <div className="week-body">
         {hours.map(hour => (
           <div key={hour} className="week-row">
-            <div className="week-time-label">{hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`}</div>
+            <div className="week-time-label">
+              {isMobileView
+                ? (hour > 12 ? `${hour-12}p` : hour === 12 ? '12p' : `${hour}a`)
+                : (hour > 12 ? `${hour-12}pm` : hour === 12 ? '12pm' : `${hour}am`)
+              }
+            </div>
             {weekDays.map(day => {
               const dateStr = format(day, 'yyyy-MM-dd')
               const dayPosts = posts.filter(p => p.date === dateStr)
