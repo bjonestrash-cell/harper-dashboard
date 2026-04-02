@@ -22,17 +22,20 @@ const CONTENT_TYPES = {
 const STATUSES = ['draft', 'scheduled', 'posted']
 const ASSIGNEES = ['natalie', 'grace']
 
+const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
+
 export default function CalendarPage() {
   const { currentMonth } = useMonth()
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
   const otherUser = currentUser === 'natalie' ? 'grace' : 'natalie'
 
-  const [viewMode, setViewMode] = useState('month') // month | week
-  const [calendarView, setCalendarView] = useState('master') // mine | theirs | master
+  const [viewMode, setViewMode] = useState('month')
+  const [calendarView, setCalendarView] = useState('master')
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedPost, setSelectedPost] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [mobileDay, setMobileDay] = useState(null)
+  const [selectedDay, setSelectedDay] = useState(null)
   const [isMobile] = useState(() => window.innerWidth < 768)
 
   const monthStart = startOfMonth(currentMonth)
@@ -88,20 +91,25 @@ export default function CalendarPage() {
 
   const isPromoStart = (promo, date) => promo.start_date === format(date, 'yyyy-MM-dd')
 
+  // Fix 3: Day click selects day + shows panel below (desktop), or mobile slide-up
   const handleDayClick = (date) => {
     if (isMobile) {
       setMobileDay(date)
       return
     }
-    setSelectedDate(format(date, 'yyyy-MM-dd'))
-    setSelectedPost(null)
-    setShowModal(true)
+    setSelectedDay(date)
   }
 
   const handlePostClick = (post, e) => {
     if (e) e.stopPropagation()
     setSelectedPost(post)
     setSelectedDate(post.date)
+    setShowModal(true)
+  }
+
+  const openAddModal = (date) => {
+    setSelectedDate(format(date, 'yyyy-MM-dd'))
+    setSelectedPost(null)
     setShowModal(true)
   }
 
@@ -113,24 +121,34 @@ export default function CalendarPage() {
     }
   }
 
+  // Fix 4: Delete post
+  const deletePost = async (id) => {
+    const { error } = await supabase.from('calendar_posts').delete().eq('id', id)
+    if (!error) {
+      setPosts(prev => prev.filter(p => p.id !== id))
+    }
+  }
+
+  // Posts for the selected day panel
+  const selectedDayPosts = selectedDay ? getPostsForDate(selectedDay) : []
+
   return (
     <div className="calendar-page">
       <div className="page-header">
         <h1 className="page-title">Calendar</h1>
         <div className="calendar-controls">
-          {/* View: Mine / Other / Master */}
+          {/* Fix 2: Use real names instead of Mine */}
           <div className="view-toggle">
             <button className={calendarView === 'mine' ? 'active' : ''} onClick={() => setCalendarView('mine')}>
-              Mine
+              {capitalize(currentUser)}
             </button>
             <button className={calendarView === 'theirs' ? 'active' : ''} onClick={() => setCalendarView('theirs')}>
-              {otherUser.charAt(0).toUpperCase() + otherUser.slice(1)}
+              {capitalize(otherUser)}
             </button>
             <button className={calendarView === 'master' ? 'active' : ''} onClick={() => setCalendarView('master')}>
               Master
             </button>
           </div>
-          {/* Month / Week */}
           <div className="view-toggle">
             <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>Month</button>
             <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Week</button>
@@ -147,6 +165,7 @@ export default function CalendarPage() {
             currentMonth={currentMonth}
             calendarView={calendarView}
             currentUser={currentUser}
+            selectedDay={selectedDay}
             getPostsForDate={getPostsForDate}
             getPromosForDate={getPromosForDate}
             isPromoStart={isPromoStart}
@@ -162,6 +181,117 @@ export default function CalendarPage() {
             onPostClick={handlePostClick}
             onDayClick={handleDayClick}
           />
+        )}
+
+        {/* Fix 3: Selected day panel below calendar */}
+        {selectedDay && !isMobile && (
+          <div style={{
+            marginTop: 32,
+            borderTop: '1px solid var(--cream-deep)',
+            paddingTop: 24,
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: 3,
+                textTransform: 'uppercase',
+                color: 'var(--ink-light)',
+              }}>
+                {format(selectedDay, 'MMMM d, yyyy')}
+              </span>
+              <button
+                onClick={() => openAddModal(selectedDay)}
+                style={{
+                  backgroundColor: 'var(--ink)',
+                  color: 'var(--cream)',
+                  border: 'none',
+                  padding: '8px 20px',
+                  fontSize: 10,
+                  fontWeight: 500,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
+                }}
+              >
+                + Add Post
+              </button>
+            </div>
+
+            {selectedDayPosts.length === 0 ? (
+              <p style={{
+                fontSize: 13,
+                fontWeight: 300,
+                color: 'var(--ink-light)',
+              }}>
+                Nothing scheduled for this day.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {selectedDayPosts.map(post => (
+                  <div key={post.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '14px 20px',
+                    backgroundColor: 'var(--white)',
+                    border: '1px solid var(--cream-deep)',
+                  }}>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                      backgroundColor:
+                        post.platform === 'instagram' ? '#F4A7B9' :
+                        post.platform === 'tiktok' ? '#1a1a2e' :
+                        post.platform === 'email' ? '#A8D4A8' : '#C4B8A8',
+                    }}/>
+                    <span style={{
+                      fontSize: 9, fontWeight: 500, letterSpacing: 2,
+                      textTransform: 'uppercase', color: 'var(--ink-light)',
+                      width: 100, flexShrink: 0,
+                    }}>
+                      {post.platform} &middot; {post.content_type}
+                    </span>
+                    <span style={{
+                      fontSize: 13, fontWeight: 300, color: 'var(--ink)',
+                      flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {post.caption || 'No caption'}
+                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 500, letterSpacing: 1.5,
+                      textTransform: 'uppercase',
+                      color: post.status === 'posted' ? '#5C7A5C' : 'var(--ink-light)',
+                      backgroundColor: post.status === 'posted' ? '#EDF3ED' : 'var(--cream-mid)',
+                      padding: '3px 10px', borderRadius: 20,
+                    }}>
+                      {post.status}
+                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 500, letterSpacing: 1,
+                      textTransform: 'uppercase', flexShrink: 0,
+                      color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)',
+                    }}>
+                      {post.assigned_to}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deletePost(post.id) }}
+                      style={{
+                        background: 'none', border: 'none',
+                        color: 'var(--ink-light)', fontSize: 16,
+                        padding: 4, lineHeight: 1,
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -200,7 +330,7 @@ export default function CalendarPage() {
   )
 }
 
-function MonthGrid({ days, currentMonth, calendarView, currentUser, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onPostClick }) {
+function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onPostClick }) {
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
@@ -214,6 +344,7 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, getPostsForD
         const isCurrentMonth = isSameMonth(day, currentMonth)
         const todayFlag = isToday(day)
         const weekend = isWeekend(day)
+        const isSelected = selectedDay && isSameDay(day, selectedDay)
 
         return (
           <div
@@ -221,7 +352,8 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, getPostsForD
             className={`calendar-cell
               ${!isCurrentMonth ? 'other-month' : ''}
               ${todayFlag ? 'today' : ''}
-              ${weekend && isCurrentMonth ? 'weekend' : ''}`}
+              ${weekend && isCurrentMonth ? 'weekend' : ''}
+              ${isSelected ? 'selected' : ''}`}
             onClick={() => onDayClick(day)}
           >
             <span className={`day-number ${todayFlag ? 'today-number' : ''}`}>
@@ -313,7 +445,7 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
           <h3 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
             {format(date, 'EEEE, MMMM d')}
           </h3>
-          <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>x</button>
+          <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>&times;</button>
         </div>
         <div className="mobile-day-posts">
           {posts.length === 0 && <p className="caption" style={{ padding: 16 }}>No posts for this day</p>}
@@ -330,6 +462,7 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
   )
 }
 
+// Fix 1: Restyled PostModal with pill toggles, underline inputs, close button
 function PostModal({ date, post, currentUser, setPosts, onClose }) {
   const [form, setForm] = useState({
     platform: post?.platform || 'instagram',
@@ -379,62 +512,100 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
 
   const contentTypes = CONTENT_TYPES[form.platform] || ['Post']
 
+  const PillSelect = ({ options, value, onChange }) => (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {options.map(opt => (
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          style={{
+            padding: '6px 16px',
+            borderRadius: 20,
+            border: '1px solid',
+            borderColor: value === opt ? 'var(--ink)' : 'var(--cream-deep)',
+            backgroundColor: value === opt ? 'var(--ink)' : 'transparent',
+            color: value === opt ? 'var(--cream)' : 'var(--ink-mid)',
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
     <Modal onClose={onClose}>
-      <div style={{ padding: '32px' }}>
-        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
+      <div style={{ padding: 32, position: 'relative' }}>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 20, right: 20,
+            background: 'none', border: 'none',
+            fontSize: 20, color: 'var(--ink-light)',
+            lineHeight: 1, padding: 4,
+          }}
+        >&times;</button>
+
+        <h2 style={{
+          fontSize: 11, fontWeight: 500, letterSpacing: 4,
+          textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24,
+        }}>
           {post ? 'Edit Post' : 'New Post'}
         </h2>
-        {date && <p className="caption" style={{ marginBottom: 20 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}
+        {date && (
+          <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 24 }}>
+            {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+          </p>
+        )}
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Platform</label>
-          <div className="pill-group">
-            {PLATFORMS.map(p => (
-              <button key={p} className={`pill ${form.platform === p ? 'active' : ''}`}
-                onClick={() => { update('platform', p); update('content_type', CONTENT_TYPES[p]?.[0] || 'Post') }}>
-                {p}
-              </button>
-            ))}
-          </div>
+          <PillSelect options={PLATFORMS} value={form.platform}
+            onChange={(v) => { update('platform', v); update('content_type', CONTENT_TYPES[v]?.[0] || 'Post') }} />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Content Type</label>
-          <div className="pill-group">
-            {contentTypes.map(t => (
-              <button key={t} className={`pill ${form.content_type === t ? 'active' : ''}`}
-                onClick={() => update('content_type', t)}>{t}</button>
-            ))}
-          </div>
+          <PillSelect options={contentTypes} value={form.content_type}
+            onChange={(v) => update('content_type', v)} />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Caption / Copy</label>
-          <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)}
-            placeholder="Write your caption..." style={{ width: '100%' }} />
+          <textarea
+            rows={4}
+            value={form.caption}
+            onChange={(e) => update('caption', e.target.value)}
+            placeholder="Write your caption..."
+            style={{
+              width: '100%', border: 'none',
+              borderBottom: '1px solid var(--cream-deep)',
+              background: 'transparent', padding: '10px 0',
+              fontFamily: "'Inter', sans-serif", fontSize: 14,
+              fontWeight: 300, color: 'var(--ink)',
+              outline: 'none', resize: 'vertical',
+            }}
+            onFocus={(e) => e.target.style.borderBottomColor = 'var(--pink-deep)'}
+            onBlur={(e) => e.target.style.borderBottomColor = 'var(--cream-deep)'}
+          />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 24 }}>
           <label className="form-label">Status</label>
-          <div className="pill-group">
-            {STATUSES.map(s => (
-              <button key={s} className={`pill ${form.status === s ? 'active' : ''}`}
-                onClick={() => update('status', s)}>{s}</button>
-            ))}
-          </div>
+          <PillSelect options={STATUSES} value={form.status}
+            onChange={(v) => update('status', v)} />
         </div>
 
-        <div className="form-group">
+        <div style={{ marginBottom: 32 }}>
           <label className="form-label">Assigned to</label>
-          <div className="pill-group">
-            {ASSIGNEES.map(a => (
-              <button key={a} className={`pill ${form.assigned_to === a ? 'active' : ''}`}
-                onClick={() => update('assigned_to', a)}>
-                {a.charAt(0).toUpperCase() + a.slice(1)}
-              </button>
-            ))}
-          </div>
+          <PillSelect options={ASSIGNEES.map(capitalize)} value={capitalize(form.assigned_to)}
+            onChange={(v) => update('assigned_to', v.toLowerCase())} />
         </div>
 
         <button className="btn-save" onClick={handleSave} disabled={saving}>
@@ -442,8 +613,15 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
         </button>
 
         {post && (
-          <button style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%', fontSize: 12 }}
-            onClick={handleDelete}>
+          <button
+            style={{
+              marginTop: 16, color: 'var(--ink-light)', display: 'block',
+              textAlign: 'center', width: '100%', fontSize: 11,
+              fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
+              background: 'none', border: 'none',
+            }}
+            onClick={handleDelete}
+          >
             Delete post
           </button>
         )}

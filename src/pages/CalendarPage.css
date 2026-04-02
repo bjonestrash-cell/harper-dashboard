@@ -36,6 +36,7 @@
 .calendar-cell.other-month { background: var(--cream-mid); }
 .calendar-cell.other-month .day-number { color: var(--ink-light); }
 .calendar-cell.today { background: var(--pink-light); }
+.calendar-cell.selected { background: var(--cream); box-shadow: inset 0 0 0 2px var(--ink); }
 .calendar-cell.weekend { background: var(--cream); }
 
 .day-number {
