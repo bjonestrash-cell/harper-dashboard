@@ -157,7 +157,7 @@ export default function NotesPage() {
           {/* Center editor */}
           <div className="notes-editor-panel">
             <div className="notes-toolbar">
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 300 }}>
+              <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
                 {format(currentMonth, 'MMMM yyyy')}
               </span>
               <div className="toolbar-actions">

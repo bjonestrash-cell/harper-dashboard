@@ -310,7 +310,7 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
     <div className="mobile-day-overlay" onClick={onClose}>
       <div className="mobile-day-panel" onClick={e => e.stopPropagation()}>
         <div className="mobile-day-header">
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 300 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
             {format(date, 'EEEE, MMMM d')}
           </h3>
           <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>x</button>
@@ -382,7 +382,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: '32px' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 300, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
           {post ? 'Edit Post' : 'New Post'}
         </h2>
         {date && <p className="caption" style={{ marginBottom: 20 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}

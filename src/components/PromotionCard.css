@@ -21,9 +21,9 @@
 }
 
 .promo-name {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 400;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--ink);
 }
 

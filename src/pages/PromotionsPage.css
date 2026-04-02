@@ -7,7 +7,7 @@
 
 .stat-card { text-align: center; padding: 24px; }
 .stat-value {
-  font-family: var(--font-display);
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 36px;
   font-weight: 300;
   color: var(--ink);

@@ -9,6 +9,7 @@ import TasksPage from './pages/TasksPage'
 import NotesPage from './pages/NotesPage'
 import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
+import CustomCursor from './components/CustomCursor'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -45,6 +46,7 @@ export default function App() {
 
   return (
     <>
+      <CustomCursor />
       {showUserPrompt && (
         <Modal onClose={() => {}}>
           <div style={{ padding: 48, textAlign: 'center' }}>

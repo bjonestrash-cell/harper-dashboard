@@ -108,8 +108,8 @@
   color: var(--ink-light);
 }
 .week-day-number {
-  font-family: var(--font-display);
-  font-size: 24px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 20px;
   font-weight: 300;
   color: var(--ink);
   display: inline-flex;

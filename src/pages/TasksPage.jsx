@@ -245,7 +245,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: '32px' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 300, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
           {task ? 'Edit Task' : 'New Task'}
         </h2>
 
