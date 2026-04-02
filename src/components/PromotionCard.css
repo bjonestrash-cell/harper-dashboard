@@ -93,3 +93,7 @@
 .promo-action:hover {
   color: var(--pink-deep);
 }
+
+.promo-delete-action:hover {
+  color: #B85450 !important;
+}

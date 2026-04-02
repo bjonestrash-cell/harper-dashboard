@@ -6,6 +6,7 @@ import { useRealtime } from '../hooks/useRealtime'
 import MonthSelector from '../components/MonthSelector'
 import PromotionCard from '../components/PromotionCard'
 import Modal from '../components/Modal'
+import DatePicker from '../components/DatePicker'
 import './PromotionsPage.css'
 
 const PLATFORM_OPTIONS = ['instagram', 'tiktok', 'email']
@@ -56,6 +57,12 @@ export default function PromotionsPage() {
   const handleArchive = async (promo) => {
     const { data, error } = await supabase.from('promotions').update({ status: 'ended' }).eq('id', promo.id).select()
     if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
+  }
+
+  const deletePromotion = async (id) => {
+    if (!window.confirm('Delete this promotion?')) return
+    const { error } = await supabase.from('promotions').delete().eq('id', id)
+    if (!error) setPromotions(prev => prev.filter(p => p.id !== id))
   }
 
   const handleAddOrder = () => {
@@ -122,7 +129,7 @@ export default function PromotionsPage() {
         <div className="promos-list">
           {monthPromos.length === 0 && <p className="caption" style={{ textAlign: 'center', padding: 40 }}>No promotions this month</p>}
           {monthPromos.map(promo => (
-            <PromotionCard key={promo.id} promotion={promo} onEdit={handleEdit} onDuplicate={handleDuplicate} onArchive={handleArchive} />
+            <PromotionCard key={promo.id} promotion={promo} onEdit={handleEdit} onDuplicate={handleDuplicate} onArchive={handleArchive} onDelete={deletePromotion} />
           ))}
         </div>
 
@@ -269,12 +276,10 @@ function PromoModal({ promo, setPromotions, onClose }) {
 
         <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
           <div style={{ flex: 1 }}>
-            <label className="form-label">Start Date</label>
-            <input type="date" value={form.start_date} onChange={(e) => update('start_date', e.target.value)} />
+            <DatePicker label="Start Date" value={form.start_date} onChange={(v) => update('start_date', v)} />
           </div>
           <div style={{ flex: 1 }}>
-            <label className="form-label">End Date</label>
-            <input type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} />
+            <DatePicker label="End Date" value={form.end_date} onChange={(v) => update('end_date', v)} />
           </div>
         </div>
 

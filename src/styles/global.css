@@ -146,21 +146,21 @@ button:active { transform: scale(0.98); }
 .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-outline {
-  padding: 10px 20px;
-  border: 1px solid var(--pink-deep);
-  color: var(--pink-deep);
+  padding: 12px 32px;
+  border: none;
+  background: var(--ink);
+  color: var(--cream);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: transparent;
   cursor: pointer;
+  font-family: 'Inter', sans-serif;
   transition: all 150ms ease;
 }
 .btn-outline:hover {
-  background: var(--pink);
+  background: var(--pink-deep);
   color: var(--white);
-  border-color: var(--pink);
 }
 
 /* ───── INPUTS ───── */

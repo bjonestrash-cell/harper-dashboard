@@ -7,6 +7,7 @@ import MonthSelector from '../components/MonthSelector'
 import TaskCard from '../components/TaskCard'
 import TodoItem from '../components/TodoItem'
 import Modal from '../components/Modal'
+import DatePicker from '../components/DatePicker'
 import './TasksPage.css'
 
 export default function TasksPage() {
@@ -52,6 +53,11 @@ export default function TasksPage() {
   const handleDragStart = (e, task) => {
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const deleteTask = async (id) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id)
+    if (!error) setTasks(prev => prev.filter(t => t.id !== id))
   }
 
   const handleDrop = async (e, targetUser) => {
@@ -117,7 +123,7 @@ export default function TasksPage() {
       </div>
       <div className="kanban-tasks">
         {activeTasks(taskList).map(task => (
-          <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} />
+          <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} />
         ))}
       </div>
     </div>
@@ -161,7 +167,7 @@ export default function TasksPage() {
             {showDone && (
               <div className="done-tasks">
                 {[...doneNatalie, ...doneGrace].map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} />
+                  <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} />
                 ))}
               </div>
             )}
@@ -289,7 +295,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         </div>
         <div style={{ marginBottom: 24 }}>
           <label className="form-label">Due Date</label>
-          <input type="date" value={form.due_date} onChange={(e) => update('due_date', e.target.value)} />
+          <DatePicker value={form.due_date} onChange={(v) => update('due_date', v)} />
         </div>
         <div style={{ marginBottom: 24 }}>
           <label className="form-label">Priority</label>

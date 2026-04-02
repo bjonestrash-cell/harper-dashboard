@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import './PromotionCard.css'
 
-export default function PromotionCard({ promotion, onEdit, onDuplicate, onArchive }) {
+export default function PromotionCard({ promotion, onEdit, onDuplicate, onArchive, onDelete }) {
   const platformLabels = {
     instagram: 'Instagram',
     tiktok: 'TikTok',
@@ -17,9 +17,8 @@ export default function PromotionCard({ promotion, onEdit, onDuplicate, onArchiv
 
       <div className="promo-details">
         <div className="promo-dates caption">
-          <span>📅</span>
           {promotion.start_date && format(new Date(promotion.start_date + 'T00:00:00'), 'MMM d')}
-          {promotion.end_date && ` – ${format(new Date(promotion.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
+          {promotion.end_date && ` \u2013 ${format(new Date(promotion.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
         </div>
 
         {promotion.discount && (
@@ -43,6 +42,11 @@ export default function PromotionCard({ promotion, onEdit, onDuplicate, onArchiv
         <button className="promo-action" onClick={() => onEdit(promotion)}>Edit</button>
         <button className="promo-action" onClick={() => onDuplicate(promotion)}>Duplicate</button>
         <button className="promo-action" onClick={() => onArchive(promotion)}>Archive</button>
+        {onDelete && (
+          <button className="promo-action promo-delete-action"
+            onClick={() => onDelete(promotion.id)}
+          >Delete</button>
+        )}
       </div>
     </div>
   )

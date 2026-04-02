@@ -1,7 +1,7 @@
 import { format, isPast, isToday } from 'date-fns'
 import './TaskCard.css'
 
-export default function TaskCard({ task, onToggle, onClick, onDragStart }) {
+export default function TaskCard({ task, onToggle, onClick, onDragStart, onDelete }) {
   const isDone = task.status === 'done'
   const isOverdue = task.due_date && isPast(new Date(task.due_date + 'T23:59:59')) && !isDone
   const isDueToday = task.due_date && isToday(new Date(task.due_date + 'T00:00:00'))
@@ -13,8 +13,17 @@ export default function TaskCard({ task, onToggle, onClick, onDragStart }) {
       onDragStart={(e) => onDragStart(e, task)}
       onClick={() => onClick(task)}
     >
+      {onDelete && (
+        <button
+          className="task-delete-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (window.confirm('Delete this task?')) onDelete(task.id)
+          }}
+        >&times;</button>
+      )}
       <div className="task-card-left">
-        <span className="drag-handle" onMouseDown={(e) => e.stopPropagation()}>⠿</span>
+        <span className="drag-handle" onMouseDown={(e) => e.stopPropagation()}>&#x2807;</span>
         <button
           className={`checkbox ${isDone ? 'checked' : ''}`}
           onClick={(e) => {
@@ -34,7 +43,7 @@ export default function TaskCard({ task, onToggle, onClick, onDragStart }) {
         <div className="task-meta">
           {task.due_date && (
             <span className={`task-due ${isOverdue ? 'overdue' : ''} ${isDueToday ? 'today' : ''}`}>
-              📅 {format(new Date(task.due_date + 'T00:00:00'), 'MMM d')}
+              {format(new Date(task.due_date + 'T00:00:00'), 'MMM d')}
             </span>
           )}
           <span className={`status-chip ${task.status}`}>{task.status}</span>
