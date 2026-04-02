@@ -210,13 +210,6 @@ export default function TasksPage() {
                   }}>{v.charAt(0).toUpperCase() + v.slice(1)}</button>
               ))}
             </div>
-            <button onClick={handleAddTodo}
-              style={{
-                padding: '8px 20px', borderRadius: 9999, border: 'none',
-                backgroundColor: 'var(--ink)', color: 'var(--cream)',
-                fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
-                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
-              }}>Add</button>
           </div>
         </div>
       </div>

@@ -173,6 +173,7 @@ input, textarea, select {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 300;
+  /* Enable autocorrect and spellcheck globally */
   border: none;
   border-bottom: 1px solid var(--cream-deep);
   background: transparent;

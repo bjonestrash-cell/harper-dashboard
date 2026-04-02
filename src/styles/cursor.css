@@ -9,45 +9,52 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.05s linear;
-  mix-blend-mode: multiply;
+  transition: transform 0.05s linear, opacity 0.2s ease;
+  opacity: 0.3;
 }
 
 .cursor-letter {
   font-family: 'Horizon', sans-serif;
-  font-size: 18px;
-  color: #1A1412;
+  font-size: 14px;
+  color: var(--ink-light);
   line-height: 1;
   display: block;
   transition:
     font-size 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    color 0.2s ease;
+    color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .cursor-follower {
   position: fixed;
   top: 0;
   left: 0;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(26, 20, 18, 0.2);
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(26, 20, 18, 0.1);
   border-radius: 50%;
   z-index: 99998;
   pointer-events: none;
   transition:
     width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    border-color 0.3s ease;
+    border-color 0.3s ease,
+    opacity 0.2s ease;
+  opacity: 0.4;
 }
 
-/* Hover state — H gets bigger and pink */
+/* Hover state — more visible on interactive elements */
+.custom-cursor.cursor-hover {
+  opacity: 0.8;
+}
 .custom-cursor.cursor-hover .cursor-letter {
-  font-size: 22px;
+  font-size: 16px;
   color: #D4849A;
 }
 
 .cursor-follower.follower-hover {
-  width: 56px;
-  height: 56px;
-  border-color: rgba(212, 132, 154, 0.4);
+  width: 44px;
+  height: 44px;
+  border-color: rgba(212, 132, 154, 0.3);
+  opacity: 0.6;
 }

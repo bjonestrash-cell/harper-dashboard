@@ -44,6 +44,21 @@ export default function App() {
     })
   }
 
+  // Enable spellcheck/autocorrect on all inputs globally
+  useEffect(() => {
+    const apply = () => {
+      document.querySelectorAll('input, textarea').forEach(el => {
+        el.setAttribute('spellcheck', 'true')
+        el.setAttribute('autocorrect', 'on')
+        el.setAttribute('autocapitalize', 'sentences')
+      })
+    }
+    apply()
+    const observer = new MutationObserver(apply)
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       <CustomCursor />

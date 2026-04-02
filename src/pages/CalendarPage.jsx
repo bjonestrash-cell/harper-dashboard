@@ -241,6 +241,9 @@ export default function CalendarPage() {
             </div>
           </div>
         )}
+
+        {/* Recent Meeting Notes */}
+        <RecentMeetingNotes />
       </div>
 
       {/* Mobile day slide-up */}
@@ -563,5 +566,75 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
         )}
       </div>
     </Modal>
+  )
+}
+
+/* ─── Recent Meeting Notes (below calendar) ─── */
+function RecentMeetingNotes() {
+  const [notes, setNotes] = useState([])
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('notes')
+        .select('*')
+        .order('month', { ascending: false })
+        .limit(5)
+      if (data) setNotes(data)
+    }
+    load()
+
+    const channel = supabase
+      .channel('calendar-notes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' },
+        () => load()
+      )
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [])
+
+  if (notes.length === 0) return null
+
+  const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
+
+  return (
+    <div style={{ marginTop: 48, borderTop: '1px solid var(--cream-deep)', paddingTop: 24 }}>
+      <span style={{
+        fontSize: 10, fontWeight: 500, letterSpacing: 3,
+        textTransform: 'uppercase', color: 'var(--ink-light)',
+        display: 'block', marginBottom: 20,
+      }}>Recent Meeting Notes</span>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {notes.map(note => {
+          let dateLabel = note.month
+          try { dateLabel = format(parseISO(note.month), 'EEE, MMM d') } catch {}
+          return (
+            <div key={note.id} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 16,
+              padding: '16px 0', borderBottom: '1px solid var(--cream-deep)',
+            }}>
+              <div style={{ flexShrink: 0, width: 80 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{dateLabel}</span>
+                {note.updated_by && (
+                  <span style={{
+                    display: 'block', marginTop: 4, fontSize: 9, fontWeight: 500,
+                    color: note.updated_by === 'natalie' ? 'var(--pink-deep)' : 'var(--ink-light)',
+                  }}>{capitalize(note.updated_by)}</span>
+                )}
+              </div>
+              <p style={{
+                fontSize: 13, fontWeight: 300, color: 'var(--ink-mid)',
+                lineHeight: 1.6, flex: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              }}>
+                {note.content || 'No notes'}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
