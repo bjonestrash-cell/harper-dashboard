@@ -1,16 +1,17 @@
 .task-card {
   background: var(--white);
   padding: 14px 16px;
-  box-shadow: 0 1px 3px var(--shadow);
+  border: 1px solid var(--cream-deep);
+  box-shadow: 0 1px 3px var(--shadow), 0 4px 16px var(--shadow-lg);
   display: flex;
   gap: 12px;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all 150ms ease;
   position: relative;
 }
 
 .task-card:hover {
-  box-shadow: 0 4px 12px var(--shadow);
+  box-shadow: 0 2px 8px var(--shadow), 0 8px 24px var(--shadow-lg);
   transform: translateY(-1px);
 }
 
@@ -58,7 +59,7 @@
 
 .task-title {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ink);
   display: block;
   margin-bottom: 4px;

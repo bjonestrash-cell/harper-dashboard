@@ -12,7 +12,6 @@ import Modal from './components/Modal'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
-    // Check URL param first
     const params = new URLSearchParams(window.location.search)
     const urlUser = params.get('user')
     if (urlUser && ['natalie', 'grace'].includes(urlUser.toLowerCase())) {
@@ -23,6 +22,10 @@ export default function App() {
   })
 
   const [showUserPrompt, setShowUserPrompt] = useState(!currentUser)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('harper-sidebar-collapsed') === 'true'
+  })
+
   const location = useLocation()
   const currentPage = location.pathname.replace('/', '') || 'calendar'
   const onlineUsers = usePresence(currentUser, currentPage)
@@ -33,25 +36,33 @@ export default function App() {
     setShowUserPrompt(false)
   }
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      localStorage.setItem('harper-sidebar-collapsed', String(!prev))
+      return !prev
+    })
+  }
+
   return (
     <>
       {showUserPrompt && (
         <Modal onClose={() => {}}>
-          <div style={{ padding: 40, textAlign: 'center' }}>
+          <div style={{ padding: 48, textAlign: 'center' }}>
             <div style={{
-              fontFamily: "'Horizon', 'Cormorant Garamond', serif",
-              fontSize: 28,
-              letterSpacing: 3,
+              fontFamily: "var(--font-logo)",
+              fontSize: 32,
+              letterSpacing: 5,
               marginBottom: 8,
               color: 'var(--ink)',
             }}>
               Harper
             </div>
             <p style={{
-              fontSize: 12,
+              fontSize: 13,
+              fontWeight: 300,
               color: 'var(--ink-light)',
               letterSpacing: 1,
-              marginBottom: 32,
+              marginBottom: 40,
             }}>
               Who are you?
             </p>
@@ -59,7 +70,7 @@ export default function App() {
               <button
                 onClick={() => selectUser('natalie')}
                 style={{
-                  padding: '14px 32px',
+                  padding: '14px 40px',
                   background: 'var(--pink)',
                   color: 'var(--white)',
                   border: 'none',
@@ -75,7 +86,7 @@ export default function App() {
               <button
                 onClick={() => selectUser('grace')}
                 style={{
-                  padding: '14px 32px',
+                  padding: '14px 40px',
                   background: 'var(--ink)',
                   color: 'var(--white)',
                   border: 'none',
@@ -94,8 +105,8 @@ export default function App() {
       )}
 
       <div className="app-layout">
-        <Sidebar />
-        <div className="main-content">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} />
+        <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div style={{
             position: 'fixed',
             top: 16,

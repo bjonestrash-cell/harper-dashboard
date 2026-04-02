@@ -2,53 +2,54 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 3px 8px;
   font-size: 10px;
   font-weight: 500;
-  border-radius: 4px;
-  border: 1px solid;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: all 200ms ease;
-  max-width: 100%;
-  overflow: hidden;
+  transition: all 150ms ease;
   white-space: nowrap;
 }
+.post-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 6px var(--shadow); }
 
-.post-pill:hover {
-  box-shadow: 0 2px 6px var(--shadow);
-  transform: translateY(-1px);
+.post-pill-icon { font-size: 9px; }
+.post-pill-text { letter-spacing: 0.5px; }
+
+.post-pill-assignee {
+  font-size: 8px;
+  font-weight: 500;
+  opacity: 0.6;
+  margin-left: 2px;
 }
 
-.post-pill-icon {
-  font-size: 9px;
-  flex-shrink: 0;
+/* Platform colors */
+.platform-instagram { background: var(--pink-light); border-color: var(--pink); color: var(--pink-deep); }
+.platform-tiktok { background: #1a1a2e; color: #fff; }
+.platform-email { background: #E8F4E8; border-color: #A8D4A8; color: #2C5C2C; }
+.platform-other { background: var(--cream-mid); border-color: var(--cream-deep); color: var(--ink-mid); }
+
+/* Master view: assignee color override */
+.post-pill.assignee-natalie {
+  background: #F4A7B9;
+  border-color: #D4849A;
+  color: var(--white);
+}
+.post-pill.assignee-grace {
+  background: #D4C4B0;
+  border-color: #B8A898;
+  color: var(--ink);
 }
 
-.post-pill-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.platform-instagram {
-  background: var(--pink-light);
-  border-color: var(--pink);
-  color: var(--pink-deep);
-}
-
-.platform-tiktok {
-  background: #1a1a2e;
-  border-color: #1a1a2e;
-  color: #ffffff;
-}
-
-.platform-email {
-  background: #E8F4E8;
-  border-color: #A8D4A8;
-  color: #2C5C2C;
-}
-
-.platform-other {
-  background: var(--cream-mid);
-  border-color: var(--cream-deep);
-  color: var(--ink-mid);
+/* Mobile: show as dots */
+@media (max-width: 767px) {
+  .post-pill {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  .post-pill-icon,
+  .post-pill-text,
+  .post-pill-assignee { display: none; }
 }

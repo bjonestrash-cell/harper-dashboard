@@ -24,10 +24,16 @@ const ASSIGNEES = ['natalie', 'grace']
 
 export default function CalendarPage() {
   const { currentMonth } = useMonth()
-  const [view, setView] = useState('month')
+  const currentUser = localStorage.getItem('harper-user') || 'natalie'
+  const otherUser = currentUser === 'natalie' ? 'grace' : 'natalie'
+
+  const [viewMode, setViewMode] = useState('month') // month | week
+  const [calendarView, setCalendarView] = useState('master') // mine | theirs | master
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedPost, setSelectedPost] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [mobileDay, setMobileDay] = useState(null)
+  const [isMobile] = useState(() => window.innerWidth < 768)
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
@@ -53,8 +59,15 @@ export default function CalendarPage() {
     [format(calendarStart, 'yyyy-MM-dd'), format(calendarEnd, 'yyyy-MM-dd')]
   )
 
-  const { data: posts } = useRealtime('calendar_posts', fetchPosts, [format(currentMonth, 'yyyy-MM')])
+  const { data: posts, setData: setPosts } = useRealtime('calendar_posts', fetchPosts, [format(currentMonth, 'yyyy-MM')])
   const { data: promotions } = useRealtime('promotions', fetchPromos, [format(currentMonth, 'yyyy-MM')])
+
+  // Filter posts by view
+  const filteredPosts = posts.filter(p => {
+    if (calendarView === 'mine') return p.assigned_to === currentUser
+    if (calendarView === 'theirs') return p.assigned_to === otherUser
+    return true
+  })
 
   const days = []
   let day = calendarStart
@@ -65,81 +78,129 @@ export default function CalendarPage() {
 
   const getPostsForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    return posts.filter(p => p.date === dateStr)
+    return filteredPosts.filter(p => p.date === dateStr)
   }
 
   const getPromosForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    return promotions.filter(p => {
-      return p.start_date <= dateStr && p.end_date >= dateStr
-    })
+    return promotions.filter(p => p.start_date <= dateStr && p.end_date >= dateStr)
   }
 
-  const isPromoStart = (promo, date) => {
-    return promo.start_date === format(date, 'yyyy-MM-dd')
-  }
+  const isPromoStart = (promo, date) => promo.start_date === format(date, 'yyyy-MM-dd')
 
   const handleDayClick = (date) => {
+    if (isMobile) {
+      setMobileDay(date)
+      return
+    }
     setSelectedDate(format(date, 'yyyy-MM-dd'))
     setSelectedPost(null)
     setShowModal(true)
   }
 
-  const handlePostClick = (post) => {
+  const handlePostClick = (post, e) => {
+    if (e) e.stopPropagation()
     setSelectedPost(post)
     setSelectedDate(post.date)
     setShowModal(true)
   }
 
+  const handleMobileAdd = () => {
+    if (mobileDay) {
+      setSelectedDate(format(mobileDay, 'yyyy-MM-dd'))
+      setSelectedPost(null)
+      setShowModal(true)
+    }
+  }
+
   return (
     <div className="calendar-page">
       <div className="page-header">
-        <h1 className="page-title">Content Calendar</h1>
-        <div className="view-toggle">
-          <button
-            className={`pill ${view === 'month' ? 'active' : ''}`}
-            onClick={() => setView('month')}
-          >Month</button>
-          <button
-            className={`pill ${view === 'week' ? 'active' : ''}`}
-            onClick={() => setView('week')}
-          >Week</button>
+        <h1 className="page-title">Calendar</h1>
+        <div className="calendar-controls">
+          {/* View: Mine / Other / Master */}
+          <div className="view-toggle">
+            <button className={calendarView === 'mine' ? 'active' : ''} onClick={() => setCalendarView('mine')}>
+              Mine
+            </button>
+            <button className={calendarView === 'theirs' ? 'active' : ''} onClick={() => setCalendarView('theirs')}>
+              {otherUser.charAt(0).toUpperCase() + otherUser.slice(1)}
+            </button>
+            <button className={calendarView === 'master' ? 'active' : ''} onClick={() => setCalendarView('master')}>
+              Master
+            </button>
+          </div>
+          {/* Month / Week */}
+          <div className="view-toggle">
+            <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>Month</button>
+            <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Week</button>
+          </div>
         </div>
       </div>
 
-      <MonthSelector />
+      <div className="page-container">
+        <MonthSelector />
 
-      {view === 'month' ? (
-        <MonthGrid
-          days={days}
-          currentMonth={currentMonth}
-          getPostsForDate={getPostsForDate}
-          getPromosForDate={getPromosForDate}
-          isPromoStart={isPromoStart}
-          onDayClick={handleDayClick}
+        {viewMode === 'month' ? (
+          <MonthGrid
+            days={days}
+            currentMonth={currentMonth}
+            calendarView={calendarView}
+            currentUser={currentUser}
+            getPostsForDate={getPostsForDate}
+            getPromosForDate={getPromosForDate}
+            isPromoStart={isPromoStart}
+            onDayClick={handleDayClick}
+            onPostClick={handlePostClick}
+          />
+        ) : (
+          <WeekView
+            currentMonth={currentMonth}
+            posts={filteredPosts}
+            calendarView={calendarView}
+            currentUser={currentUser}
+            onPostClick={handlePostClick}
+            onDayClick={handleDayClick}
+          />
+        )}
+      </div>
+
+      {/* Mobile day slide-up */}
+      {mobileDay && (
+        <MobileDayPanel
+          date={mobileDay}
+          posts={getPostsForDate(mobileDay)}
+          calendarView={calendarView}
+          currentUser={currentUser}
+          onClose={() => setMobileDay(null)}
           onPostClick={handlePostClick}
+          onAdd={handleMobileAdd}
         />
-      ) : (
-        <WeekView
-          currentMonth={currentMonth}
-          posts={posts}
-          onPostClick={handlePostClick}
-          onDayClick={handleDayClick}
-        />
+      )}
+
+      {/* Mobile FAB */}
+      {isMobile && !mobileDay && (
+        <button className="mobile-fab" onClick={() => {
+          setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+          setSelectedPost(null)
+          setShowModal(true)
+        }}>+</button>
       )}
 
       {showModal && (
         <PostModal
           date={selectedDate}
           post={selectedPost}
-          onClose={() => { setShowModal(false); setSelectedPost(null) }}
+          currentUser={currentUser}
+          setPosts={setPosts}
+          onClose={() => { setShowModal(false); setSelectedPost(null); setMobileDay(null) }}
         />
       )}
     </div>
   )
 }
 
-function MonthGrid({ days, currentMonth, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onPostClick }) {
+function MonthGrid({ days, currentMonth, calendarView, currentUser, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onPostClick }) {
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
@@ -170,21 +231,14 @@ function MonthGrid({ days, currentMonth, getPostsForDate, getPromosForDate, isPr
             <div className="cell-promos">
               {dayPromos.map(promo => (
                 isPromoStart(promo, day) ? (
-                  <div
-                    key={promo.id}
-                    className="promo-banner"
+                  <div key={promo.id} className="promo-banner"
                     style={{ background: promo.color || '#F4A7B9' }}
-                    onClick={(e) => { e.stopPropagation() }}
-                    title={promo.name}
-                  >
+                    onClick={(e) => e.stopPropagation()} title={promo.name}>
                     {promo.name}
                   </div>
                 ) : (
-                  <div
-                    key={promo.id}
-                    className="promo-banner-continue"
-                    style={{ background: promo.color || '#F4A7B9' }}
-                  />
+                  <div key={promo.id} className="promo-banner-continue"
+                    style={{ background: promo.color || '#F4A7B9' }} />
                 )
               ))}
             </div>
@@ -194,7 +248,9 @@ function MonthGrid({ days, currentMonth, getPostsForDate, getPromosForDate, isPr
                 <PostPill
                   key={post.id}
                   post={post}
-                  onClick={(e) => { e.stopPropagation(); onPostClick(post) }}
+                  showAssignee={calendarView === 'master'}
+                  currentUser={currentUser}
+                  onClick={(e) => onPostClick(post, e)}
                 />
               ))}
             </div>
@@ -205,11 +261,11 @@ function MonthGrid({ days, currentMonth, getPostsForDate, getPromosForDate, isPr
   )
 }
 
-function WeekView({ currentMonth, posts, onPostClick, onDayClick }) {
+function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick, onDayClick }) {
   const weekStart = startOfWeek(currentMonth)
   const weekEnd = endOfWeek(currentMonth)
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9) // 9am-8pm
+  const hours = Array.from({ length: 12 }, (_, i) => i + 9)
 
   return (
     <div className="week-view">
@@ -234,11 +290,10 @@ function WeekView({ currentMonth, posts, onPostClick, onDayClick }) {
               return (
                 <div key={day.toString()} className="week-cell" onClick={() => onDayClick(day)}>
                   {hour === 9 && dayPosts.map(post => (
-                    <PostPill
-                      key={post.id}
-                      post={post}
-                      onClick={(e) => { e.stopPropagation(); onPostClick(post) }}
-                    />
+                    <PostPill key={post.id} post={post}
+                      showAssignee={calendarView === 'master'}
+                      currentUser={currentUser}
+                      onClick={(e) => onPostClick(post, e)} />
                   ))}
                 </div>
               )
@@ -250,13 +305,38 @@ function WeekView({ currentMonth, posts, onPostClick, onDayClick }) {
   )
 }
 
-function PostModal({ date, post, onClose }) {
+function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPostClick, onAdd }) {
+  return (
+    <div className="mobile-day-overlay" onClick={onClose}>
+      <div className="mobile-day-panel" onClick={e => e.stopPropagation()}>
+        <div className="mobile-day-header">
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 300 }}>
+            {format(date, 'EEEE, MMMM d')}
+          </h3>
+          <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>x</button>
+        </div>
+        <div className="mobile-day-posts">
+          {posts.length === 0 && <p className="caption" style={{ padding: 16 }}>No posts for this day</p>}
+          {posts.map(post => (
+            <PostPill key={post.id} post={post}
+              showAssignee={calendarView === 'master'}
+              currentUser={currentUser}
+              onClick={(e) => onPostClick(post, e)} />
+          ))}
+        </div>
+        <button className="btn-save" onClick={onAdd} style={{ margin: 16 }}>+ Add Post</button>
+      </div>
+    </div>
+  )
+}
+
+function PostModal({ date, post, currentUser, setPosts, onClose }) {
   const [form, setForm] = useState({
     platform: post?.platform || 'instagram',
     content_type: post?.content_type || 'Post',
     caption: post?.caption || '',
     status: post?.status || 'draft',
-    assigned_to: post?.assigned_to || 'natalie',
+    assigned_to: post?.assigned_to || currentUser || 'natalie',
   })
   const [saving, setSaving] = useState(false)
 
@@ -265,11 +345,20 @@ function PostModal({ date, post, onClose }) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const data = { ...form, date, updated_at: new Date().toISOString() }
+      const payload = { ...form, date, updated_at: new Date().toISOString() }
       if (post) {
-        await supabase.from('calendar_posts').update(data).eq('id', post.id)
+        const { data, error } = await supabase.from('calendar_posts').update(payload).eq('id', post.id).select()
+        if (!error && data?.[0]) {
+          setPosts(prev => prev.map(p => p.id === post.id ? data[0] : p))
+        }
       } else {
-        await supabase.from('calendar_posts').insert(data)
+        const { data, error } = await supabase.from('calendar_posts').insert([payload]).select()
+        if (!error && data?.[0]) {
+          setPosts(prev => {
+            if (prev.find(p => p.id === data[0].id)) return prev
+            return [...prev, data[0]]
+          })
+        }
       }
       onClose()
     } catch (err) {
@@ -281,7 +370,10 @@ function PostModal({ date, post, onClose }) {
 
   const handleDelete = async () => {
     if (!post) return
-    await supabase.from('calendar_posts').delete().eq('id', post.id)
+    const { error } = await supabase.from('calendar_posts').delete().eq('id', post.id)
+    if (!error) {
+      setPosts(prev => prev.filter(p => p.id !== post.id))
+    }
     onClose()
   }
 
@@ -290,19 +382,17 @@ function PostModal({ date, post, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: '32px' }}>
-        <h2 className="section-header" style={{ marginBottom: 24 }}>
-          {post ? 'Edit Post' : 'New Post'} — {date && format(parseISO(date), 'MMM d, yyyy')}
+        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 300, marginBottom: 24 }}>
+          {post ? 'Edit Post' : 'New Post'}
         </h2>
+        {date && <p className="caption" style={{ marginBottom: 20 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}
 
         <div className="form-group">
           <label className="form-label">Platform</label>
           <div className="pill-group">
             {PLATFORMS.map(p => (
-              <button
-                key={p}
-                className={`pill ${form.platform === p ? 'active' : ''}`}
-                onClick={() => { update('platform', p); update('content_type', CONTENT_TYPES[p]?.[0] || 'Post') }}
-              >
+              <button key={p} className={`pill ${form.platform === p ? 'active' : ''}`}
+                onClick={() => { update('platform', p); update('content_type', CONTENT_TYPES[p]?.[0] || 'Post') }}>
                 {p}
               </button>
             ))}
@@ -313,39 +403,24 @@ function PostModal({ date, post, onClose }) {
           <label className="form-label">Content Type</label>
           <div className="pill-group">
             {contentTypes.map(t => (
-              <button
-                key={t}
-                className={`pill ${form.content_type === t ? 'active' : ''}`}
-                onClick={() => update('content_type', t)}
-              >
-                {t}
-              </button>
+              <button key={t} className={`pill ${form.content_type === t ? 'active' : ''}`}
+                onClick={() => update('content_type', t)}>{t}</button>
             ))}
           </div>
         </div>
 
         <div className="form-group">
           <label className="form-label">Caption / Copy</label>
-          <textarea
-            rows={4}
-            value={form.caption}
-            onChange={(e) => update('caption', e.target.value)}
-            placeholder="Write your caption..."
-            style={{ width: '100%' }}
-          />
+          <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)}
+            placeholder="Write your caption..." style={{ width: '100%' }} />
         </div>
 
         <div className="form-group">
           <label className="form-label">Status</label>
           <div className="pill-group">
             {STATUSES.map(s => (
-              <button
-                key={s}
-                className={`pill ${form.status === s ? 'active' : ''}`}
-                onClick={() => update('status', s)}
-              >
-                {s}
-              </button>
+              <button key={s} className={`pill ${form.status === s ? 'active' : ''}`}
+                onClick={() => update('status', s)}>{s}</button>
             ))}
           </div>
         </div>
@@ -354,12 +429,9 @@ function PostModal({ date, post, onClose }) {
           <label className="form-label">Assigned to</label>
           <div className="pill-group">
             {ASSIGNEES.map(a => (
-              <button
-                key={a}
-                className={`pill ${form.assigned_to === a ? 'active' : ''}`}
-                onClick={() => update('assigned_to', a)}
-              >
-                {a}
+              <button key={a} className={`pill ${form.assigned_to === a ? 'active' : ''}`}
+                onClick={() => update('assigned_to', a)}>
+                {a.charAt(0).toUpperCase() + a.slice(1)}
               </button>
             ))}
           </div>
@@ -370,11 +442,8 @@ function PostModal({ date, post, onClose }) {
         </button>
 
         {post && (
-          <button
-            className="promo-action"
-            style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%' }}
-            onClick={handleDelete}
-          >
+          <button style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%', fontSize: 12 }}
+            onClick={handleDelete}>
             Delete post
           </button>
         )}

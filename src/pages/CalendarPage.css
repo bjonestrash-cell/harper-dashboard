@@ -1,20 +1,14 @@
-.calendar-page .page-header {
+.calendar-controls {
   display: flex;
+  gap: 12px;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.view-toggle {
-  display: flex;
-  gap: 4px;
 }
 
 /* Month Grid */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  border: 1px solid var(--cream-mid);
+  border: 1px solid var(--cream-deep);
 }
 
 .calendar-header-cell {
@@ -22,42 +16,27 @@
   text-align: center;
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--ink-light);
   background: var(--white);
-  border-bottom: 1px solid var(--cream-mid);
+  border-bottom: 1px solid var(--cream-deep);
 }
 
 .calendar-cell {
   min-height: 120px;
   padding: 8px;
-  border: 1px solid var(--cream-mid);
+  border: 1px solid var(--cream-deep);
   background: var(--white);
   cursor: pointer;
-  transition: background 200ms ease;
+  transition: background 150ms ease;
   position: relative;
 }
-
-.calendar-cell:hover {
-  background: var(--cream);
-}
-
-.calendar-cell.other-month {
-  background: var(--cream-mid);
-}
-
-.calendar-cell.other-month .day-number {
-  color: var(--ink-light);
-}
-
-.calendar-cell.today {
-  background: rgba(253, 232, 238, 0.3);
-}
-
-.calendar-cell.weekend {
-  background: var(--cream);
-}
+.calendar-cell:hover { background: var(--cream); }
+.calendar-cell.other-month { background: var(--cream-mid); }
+.calendar-cell.other-month .day-number { color: var(--ink-light); }
+.calendar-cell.today { background: var(--pink-light); }
+.calendar-cell.weekend { background: var(--cream); }
 
 .day-number {
   font-size: 11px;
@@ -69,17 +48,13 @@
   width: 24px;
   height: 24px;
 }
-
 .today-number {
   background: var(--pink);
   color: var(--white);
   border-radius: 50%;
 }
 
-.cell-promos {
-  margin-top: 4px;
-}
-
+.cell-promos { margin-top: 4px; }
 .promo-banner {
   font-size: 10px;
   color: white;
@@ -89,8 +64,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: default;
+  font-weight: 500;
 }
-
 .promo-banner-continue {
   height: 4px;
   margin-bottom: 2px;
@@ -106,20 +81,18 @@
 
 /* Week View */
 .week-view {
-  border: 1px solid var(--cream-mid);
+  border: 1px solid var(--cream-deep);
   overflow-x: auto;
 }
-
 .week-header {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
-  border-bottom: 1px solid var(--cream-mid);
+  border-bottom: 1px solid var(--cream-deep);
   background: var(--white);
   position: sticky;
   top: 0;
   z-index: 2;
 }
-
 .week-day-header {
   padding: 12px;
   text-align: center;
@@ -127,52 +100,41 @@
   flex-direction: column;
   gap: 4px;
 }
-
 .week-day-name {
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--ink-light);
 }
-
 .week-day-number {
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: 24px;
   font-weight: 300;
   color: var(--ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   margin: 0 auto;
 }
-
-.week-body {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
+.week-body { max-height: 600px; overflow-y: auto; }
 .week-row {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
   min-height: 48px;
 }
-
-.week-time-col {
-  width: 60px;
-}
-
+.week-time-col { width: 60px; }
 .week-time-label {
   font-size: 10px;
   color: var(--ink-light);
   padding: 8px;
   text-align: right;
-  border-right: 1px solid var(--cream-mid);
+  border-right: 1px solid var(--cream-deep);
 }
-
 .week-cell {
-  border: 1px solid var(--cream-mid);
+  border: 1px solid var(--cream-deep);
   padding: 4px;
   cursor: pointer;
   min-height: 48px;
@@ -180,22 +142,80 @@
   flex-direction: column;
   gap: 4px;
 }
+.week-cell:hover { background: var(--cream); }
 
-.week-cell:hover {
-  background: var(--cream);
+/* Mobile day panel */
+.mobile-day-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,20,18,0.4);
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+}
+.mobile-day-panel {
+  background: var(--white);
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.mobile-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--cream-deep);
+}
+.mobile-day-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
 }
 
-/* Form styles */
-.form-group {
-  margin-bottom: 20px;
+/* Mobile FAB */
+.mobile-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  background: var(--pink);
+  color: var(--white);
+  border-radius: 50%;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(244,167,185,0.4);
+  z-index: 40;
 }
 
-.form-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 8px;
+/* Mobile */
+@media (max-width: 767px) {
+  .calendar-controls {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .calendar-cell { min-height: 60px; padding: 4px; }
+  .day-number { font-size: 11px; width: 20px; height: 20px; }
+  .cell-promos { display: none; }
+  .cell-posts .post-pill { display: none; }
+  .cell-posts::after {
+    content: '';
+    display: block;
+  }
+  /* On mobile, show colored dots instead of full pills */
+  .calendar-cell .cell-posts {
+    flex-direction: row;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-fab { display: none; }
+  .mobile-day-overlay { display: none; }
 }

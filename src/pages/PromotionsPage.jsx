@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { format, parseISO, isWithinInterval, isBefore, isAfter } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
@@ -9,13 +9,12 @@ import Modal from '../components/Modal'
 import './PromotionsPage.css'
 
 const PLATFORM_OPTIONS = ['instagram', 'tiktok', 'email']
-const PROMO_COLORS = ['#F4A7B9', '#E8839A', '#A8D4A8', '#8EC5E8', '#E8D4A8', '#C4A8E8']
+const PROMO_COLORS = ['#F4A7B9', '#D4849A', '#A8D4A8', '#8EC5E8', '#C4A882', '#C4A8E8']
 
 export default function PromotionsPage() {
   const { currentMonth } = useMonth()
   const [showModal, setShowModal] = useState(false)
   const [editingPromo, setEditingPromo] = useState(null)
-  const [showOrderEntry, setShowOrderEntry] = useState(false)
   const [orderForm, setOrderForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), orders: '', notes: '' })
   const [orderLog, setOrderLog] = useState([])
 
@@ -24,7 +23,7 @@ export default function PromotionsPage() {
     []
   )
 
-  const { data: promotions } = useRealtime('promotions', fetchPromos)
+  const { data: promotions, setData: setPromotions } = useRealtime('promotions', fetchPromos)
 
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
@@ -46,18 +45,17 @@ export default function PromotionsPage() {
     (p.start_date && p.end_date && p.start_date < monthStr && p.end_date > monthStr)
   )
 
-  const handleEdit = (promo) => {
-    setEditingPromo(promo)
-    setShowModal(true)
-  }
+  const handleEdit = (promo) => { setEditingPromo(promo); setShowModal(true) }
 
   const handleDuplicate = async (promo) => {
     const { id, created_at, ...rest } = promo
-    await supabase.from('promotions').insert({ ...rest, name: `${rest.name} (Copy)` })
+    const { data, error } = await supabase.from('promotions').insert({ ...rest, name: `${rest.name} (Copy)` }).select()
+    if (!error && data?.[0]) setPromotions(prev => [...prev, data[0]])
   }
 
   const handleArchive = async (promo) => {
-    await supabase.from('promotions').update({ status: 'ended' }).eq('id', promo.id)
+    const { data, error } = await supabase.from('promotions').update({ status: 'ended' }).eq('id', promo.id).select()
+    if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
   }
 
   const handleAddOrder = () => {
@@ -80,133 +78,96 @@ export default function PromotionsPage() {
         </button>
       </div>
 
-      <MonthSelector />
+      <div className="page-container">
+        <MonthSelector />
 
-      <div className="stats-row">
-        {[
-          { label: 'Active Now', value: stats.active },
-          { label: 'Upcoming', value: stats.upcoming },
-          { label: 'This Month', value: stats.thisMonth },
-          { label: 'Total', value: stats.total },
-        ].map(s => (
-          <div key={s.label} className="stat-card card">
-            <div className="stat-value">{s.value}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Timeline */}
-      <div className="timeline-section">
-        <h2 className="section-header" style={{ marginBottom: 16 }}>Timeline</h2>
-        <div className="timeline-bar">
-          {monthPromos.map(promo => {
-            const monthStart = parseISO(format(currentMonth, 'yyyy-MM-01'))
-            const daysInMonth = 30
-            const startDay = Math.max(0, (parseISO(promo.start_date).getTime() - monthStart.getTime()) / (86400000))
-            const endDay = Math.min(daysInMonth, (parseISO(promo.end_date).getTime() - monthStart.getTime()) / (86400000))
-            const left = (startDay / daysInMonth) * 100
-            const width = ((endDay - startDay) / daysInMonth) * 100
-
-            return (
-              <div
-                key={promo.id}
-                className="timeline-promo"
-                style={{
-                  left: `${Math.max(0, left)}%`,
-                  width: `${Math.max(2, Math.min(100, width))}%`,
-                  background: promo.color || '#F4A7B9',
-                }}
-                title={promo.name}
-              >
-                <span className="timeline-promo-label">{promo.name}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Promotion Cards */}
-      <div className="promos-list">
-        {monthPromos.length === 0 && (
-          <p className="caption" style={{ textAlign: 'center', padding: 40 }}>No promotions this month</p>
-        )}
-        {monthPromos.map(promo => (
-          <PromotionCard
-            key={promo.id}
-            promotion={promo}
-            onEdit={handleEdit}
-            onDuplicate={handleDuplicate}
-            onArchive={handleArchive}
-          />
-        ))}
-      </div>
-
-      {/* Order Volume */}
-      <div className="order-volume-section">
-        <h2 className="section-header" style={{ marginBottom: 16 }}>Order Volume Tracker</h2>
-        <div className="caption" style={{ marginBottom: 16 }}>Track daily order counts during active promotions (baseline: 300+/day)</div>
-
-        {orderLog.length > 0 && (
-          <>
-            <table className="order-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Orders</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orderLog.map(o => (
-                  <tr key={o.id}>
-                    <td>{format(parseISO(o.date), 'MMM d')}</td>
-                    <td>{o.orders}</td>
-                    <td>{o.notes}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="order-summary">
-              <span>Total: <strong>{totalOrders}</strong></span>
-              {peakDay && <span>Peak: <strong>{peakDay.orders}</strong> on {format(parseISO(peakDay.date), 'MMM d')}</span>}
+        <div className="stats-row">
+          {[
+            { label: 'Active Now', value: stats.active },
+            { label: 'Upcoming', value: stats.upcoming },
+            { label: 'This Month', value: stats.thisMonth },
+            { label: 'Total', value: stats.total },
+          ].map(s => (
+            <div key={s.label} className="stat-card card">
+              <div className="stat-value">{s.value}</div>
+              <div className="stat-label">{s.label}</div>
             </div>
-          </>
-        )}
+          ))}
+        </div>
 
-        <div className="order-input-row">
-          <input
-            type="date"
-            value={orderForm.date}
-            onChange={(e) => setOrderForm(prev => ({ ...prev, date: e.target.value }))}
-          />
-          <input
-            type="number"
-            placeholder="Orders"
-            value={orderForm.orders}
-            onChange={(e) => setOrderForm(prev => ({ ...prev, orders: e.target.value }))}
-          />
-          <input
-            type="text"
-            placeholder="Notes"
-            value={orderForm.notes}
-            onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))}
-          />
-          <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddOrder}>Add</button>
+        {/* Timeline */}
+        <div className="timeline-section">
+          <h2 className="section-header" style={{ marginBottom: 16 }}>Timeline</h2>
+          <div className="timeline-bar">
+            {monthPromos.map(promo => {
+              const monthStart = parseISO(format(currentMonth, 'yyyy-MM-01'))
+              const daysInMonth = 30
+              const startDay = Math.max(0, (parseISO(promo.start_date).getTime() - monthStart.getTime()) / 86400000)
+              const endDay = Math.min(daysInMonth, (parseISO(promo.end_date).getTime() - monthStart.getTime()) / 86400000)
+              const left = (startDay / daysInMonth) * 100
+              const width = ((endDay - startDay) / daysInMonth) * 100
+
+              return (
+                <div key={promo.id} className="timeline-promo"
+                  style={{ left: `${Math.max(0, left)}%`, width: `${Math.max(2, Math.min(100, width))}%`, background: promo.color || '#F4A7B9' }}
+                  title={promo.name}>
+                  <span className="timeline-promo-label">{promo.name}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Promotion Cards */}
+        <div className="promos-list">
+          {monthPromos.length === 0 && <p className="caption" style={{ textAlign: 'center', padding: 40 }}>No promotions this month</p>}
+          {monthPromos.map(promo => (
+            <PromotionCard key={promo.id} promotion={promo} onEdit={handleEdit} onDuplicate={handleDuplicate} onArchive={handleArchive} />
+          ))}
+        </div>
+
+        {/* Order Volume */}
+        <div className="order-volume-section card">
+          <h2 className="section-header" style={{ marginBottom: 8 }}>Order Volume Tracker</h2>
+          <div className="caption" style={{ marginBottom: 16 }}>Track daily order counts during active promotions (baseline: 300+/day)</div>
+
+          {orderLog.length > 0 && (
+            <>
+              <table className="order-table">
+                <thead>
+                  <tr><th>Date</th><th>Orders</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  {orderLog.map(o => (
+                    <tr key={o.id}><td>{format(parseISO(o.date), 'MMM d')}</td><td>{o.orders}</td><td>{o.notes}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="order-summary">
+                <span>Total: <strong>{totalOrders}</strong></span>
+                {peakDay && <span>Peak: <strong>{peakDay.orders}</strong> on {format(parseISO(peakDay.date), 'MMM d')}</span>}
+              </div>
+            </>
+          )}
+
+          <div className="order-input-row">
+            <input type="date" value={orderForm.date} onChange={(e) => setOrderForm(prev => ({ ...prev, date: e.target.value }))} />
+            <input type="number" placeholder="Orders" value={orderForm.orders} onChange={(e) => setOrderForm(prev => ({ ...prev, orders: e.target.value }))} />
+            <input type="text" placeholder="Notes" value={orderForm.notes} onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))} />
+            <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddOrder}>Add</button>
+          </div>
         </div>
       </div>
 
       {showModal && (
-        <PromoModal
-          promo={editingPromo}
-          onClose={() => { setShowModal(false); setEditingPromo(null) }}
-        />
+        <PromoModal promo={editingPromo} setPromotions={setPromotions}
+          onClose={() => { setShowModal(false); setEditingPromo(null) }} />
       )}
     </div>
   )
 }
 
-function PromoModal({ promo, onClose }) {
+function PromoModal({ promo, setPromotions, onClose }) {
   const [form, setForm] = useState({
     name: promo?.name || '',
     start_date: promo?.start_date || '',
@@ -235,9 +196,11 @@ function PromoModal({ promo, onClose }) {
     setSaving(true)
     try {
       if (promo) {
-        await supabase.from('promotions').update(form).eq('id', promo.id)
+        const { data, error } = await supabase.from('promotions').update(form).eq('id', promo.id).select()
+        if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
       } else {
-        await supabase.from('promotions').insert(form)
+        const { data, error } = await supabase.from('promotions').insert(form).select()
+        if (!error && data?.[0]) setPromotions(prev => [...prev, data[0]])
       }
       onClose()
     } catch (err) {
@@ -250,7 +213,7 @@ function PromoModal({ promo, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: '32px' }}>
-        <h2 className="section-header" style={{ marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 300, marginBottom: 24 }}>
           {promo ? 'Edit Promotion' : 'New Promotion'}
         </h2>
 
@@ -282,9 +245,7 @@ function PromoModal({ promo, onClose }) {
           <div className="pill-group">
             {PLATFORM_OPTIONS.map(p => (
               <button key={p} className={`pill ${form.platforms.includes(p) ? 'active' : ''}`}
-                onClick={() => togglePlatform(p)}>
-                {p}
-              </button>
+                onClick={() => togglePlatform(p)}>{p}</button>
             ))}
           </div>
         </div>

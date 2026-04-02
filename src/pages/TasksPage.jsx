@@ -12,6 +12,7 @@ import './TasksPage.css'
 export default function TasksPage() {
   const { currentMonth } = useMonth()
   const monthStr = format(currentMonth, 'yyyy-MM-01')
+  const [isMobile] = useState(() => window.innerWidth < 768)
 
   const [draggedTask, setDraggedTask] = useState(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -22,19 +23,19 @@ export default function TasksPage() {
   const [todoInput, setTodoInput] = useState('')
   const [todoAssignee, setTodoAssignee] = useState('both')
   const [todoPriority, setTodoPriority] = useState('normal')
+  const [mobileColumn, setMobileColumn] = useState('natalie')
 
   const fetchTasks = useCallback(() =>
     supabase.from('tasks').select('*').eq('month', monthStr).order('created_at'),
     [monthStr]
   )
-
   const fetchTodos = useCallback(() =>
     supabase.from('todos').select('*').eq('month', monthStr).order('completed').order('created_at'),
     [monthStr]
   )
 
-  const { data: tasks } = useRealtime('tasks', fetchTasks, [monthStr])
-  const { data: todos } = useRealtime('todos', fetchTodos, [monthStr])
+  const { data: tasks, setData: setTasks } = useRealtime('tasks', fetchTasks, [monthStr])
+  const { data: todos, setData: setTodos } = useRealtime('todos', fetchTodos, [monthStr])
 
   const natalieTasks = tasks.filter(t => t.assigned_to === 'natalie')
   const graceTasks = tasks.filter(t => t.assigned_to === 'grace')
@@ -43,7 +44,8 @@ export default function TasksPage() {
 
   const handleToggleTask = async (task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done'
-    await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id)
+    const { data, error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id).select()
+    if (!error && data?.[0]) setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
   }
 
   const handleDragStart = (e, task) => {
@@ -54,57 +56,40 @@ export default function TasksPage() {
   const handleDrop = async (e, targetUser) => {
     e.preventDefault()
     if (draggedTask && draggedTask.assigned_to !== targetUser) {
-      await supabase.from('tasks').update({ assigned_to: targetUser }).eq('id', draggedTask.id)
+      const { data, error } = await supabase.from('tasks').update({ assigned_to: targetUser }).eq('id', draggedTask.id).select()
+      if (!error && data?.[0]) setTasks(prev => prev.map(t => t.id === draggedTask.id ? data[0] : t))
     }
     setDraggedTask(null)
   }
 
-  const handleDragOver = (e) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-  }
+  const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }
 
   const handleQuickAdd = async (user) => {
     const title = quickAdd[user].trim()
     if (!title) return
-    await supabase.from('tasks').insert({
-      title,
-      assigned_to: user,
-      month: monthStr,
-      status: 'todo',
-    })
+    const { data, error } = await supabase.from('tasks').insert({ title, assigned_to: user, month: monthStr, status: 'todo' }).select()
+    if (!error && data?.[0]) setTasks(prev => [...prev, data[0]])
     setQuickAdd(prev => ({ ...prev, [user]: '' }))
   }
 
-  const handleTaskClick = (task) => {
-    setEditingTask(task)
-    setShowTaskModal(true)
-  }
+  const handleTaskClick = (task) => { setEditingTask(task); setShowTaskModal(true) }
+  const handleAddTaskModal = (user) => { setTaskColumn(user); setEditingTask(null); setShowTaskModal(true) }
 
-  const handleAddTaskModal = (user) => {
-    setTaskColumn(user)
-    setEditingTask(null)
-    setShowTaskModal(true)
-  }
-
-  // Todos
   const handleToggleTodo = async (todo) => {
-    await supabase.from('todos').update({ completed: !todo.completed }).eq('id', todo.id)
+    const { data, error } = await supabase.from('todos').update({ completed: !todo.completed }).eq('id', todo.id).select()
+    if (!error && data?.[0]) setTodos(prev => prev.map(t => t.id === todo.id ? data[0] : t))
   }
 
   const handleDeleteTodo = async (todo) => {
-    await supabase.from('todos').delete().eq('id', todo.id)
+    const { error } = await supabase.from('todos').delete().eq('id', todo.id)
+    if (!error) setTodos(prev => prev.filter(t => t.id !== todo.id))
   }
 
   const handleAddTodo = async () => {
     const text = todoInput.trim()
     if (!text) return
-    await supabase.from('todos').insert({
-      text,
-      month: monthStr,
-      assigned_to: todoAssignee,
-      priority: todoPriority,
-    })
+    const { data, error } = await supabase.from('todos').insert({ text, month: monthStr, assigned_to: todoAssignee, priority: todoPriority }).select()
+    if (!error && data?.[0]) setTodos(prev => [...prev, data[0]])
     setTodoInput('')
   }
 
@@ -112,144 +97,113 @@ export default function TasksPage() {
   const doneGrace = doneTasks(graceTasks)
   const totalDone = doneNatalie.length + doneGrace.length
 
+  const renderColumn = (user, label, taskList) => (
+    <div className="kanban-column"
+      onDragOver={handleDragOver}
+      onDrop={(e) => handleDrop(e, user)}>
+      <div className="kanban-header">
+        <div className="kanban-user">
+          <span className={`avatar ${user}`}>{user[0].toUpperCase()}</span>
+          <span className="section-header">{label}</span>
+        </div>
+        <button className="kanban-add" onClick={() => handleAddTaskModal(user)}>+</button>
+      </div>
+      <div className="quick-add-row">
+        <input placeholder="Quick add task..."
+          value={quickAdd[user]}
+          onChange={(e) => setQuickAdd(prev => ({ ...prev, [user]: e.target.value }))}
+          onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd(user)} />
+      </div>
+      <div className="kanban-tasks">
+        {activeTasks(taskList).map(task => (
+          <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} />
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div className="tasks-page">
-      <h1 className="page-title">Tasks</h1>
-      <MonthSelector />
-
-      <div className="kanban">
-        {/* Natalie Column */}
-        <div
-          className="kanban-column"
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, 'natalie')}
-        >
-          <div className="kanban-header">
-            <div className="kanban-user">
-              <span className="avatar natalie">N</span>
-              <span className="section-header">Natalie</span>
-            </div>
-            <button className="kanban-add" onClick={() => handleAddTaskModal('natalie')}>+</button>
-          </div>
-
-          <div className="quick-add-row">
-            <input
-              placeholder="Quick add task..."
-              value={quickAdd.natalie}
-              onChange={(e) => setQuickAdd(prev => ({ ...prev, natalie: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd('natalie')}
-            />
-          </div>
-
-          <div className="kanban-tasks">
-            {activeTasks(natalieTasks).map(task => (
-              <TaskCard key={task.id} task={task}
-                onToggle={handleToggleTask}
-                onClick={handleTaskClick}
-                onDragStart={handleDragStart}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Grace Column */}
-        <div
-          className="kanban-column"
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, 'grace')}
-        >
-          <div className="kanban-header">
-            <div className="kanban-user">
-              <span className="avatar grace">G</span>
-              <span className="section-header">Grace</span>
-            </div>
-            <button className="kanban-add" onClick={() => handleAddTaskModal('grace')}>+</button>
-          </div>
-
-          <div className="quick-add-row">
-            <input
-              placeholder="Quick add task..."
-              value={quickAdd.grace}
-              onChange={(e) => setQuickAdd(prev => ({ ...prev, grace: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd('grace')}
-            />
-          </div>
-
-          <div className="kanban-tasks">
-            {activeTasks(graceTasks).map(task => (
-              <TaskCard key={task.id} task={task}
-                onToggle={handleToggleTask}
-                onClick={handleTaskClick}
-                onDragStart={handleDragStart}
-              />
-            ))}
-          </div>
-        </div>
+      <div className="page-header">
+        <h1 className="page-title">Tasks</h1>
       </div>
 
-      {/* Done section */}
-      {totalDone > 0 && (
-        <div className="done-section">
-          <button className="done-toggle" onClick={() => setShowDone(!showDone)}>
-            {showDone ? '▾' : '▸'} {totalDone} completed task{totalDone !== 1 ? 's' : ''}
-          </button>
-          {showDone && (
-            <div className="done-tasks">
-              {[...doneNatalie, ...doneGrace].map(task => (
-                <TaskCard key={task.id} task={task}
-                  onToggle={handleToggleTask}
-                  onClick={handleTaskClick}
-                  onDragStart={handleDragStart}
-                />
-              ))}
-            </div>
+      <div className="page-container">
+        <MonthSelector />
+
+        {/* Mobile column toggle */}
+        {isMobile && (
+          <div className="view-toggle" style={{ marginBottom: 16, justifyContent: 'center', display: 'flex' }}>
+            <button className={mobileColumn === 'natalie' ? 'active' : ''} onClick={() => setMobileColumn('natalie')}>Natalie</button>
+            <button className={mobileColumn === 'grace' ? 'active' : ''} onClick={() => setMobileColumn('grace')}>Grace</button>
+          </div>
+        )}
+
+        <div className="kanban">
+          {isMobile ? (
+            renderColumn(mobileColumn, mobileColumn.charAt(0).toUpperCase() + mobileColumn.slice(1),
+              mobileColumn === 'natalie' ? natalieTasks : graceTasks)
+          ) : (
+            <>
+              {renderColumn('natalie', 'Natalie', natalieTasks)}
+              {renderColumn('grace', 'Grace', graceTasks)}
+            </>
           )}
         </div>
-      )}
 
-      {/* Monthly Todos */}
-      <div className="monthly-todos">
-        <h2 className="section-header">This Month's Checklist</h2>
-        <div className="todo-list">
-          {todos.map(todo => (
-            <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
-          ))}
-        </div>
-        <div className="todo-add-row">
-          <input
-            placeholder="Add a checklist item..."
-            value={todoInput}
-            onChange={(e) => setTodoInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
-            style={{ flex: 1 }}
-          />
-          <select value={todoAssignee} onChange={(e) => setTodoAssignee(e.target.value)}>
-            <option value="both">Both</option>
-            <option value="natalie">Natalie</option>
-            <option value="grace">Grace</option>
-          </select>
-          <select value={todoPriority} onChange={(e) => setTodoPriority(e.target.value)}>
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select>
-          <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddTodo}>Add</button>
+        {/* Done section */}
+        {totalDone > 0 && (
+          <div className="done-section">
+            <button className="done-toggle" onClick={() => setShowDone(!showDone)}>
+              {showDone ? '\u25BE' : '\u25B8'} {totalDone} completed task{totalDone !== 1 ? 's' : ''}
+            </button>
+            {showDone && (
+              <div className="done-tasks">
+                {[...doneNatalie, ...doneGrace].map(task => (
+                  <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Monthly Todos */}
+        <div className="monthly-todos card">
+          <h2 className="section-header" style={{ marginBottom: 16 }}>This Month's Checklist</h2>
+          <div className="todo-list">
+            {todos.map(todo => (
+              <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
+            ))}
+          </div>
+          <div className="todo-add-row">
+            <input placeholder="Add a checklist item..." value={todoInput}
+              onChange={(e) => setTodoInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
+              style={{ flex: 1 }} />
+            <select value={todoAssignee} onChange={(e) => setTodoAssignee(e.target.value)}>
+              <option value="both">Both</option>
+              <option value="natalie">Natalie</option>
+              <option value="grace">Grace</option>
+            </select>
+            <select value={todoPriority} onChange={(e) => setTodoPriority(e.target.value)}>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+            <button className="btn-save" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleAddTodo}>Add</button>
+          </div>
         </div>
       </div>
 
       {showTaskModal && (
-        <TaskModal
-          task={editingTask}
-          defaultUser={taskColumn}
-          month={monthStr}
-          onClose={() => { setShowTaskModal(false); setEditingTask(null) }}
-        />
+        <TaskModal task={editingTask} defaultUser={taskColumn} month={monthStr} setTasks={setTasks}
+          onClose={() => { setShowTaskModal(false); setEditingTask(null) }} />
       )}
     </div>
   )
 }
 
-function TaskModal({ task, defaultUser, month, onClose }) {
+function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
   const [form, setForm] = useState({
     title: task?.title || '',
     description: task?.description || '',
@@ -267,9 +221,11 @@ function TaskModal({ task, defaultUser, month, onClose }) {
     setSaving(true)
     try {
       if (task) {
-        await supabase.from('tasks').update(form).eq('id', task.id)
+        const { data, error } = await supabase.from('tasks').update(form).eq('id', task.id).select()
+        if (!error && data?.[0]) setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
       } else {
-        await supabase.from('tasks').insert({ ...form, month })
+        const { data, error } = await supabase.from('tasks').insert({ ...form, month }).select()
+        if (!error && data?.[0]) setTasks(prev => [...prev, data[0]])
       }
       onClose()
     } catch (err) {
@@ -281,44 +237,39 @@ function TaskModal({ task, defaultUser, month, onClose }) {
 
   const handleDelete = async () => {
     if (!task) return
-    await supabase.from('tasks').delete().eq('id', task.id)
+    const { error } = await supabase.from('tasks').delete().eq('id', task.id)
+    if (!error) setTasks(prev => prev.filter(t => t.id !== task.id))
     onClose()
   }
 
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: '32px' }}>
-        <h2 className="section-header" style={{ marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 300, marginBottom: 24 }}>
           {task ? 'Edit Task' : 'New Task'}
         </h2>
 
         <div className="form-group">
           <label className="form-label">Title</label>
-          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)}
-            placeholder="Task title" style={{ width: '100%' }} />
+          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Task title" style={{ width: '100%' }} />
         </div>
-
         <div className="form-group">
           <label className="form-label">Description</label>
-          <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)}
-            placeholder="Details..." style={{ width: '100%' }} />
+          <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Details..." style={{ width: '100%' }} />
         </div>
-
         <div className="form-group">
           <label className="form-label">Assigned to</label>
           <div className="pill-group">
             {['natalie', 'grace'].map(a => (
               <button key={a} className={`pill ${form.assigned_to === a ? 'active' : ''}`}
-                onClick={() => update('assigned_to', a)}>{a}</button>
+                onClick={() => update('assigned_to', a)}>{a.charAt(0).toUpperCase() + a.slice(1)}</button>
             ))}
           </div>
         </div>
-
         <div className="form-group">
           <label className="form-label">Due Date</label>
           <input type="date" value={form.due_date} onChange={(e) => update('due_date', e.target.value)} style={{ width: '100%' }} />
         </div>
-
         <div className="form-group">
           <label className="form-label">Priority</label>
           <div className="pill-group">
@@ -328,7 +279,6 @@ function TaskModal({ task, defaultUser, month, onClose }) {
             ))}
           </div>
         </div>
-
         <div className="form-group">
           <label className="form-label">Status</label>
           <div className="pill-group">
@@ -339,16 +289,10 @@ function TaskModal({ task, defaultUser, month, onClose }) {
           </div>
         </div>
 
-        <button className="btn-save" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-
+        <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {task && (
-          <button className="promo-action"
-            style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%' }}
-            onClick={handleDelete}>
-            Delete task
-          </button>
+          <button style={{ marginTop: 12, color: '#C0392B', display: 'block', textAlign: 'center', width: '100%', fontSize: 12 }}
+            onClick={handleDelete}>Delete task</button>
         )}
       </div>
     </Modal>

@@ -4,13 +4,19 @@
   --cream-deep: #E8E0D5;
   --pink: #F4A7B9;
   --pink-light: #FDE8EE;
-  --pink-deep: #E8839A;
+  --pink-deep: #D4849A;
   --ink: #1A1412;
   --ink-mid: #5C4A42;
-  --ink-light: #8C7A72;
+  --ink-light: #9C8880;
   --white: #FFFFFF;
-  --shadow: rgba(26, 20, 18, 0.08);
+  --gold: #C4A882;
+  --shadow: rgba(26, 20, 18, 0.06);
+  --shadow-lg: rgba(26, 20, 18, 0.04);
 
-  --sidebar-width: 200px;
+  --sidebar-width: 220px;
+  --sidebar-collapsed: 56px;
   --spacing: 8px;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-logo: 'Horizon', 'Cormorant Garamond', serif;
 }

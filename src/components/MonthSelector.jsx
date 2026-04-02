@@ -7,9 +7,13 @@ export default function MonthSelector() {
 
   return (
     <div className="month-selector">
-      <button className="month-arrow" onClick={prevMonth}>←</button>
+      <button className="month-arrow" onClick={prevMonth} aria-label="Previous month">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <span className="month-label">{format(currentMonth, 'MMMM yyyy')}</span>
-      <button className="month-arrow" onClick={nextMonth}>→</button>
+      <button className="month-arrow" onClick={nextMonth} aria-label="Next month">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
   )
 }
