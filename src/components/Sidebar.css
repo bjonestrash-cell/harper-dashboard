@@ -30,11 +30,11 @@
 
 .sidebar-toggle {
   position: absolute;
-  top: 36px;
-  right: -16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 24px;
+  border-radius: 12px;
   background: var(--pink);
   color: var(--white);
   display: flex;
@@ -43,16 +43,16 @@
   transition: all 350ms cubic-bezier(0.25, 0.1, 0.25, 1);
   cursor: pointer;
   z-index: 51;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .sidebar-toggle:hover {
   background: var(--pink-deep);
-  transform: scale(1.1);
 }
 .sidebar.collapsed .sidebar-toggle {
   position: static;
   align-self: center;
   margin-bottom: 8px;
+  width: 32px;
+  height: 22px;
 }
 
 .sidebar-logo {

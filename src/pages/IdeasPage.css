@@ -375,10 +375,36 @@
   .moment-timing { font-size: 9px; }
   .ideas-filters { gap: 8px; }
   .ideas-filter-group { gap: 4px; }
-  .tts-day-label { width: 32px; font-size: 10px; }
-  .tts-track { height: 28px; }
-  .tts-block-label { font-size: 8px; letter-spacing: 0.5px; }
-  .tts-hour-mark { font-size: 8px; }
+  /* TikTok: vertical list on mobile */
+  .tts-header-row { display: none; }
+  .tts-timeline { gap: 6px; }
+  .tts-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .tts-day-label {
+    width: 36px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .tts-track {
+    flex: 1;
+    height: auto;
+    background: transparent;
+    position: static;
+    overflow: visible;
+  }
+  .tts-block {
+    position: static;
+    display: inline-flex;
+    width: auto !important;
+    padding: 6px 14px;
+    border-radius: 9999px;
+  }
+  .tts-block-label {
+    font-size: 10px;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {

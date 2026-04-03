@@ -174,11 +174,6 @@ export default function IdeasPage() {
                     {item.whyNow && (
                       <div className="idea-why-now">{item.whyNow}</div>
                     )}
-                    {item.score && (
-                      <div className="idea-score-bar">
-                        <div className="idea-score-fill" style={{ width: `${item.score}%` }} />
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
