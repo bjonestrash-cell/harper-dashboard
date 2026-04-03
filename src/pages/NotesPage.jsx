@@ -102,11 +102,7 @@ export default function NotesPage() {
       <div className="meeting-layout">
         {/* LEFT PANEL */}
         <div className="meeting-sidebar">
-          <div className="meeting-sidebar-header">
-            <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
-              Meeting Notes
-            </span>
-          </div>
+          <div className="meeting-sidebar-header" />
 
           <button onClick={() => setShowAddModal(true)}
             style={{
