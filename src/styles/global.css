@@ -22,10 +22,12 @@
 html {
   height: 100%;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body, #root {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -107,6 +109,8 @@ body {
 
 .page-container {
   padding: 0 48px 48px;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .global-status {

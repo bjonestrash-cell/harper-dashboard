@@ -136,8 +136,21 @@
 
 /* Mobile */
 @media (max-width: 767px) {
-  .stats-row { grid-template-columns: 1fr 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 16px 8px; }
+  .stat-value { font-size: 28px; }
+  .stat-label { font-size: 9px; letter-spacing: 2px; }
+
+  .timeline-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  .promos-list { gap: 12px; }
+
+  .order-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .order-input-row { flex-wrap: wrap; }
-  .order-input-row input { min-width: calc(50% - 4px); }
+  .order-input-row input { min-width: calc(50% - 4px); font-size: 14px; }
+  .order-input-row input[type="number"] { max-width: none; }
+
+  .color-picker { flex-wrap: wrap; }
+
   .fab-add { bottom: 76px; right: 16px; width: 48px; height: 48px; font-size: 24px; }
 }

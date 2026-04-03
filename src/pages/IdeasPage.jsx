@@ -198,7 +198,7 @@ export default function IdeasPage() {
                 {(data.moments || []).map((item, i) => {
                   const daysOut = item.daysOut || 30
                   return (
-                    <div key={i} className="moment-row" style={{ borderLeftColor: getUrgencyColor(daysOut) }}>
+                    <div key={i} className="moment-row">
                       <div className="moment-left">
                         <span className="moment-date">{item.date}</span>
                         <span className="moment-urgency" style={{ color: getUrgencyColor(daysOut) }}>
@@ -374,14 +374,18 @@ const LOADING_PHRASES = [
 ]
 
 function IdeasLoadingState() {
-  const [phraseIdx, setPhraseIdx] = useState(0)
+  const [phraseIdx, setPhraseIdx] = useState(() => Math.floor(Math.random() * LOADING_PHRASES.length))
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false)
       setTimeout(() => {
-        setPhraseIdx(prev => (prev + 1) % LOADING_PHRASES.length)
+        setPhraseIdx(prev => {
+          let next
+          do { next = Math.floor(Math.random() * LOADING_PHRASES.length) } while (next === prev)
+          return next
+        })
         setVisible(true)
       }, 300)
     }, 1500)

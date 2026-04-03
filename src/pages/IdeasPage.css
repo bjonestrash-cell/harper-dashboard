@@ -176,10 +176,8 @@
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  padding: 20px 0 20px 16px;
+  padding: 20px 0;
   border-bottom: 1px solid var(--cream-deep);
-  border-left: 3px solid var(--cream-deep);
-  transition: border-left-color 0.2s ease;
 }
 .moment-row:last-child { border-bottom: none; }
 

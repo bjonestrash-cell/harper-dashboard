@@ -424,16 +424,20 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
   const weekStart = startOfWeek(currentMonth)
   const weekEnd = endOfWeek(currentMonth)
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9)
   const isMobileView = window.innerWidth < 768
 
+  // Mobile: day-strip + event list
+  if (isMobileView) return <MobileWeekView weekDays={weekDays} posts={posts} calendarView={calendarView} currentUser={currentUser} onPostClick={onPostClick} />
+
+  // Desktop: time grid
+  const hours = Array.from({ length: 12 }, (_, i) => i + 9)
   return (
     <div className="week-view">
       <div className="week-header">
         <div className="week-time-col" />
         {weekDays.map(day => (
           <div key={day.toString()} className={`week-day-header ${isToday(day) ? 'week-today' : ''}`}>
-            <span className="week-day-name">{isMobileView ? format(day, 'EEEEE') : format(day, 'EEE')}</span>
+            <span className="week-day-name">{format(day, 'EEE')}</span>
             <span className={`week-day-number ${isToday(day) ? 'today-number' : ''}`}>{format(day, 'd')}</span>
           </div>
         ))}
@@ -442,10 +446,7 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
         {hours.map(hour => (
           <div key={hour} className="week-row">
             <div className="week-time-label">
-              {isMobileView
-                ? (hour > 12 ? `${hour-12}p` : hour === 12 ? '12p' : `${hour}a`)
-                : (hour > 12 ? `${hour-12}pm` : hour === 12 ? '12pm' : `${hour}am`)
-              }
+              {hour > 12 ? `${hour-12}pm` : hour === 12 ? '12pm' : `${hour}am`}
             </div>
             {weekDays.map(day => {
               const dateStr = format(day, 'yyyy-MM-dd')
@@ -467,6 +468,64 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
             })}
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Mobile Week View ─── */
+function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClick }) {
+  const todayInWeek = weekDays.find(d => isToday(d))
+  const [selectedDay, setSelectedDay] = useState(todayInWeek || weekDays[0])
+  const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+  const getEvType = (p) => {
+    if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
+    if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
+    if (p.platform === 'other-event' || p.content_type === 'other') return 'other'
+    return 'post'
+  }
+
+  const dayPosts = posts.filter(p => p.date === format(selectedDay, 'yyyy-MM-dd'))
+
+  return (
+    <div className="mobile-week-view">
+      {/* Day strip */}
+      <div className="mwv-day-strip">
+        {weekDays.map(day => {
+          const isActive = isSameDay(day, selectedDay)
+          const todayMark = isToday(day)
+          const hasEvents = posts.some(p => p.date === format(day, 'yyyy-MM-dd'))
+          return (
+            <button key={day.toString()} className={`mwv-day ${isActive ? 'active' : ''}`} onClick={() => setSelectedDay(day)}>
+              <span className="mwv-day-letter">{format(day, 'EEEEE')}</span>
+              <span className={`mwv-day-num ${todayMark && !isActive ? 'today-ring' : ''}`}>{format(day, 'd')}</span>
+              {hasEvents && <span className="mwv-day-dot" />}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Event list */}
+      <div className="mwv-events">
+        <div className="mwv-date-label">{format(selectedDay, 'EEEE, MMMM d')}</div>
+        {dayPosts.length === 0 && (
+          <p className="mwv-empty">Nothing scheduled</p>
+        )}
+        {dayPosts.map(post => {
+          const evType = getEvType(post)
+          return (
+            <div key={post.id} className="mwv-event-row" onClick={(e) => onPostClick(post, e)}>
+              <span className="mwv-event-dot" style={{ backgroundColor: dotColors[evType] }} />
+              <div className="mwv-event-body">
+                <span className="mwv-event-title">{post.caption || post.content_type || evType}</span>
+                <div className="mwv-event-meta">
+                  <span className="mwv-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
+                  {post.assigned_to && <span className="mwv-event-creator">{post.assigned_to}</span>}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
