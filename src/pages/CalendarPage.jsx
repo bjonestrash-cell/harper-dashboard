@@ -425,46 +425,47 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
   // Mobile: day-strip + event list
   if (isMobileView) return <MobileWeekView weekDays={weekDays} posts={posts} calendarView={calendarView} currentUser={currentUser} onPostClick={onPostClick} />
 
-  // Desktop: time grid
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9)
+  // Desktop: column-based day layout
+  const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+  const getEvType = (p) => {
+    if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
+    if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
+    if (p.platform === 'other-event' || p.content_type === 'other') return 'other'
+    return 'post'
+  }
+
   return (
-    <div className="week-view">
-      <div className="week-header">
-        <div className="week-time-col" />
-        {weekDays.map(day => (
-          <div key={day.toString()} className={`week-day-header ${isToday(day) ? 'week-today' : ''}`}>
-            <span className="week-day-name">{format(day, 'EEE')}</span>
-            <span className={`week-day-number ${isToday(day) ? 'today-number' : ''}`}>{format(day, 'd')}</span>
-          </div>
-        ))}
-      </div>
-      <div className="week-body">
-        {hours.map(hour => (
-          <div key={hour} className="week-row">
-            <div className="week-time-label">
-              {hour > 12 ? `${hour-12}pm` : hour === 12 ? '12pm' : `${hour}am`}
+    <div className="dwv-grid">
+      {weekDays.map(day => {
+        const dateStr = format(day, 'yyyy-MM-dd')
+        const dayPosts = posts.filter(p => p.date === dateStr)
+        const todayFlag = isToday(day)
+
+        return (
+          <div key={day.toString()} className={`dwv-column ${todayFlag ? 'dwv-today' : ''}`}>
+            <div className="dwv-col-header">
+              <span className="dwv-col-day">{format(day, 'EEE')}</span>
+              <span className={`dwv-col-num ${todayFlag ? 'today-number' : ''}`}>{format(day, 'd')}</span>
             </div>
-            {weekDays.map(day => {
-              const dateStr = format(day, 'yyyy-MM-dd')
-              const dayPosts = posts.filter(p => p.date === dateStr)
-              return (
-                <div key={day.toString()} className="week-cell" onClick={() => onDayClick(day)}>
-                  {hour === 9 && dayPosts.map(post => {
-                    const evType = post.platform === 'meeting' || post.content_type === 'meeting' ? 'meeting' : post.platform === 'holiday' || post.content_type === 'holiday' ? 'holiday' : post.platform === 'other-event' || post.content_type === 'other' ? 'other' : 'post'
-                    const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
-                    return (
-                      <div key={post.id} className="week-event-block" onClick={(e) => onPostClick(post, e)}
-                        style={{ borderLeftColor: dotColors[evType] }}>
-                        <span className="week-event-title">{post.caption || post.content_type || evType}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
+            <div className="dwv-col-events">
+              {dayPosts.length === 0 && (
+                <span className="dwv-empty">&mdash;</span>
+              )}
+              {dayPosts.map(post => {
+                const evType = getEvType(post)
+                return (
+                  <div key={post.id} className="dwv-event-card"
+                    style={{ borderLeftColor: dotColors[evType] }}
+                    onClick={(e) => onPostClick(post, e)}>
+                    <span className="dwv-event-title">{post.caption || post.content_type || evType}</span>
+                    <span className="dwv-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }
