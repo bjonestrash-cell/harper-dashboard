@@ -25,12 +25,17 @@ Respond in EXACTLY this JSON format (no markdown, no code blocks, just raw JSON)
   ]
 }`
 
+function cacheIdeas(ideas) {
+  localStorage.setItem('harper-ideas-cache', JSON.stringify({
+    date: new Date().toISOString().split('T')[0],
+    ideas,
+  }))
+}
+
 export default function IdeasPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [platformFilter, setPlatformFilter] = useState('ALL')
-  const [formatFilter, setFormatFilter] = useState('ALL')
 
   const fetchIdeas = useCallback(async () => {
     setLoading(true)
@@ -39,7 +44,9 @@ export default function IdeasPage() {
       const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
       if (!apiKey || apiKey === 'your_key') {
         await new Promise(r => setTimeout(r, 2500))
-        setData(getMockData())
+        const mock = getMockData()
+        setData(mock)
+        cacheIdeas(mock)
         setLoading(false)
         return
       }
@@ -70,7 +77,7 @@ export default function IdeasPage() {
       const textBlock = result.content?.find(b => b.type === 'text')
       if (textBlock) {
         const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
-        if (jsonMatch) setData(JSON.parse(jsonMatch[0]))
+        if (jsonMatch) { const p = JSON.parse(jsonMatch[0]); setData(p); cacheIdeas(p) }
         else throw new Error('Could not parse response')
       } else throw new Error('No text in response')
     } catch (err) {
@@ -82,7 +89,21 @@ export default function IdeasPage() {
     }
   }, [])
 
-  useState(() => { fetchIdeas() })
+  // Auto-load: check for today's cached data, otherwise fetch fresh
+  useEffect(() => {
+    const todayKey = new Date().toISOString().split('T')[0]
+    const cached = localStorage.getItem('harper-ideas-cache')
+    if (cached) {
+      try {
+        const { date, ideas } = JSON.parse(cached)
+        if (date === todayKey && ideas) {
+          setData(ideas)
+          return
+        }
+      } catch {}
+    }
+    fetchIdeas()
+  }, [fetchIdeas])
 
   const platformColor = (p) => {
     const pl = p?.toLowerCase()
@@ -103,11 +124,6 @@ export default function IdeasPage() {
     return 'PLAN AHEAD'
   }
 
-  const filteredTrending = (data?.trending || []).filter(item => {
-    const pMatch = platformFilter === 'ALL' || item.platform?.toUpperCase() === platformFilter || (platformFilter === 'BOTH' && item.platform?.toUpperCase() === 'BOTH')
-    const fMatch = formatFilter === 'ALL' || item.format?.toUpperCase() === formatFilter
-    return pMatch && fMatch
-  })
 
   return (
     <div className="ideas-page">
@@ -145,26 +161,8 @@ export default function IdeasPage() {
             <section className="ideas-section">
               <h2 className="ideas-section-title">Trending Now</h2>
 
-              {/* Filter bar */}
-              <div className="ideas-filters">
-                <div className="ideas-filter-group">
-                  {['ALL', 'INSTAGRAM', 'TIKTOK', 'BOTH'].map(p => (
-                    <button key={p}
-                      className={`ideas-filter-pill ${platformFilter === p ? 'active' : ''}`}
-                      onClick={() => setPlatformFilter(p)}>{p}</button>
-                  ))}
-                </div>
-                <div className="ideas-filter-group">
-                  {['ALL', 'REEL', 'CAROUSEL', 'STATIC', 'UGC'].map(f => (
-                    <button key={f}
-                      className={`ideas-filter-pill ${formatFilter === f ? 'active' : ''}`}
-                      onClick={() => setFormatFilter(f)}>{f}</button>
-                  ))}
-                </div>
-              </div>
-
               <div className="ideas-grid">
-                {filteredTrending.map((item, i) => (
+                {(data.trending || []).map((item, i) => (
                   <div key={i} className="idea-card">
                     <div className="idea-card-top">
                       <span className="idea-platform-pill" style={{ backgroundColor: platformColor(item.platform).bg, color: platformColor(item.platform).color }}>
@@ -183,11 +181,6 @@ export default function IdeasPage() {
                     )}
                   </div>
                 ))}
-                {filteredTrending.length === 0 && (
-                  <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', gridColumn: '1 / -1', padding: '24px 0' }}>
-                    No ideas match these filters.
-                  </p>
-                )}
               </div>
             </section>
 
@@ -249,14 +242,17 @@ export default function IdeasPage() {
 }
 
 const LIVE_TIMES = [
-  { day: 'Thursday', time: '5–7pm PST', heat: 0.95 },
-  { day: 'Tuesday', time: '5–7pm PST', heat: 0.9 },
-  { day: 'Sunday', time: '12–2pm PST', heat: 0.88 },
-  { day: 'Wednesday', time: '6–8pm PST', heat: 0.82 },
-  { day: 'Saturday', time: '11am–1pm PST', heat: 0.78 },
-  { day: 'Friday', time: '7–9pm PST', heat: 0.72 },
-  { day: 'Monday', time: '5–7pm PST', heat: 0.65 },
+  { day: 'Mon', start: 17, end: 19, label: '5–7pm PST', heat: 0.65 },
+  { day: 'Tue', start: 17, end: 19, label: '5–7pm PST', heat: 0.9 },
+  { day: 'Wed', start: 18, end: 20, label: '6–8pm PST', heat: 0.82 },
+  { day: 'Thu', start: 17, end: 19, label: '5–7pm PST', heat: 0.95 },
+  { day: 'Fri', start: 19, end: 21, label: '7–9pm PST', heat: 0.72 },
+  { day: 'Sat', start: 11, end: 13, label: '11a–1p PST', heat: 0.78 },
+  { day: 'Sun', start: 12, end: 14, label: '12–2pm PST', heat: 0.88 },
 ]
+const TL_START = 8
+const TL_END = 23
+const TL_HOURS = TL_END - TL_START
 
 function TikTokShopLiveSection() {
   return (
@@ -264,19 +260,45 @@ function TikTokShopLiveSection() {
       <h2 className="ideas-section-title">TikTok Shop Live</h2>
       <div className="tiktok-subsection">
         <h3 className="tiktok-sub-title">Best Times to Go Live</h3>
-        <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 16, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 20, lineHeight: 1.5 }}>
           Peak windows for US women 18–34 shopping fashion and jewelry on TikTok Live
         </p>
-        <div className="live-times-grid">
-          {LIVE_TIMES.map((slot, i) => (
-            <div key={i} className="live-time-row">
-              <span className="live-time-day">{slot.day}</span>
-              <div className="live-time-bar-track">
-                <div className="live-time-bar-fill" style={{ width: `${slot.heat * 100}%` }} />
-              </div>
-              <span className="live-time-label">{slot.time}</span>
+
+        {/* Timeline header */}
+        <div className="tts-timeline">
+          <div className="tts-header-row">
+            <div className="tts-day-label" />
+            <div className="tts-track-header">
+              {Array.from({ length: TL_HOURS + 1 }, (_, i) => {
+                const h = TL_START + i
+                const label = h === 12 ? '12p' : h > 12 ? `${h - 12}p` : `${h}a`
+                return i % 2 === 0 ? (
+                  <span key={i} className="tts-hour-mark" style={{ left: `${(i / TL_HOURS) * 100}%` }}>{label}</span>
+                ) : null
+              })}
             </div>
-          ))}
+          </div>
+
+          {/* Day rows */}
+          {LIVE_TIMES.map((slot, i) => {
+            const leftPct = ((slot.start - TL_START) / TL_HOURS) * 100
+            const widthPct = ((slot.end - slot.start) / TL_HOURS) * 100
+            return (
+              <div key={i} className="tts-row">
+                <div className="tts-day-label">{slot.day}</div>
+                <div className="tts-track">
+                  <div className="tts-block"
+                    style={{
+                      left: `${leftPct}%`,
+                      width: `${widthPct}%`,
+                      opacity: 0.4 + slot.heat * 0.6,
+                    }}>
+                    <span className="tts-block-label">{slot.label}</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>

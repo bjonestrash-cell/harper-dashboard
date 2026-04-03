@@ -290,87 +290,69 @@
   letter-spacing: 0.5px;
 }
 
-.live-times-grid {
+/* Time block schedule */
+.tts-timeline {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
-.live-time-row {
+.tts-header-row {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 4px;
 }
-.live-time-day {
-  font-size: 12px;
+.tts-day-label {
+  width: 40px;
+  flex-shrink: 0;
+  font-size: 11px;
   font-weight: 500;
   color: var(--ink);
-  width: 80px;
-  flex-shrink: 0;
+  letter-spacing: 0.5px;
 }
-.live-time-bar-track {
+.tts-track-header {
   flex: 1;
-  height: 6px;
-  background: var(--cream-mid);
-  border-radius: 3px;
-  overflow: hidden;
+  position: relative;
+  height: 16px;
 }
-.live-time-bar-fill {
-  height: 100%;
-  background: #1a1a2e;
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-.live-time-label {
-  font-size: 11px;
+.tts-hour-mark {
+  position: absolute;
+  font-size: 9px;
   font-weight: 400;
   color: var(--ink-light);
-  width: 110px;
-  flex-shrink: 0;
-  text-align: right;
+  letter-spacing: 0.5px;
+  transform: translateX(-50%);
+  bottom: 0;
 }
-
-.live-prompts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--cream-deep);
-}
-.live-prompt-card {
-  background: var(--white);
-  padding: 16px;
+.tts-row {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
-.live-prompt-number {
-  font-size: 20px;
-  font-weight: 300;
-  color: var(--cream-deep);
-  line-height: 1;
-  flex-shrink: 0;
+.tts-track {
+  flex: 1;
+  position: relative;
+  height: 32px;
+  background: var(--cream-mid);
+  border-radius: 4px;
+  overflow: hidden;
 }
-.live-prompt-text {
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--ink);
-  line-height: 1.5;
-}
-
-.live-hooks {
+.tts-block {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background: #D4849A;
+  border-radius: 3px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
 }
-.live-hook-row {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--cream-deep);
-}
-.live-hook-row:last-child { border-bottom: none; }
-.live-hook-quote {
-  font-size: 14px;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--ink);
-  line-height: 1.6;
+.tts-block-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--white);
+  white-space: nowrap;
+  text-transform: uppercase;
 }
 
 /* Mobile */
@@ -382,10 +364,10 @@
   .moment-timing { font-size: 9px; }
   .ideas-filters { gap: 8px; }
   .ideas-filter-group { gap: 4px; }
-  .ideas-filter-pill { padding: 4px 10px; font-size: 8px; }
-  .live-prompts-grid { grid-template-columns: 1fr; }
-  .live-time-day { width: 60px; font-size: 11px; }
-  .live-time-label { width: 90px; font-size: 10px; }
+  .tts-day-label { width: 32px; font-size: 10px; }
+  .tts-track { height: 28px; }
+  .tts-block-label { font-size: 8px; letter-spacing: 0.5px; }
+  .tts-hour-mark { font-size: 8px; }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {

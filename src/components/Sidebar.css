@@ -31,16 +31,27 @@
 .sidebar-toggle {
   position: absolute;
   top: 16px;
-  right: 16px;
-  color: rgba(255,255,255,0.4);
-  padding: 4px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 150ms ease;
+  transition: all 200ms ease;
+  cursor: pointer;
 }
-.sidebar-toggle:hover { color: rgba(255,255,255,0.8); }
-.sidebar.collapsed .sidebar-toggle { align-self: center; }
+.sidebar-toggle:hover {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+}
+.sidebar.collapsed .sidebar-toggle {
+  position: static;
+  align-self: center;
+  margin-bottom: 8px;
+}
 
 .sidebar-logo {
   font-family: 'Horizon', 'Inter', system-ui, sans-serif;
