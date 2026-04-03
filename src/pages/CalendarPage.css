@@ -25,13 +25,14 @@
 }
 
 .calendar-cell {
-  min-height: 120px;
+  height: 120px;
   padding: 8px;
   border: 1px solid var(--cream-deep);
   background: var(--white);
   cursor: pointer;
   transition: background 150ms ease;
   position: relative;
+  overflow: hidden;
 }
 .calendar-cell:hover { background: var(--cream); }
 .calendar-cell.other-month { background: var(--cream-mid); }
@@ -236,8 +237,10 @@
     overflow: hidden;
   }
   .calendar-cell {
-    min-height: 44px;
+    height: 64px;
+    min-height: unset;
     padding: 3px 1px;
+    overflow: hidden;
   }
   .calendar-header-cell {
     padding: 6px 0;

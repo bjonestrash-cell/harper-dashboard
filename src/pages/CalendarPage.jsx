@@ -149,7 +149,7 @@ export default function CalendarPage() {
       </PageHeader>
 
       <div className="page-container">
-        <MonthSelector />
+        <MonthSelector mode={viewMode} />
 
         {/* Color legend */}
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 20 }}>
@@ -551,13 +551,9 @@ function WeeklyStrip({ posts }) {
     <div className="weekly-strip"
       onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="weekly-strip-header">
-        <button onClick={() => setWeekOffset(prev => prev - 1)}
-          style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', padding: '4px 8px' }}>&lsaquo;</button>
         <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
           {format(currentWeekStart, 'MMM d')} – {format(currentWeekEnd, 'MMM d')}
         </span>
-        <button onClick={() => setWeekOffset(prev => prev + 1)}
-          style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', padding: '4px 8px' }}>&rsaquo;</button>
       </div>
       <div className="weekly-strip-events">
         {weekEvents.length === 0 && (
