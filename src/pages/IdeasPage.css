@@ -377,11 +377,12 @@
   .ideas-filter-group { gap: 4px; }
   /* TikTok: vertical list on mobile */
   .tts-header-row { display: none; }
-  .tts-timeline { gap: 6px; }
+  .tts-timeline { gap: 10px; }
   .tts-row {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 1px 0;
   }
   .tts-day-label {
     width: 36px;

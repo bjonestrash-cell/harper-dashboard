@@ -109,26 +109,9 @@ export default function PromotionsPage() {
           ))}
         </div>
 
-        {/* Timeline — flat bar */}
+        {/* Timeline — thin editorial line */}
         <div style={{ marginBottom: 48 }}>
-          <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 16 }}>Timeline</span>
-          <div style={{ height: 4, backgroundColor: 'var(--cream-deep)', borderRadius: 2, position: 'relative' }}>
-            {monthPromos.map(promo => {
-              const monthStart = parseISO(format(currentMonth, 'yyyy-MM-01'))
-              const daysInMonth = 30
-              const startDay = Math.max(0, (parseISO(promo.start_date).getTime() - monthStart.getTime()) / 86400000)
-              const endDay = Math.min(daysInMonth, (parseISO(promo.end_date).getTime() - monthStart.getTime()) / 86400000)
-              const left = (startDay / daysInMonth) * 100
-              const width = ((endDay - startDay) / daysInMonth) * 100
-              return (
-                <div key={promo.id} title={promo.name} style={{
-                  position: 'absolute', top: -2, height: 8, borderRadius: 4,
-                  left: `${Math.max(0, left)}%`, width: `${Math.max(2, Math.min(100, width))}%`,
-                  background: promo.color || '#F4A7B9',
-                }} />
-              )
-            })}
-          </div>
+          <div style={{ height: 1, backgroundColor: 'var(--cream-deep)', width: '100%' }} />
         </div>
 
         {/* Promotions — flat rows */}

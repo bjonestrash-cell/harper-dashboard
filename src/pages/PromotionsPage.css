@@ -22,30 +22,19 @@
 }
 
 /* Timeline */
-.timeline-section { margin-bottom: 32px; }
+.timeline-section { margin-bottom: 40px; }
 .timeline-bar {
   position: relative;
-  height: 48px;
-  background: var(--cream-mid);
-  border: 1px solid var(--cream-deep);
-  overflow: hidden;
+  height: 1px;
+  background: var(--cream-deep);
+  border: none;
+  overflow: visible;
 }
 .timeline-promo {
-  position: absolute;
-  top: 8px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  overflow: hidden;
+  display: none;
 }
 .timeline-promo-label {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--white);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: none;
 }
 
 .promos-list {
