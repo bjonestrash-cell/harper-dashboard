@@ -222,12 +222,6 @@ export default function CalendarPage() {
                     <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.caption || 'No caption'}
                     </span>
-                    <span style={{
-                      fontSize: 9, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
-                      color: post.status === 'posted' ? '#5C7A5C' : 'var(--ink-light)',
-                      backgroundColor: post.status === 'posted' ? '#EDF3ED' : 'var(--cream-mid)',
-                      padding: '3px 10px', borderRadius: 20,
-                    }}>{post.status}</span>
                     <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0, color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
                       {post.assigned_to}
                     </span>
@@ -582,10 +576,6 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Caption / Copy</label>
             <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Write your caption..." style={{ ...inputStyle, resize: 'vertical' }} />
-          </div>
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Status</label>
-            <PillSelect options={STATUSES} value={form.status} onChange={(v) => update('status', v)} />
           </div>
           <div style={{ marginBottom: 32 }}>
             <label className="form-label">Assigned to</label>

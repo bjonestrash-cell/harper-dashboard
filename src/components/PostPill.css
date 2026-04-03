@@ -10,6 +10,8 @@
   transition: all 150ms ease;
   white-space: nowrap;
   text-transform: uppercase;
+  max-width: 100%;
+  overflow: hidden;
 }
 .post-pill:hover {
   transform: translateY(-1px);
@@ -18,6 +20,9 @@
 
 .post-pill-text {
   letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .post-pill-assignee {

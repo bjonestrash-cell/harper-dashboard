@@ -25,7 +25,7 @@ export default function PostPill({ post, onClick, showAssignee }) {
         color: textColor,
       }}
     >
-      <span className="post-pill-text">{post.content_type || evType}</span>
+      <span className="post-pill-text">{post.caption || post.content_type || evType}</span>
       {showAssignee && (
         <span className="post-pill-assignee">{post.assigned_to?.[0]?.toUpperCase()}</span>
       )}
