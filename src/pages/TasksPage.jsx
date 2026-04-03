@@ -237,17 +237,17 @@ function PillSelect({ options, value, onChange }) {
 }
 
 const TODO_PLACEHOLDERS = [
-  'what needs to happen?', 'add it before you forget...', 'one more thing...',
-  'put it on the list', "what's on your mind?", 'something to get done',
-  'add a to do...', 'what are we doing today?', 'drop it here',
-  'one thing at a time', "what's next?", 'brain dump it',
-  'make it official', 'write it down', 'what needs attention?',
-  'add something', "let's get it done", 'task at hand',
-  'note to self...', "what's the move?",
+  'What needs to happen?', 'Add it before you forget...', 'One more thing...',
+  'Put it on the list', "What's on your mind?", 'Something to get done',
+  'Add a to do...', 'What are we doing today?', 'Drop it here',
+  'One thing at a time', "What's next?", 'Brain dump it',
+  'Make it official', 'Write it down', 'What needs attention?',
+  'Add something', "Let's get it done", 'Task at hand',
+  'Note to self...', "What's the move?",
 ]
 
 function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
-  const [placeholder] = useState(() => TODO_PLACEHOLDERS[Math.floor(Math.random() * TODO_PLACEHOLDERS.length)])
+  const placeholder = TODO_PLACEHOLDERS[Math.floor(Math.random() * TODO_PLACEHOLDERS.length)]
   const [form, setForm] = useState({
     title: task?.title || '',
     description: task?.description || '',
