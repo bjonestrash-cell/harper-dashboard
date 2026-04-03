@@ -10,7 +10,7 @@ export default function MonthSelector({ mode = 'month' }) {
 
   const label = mode === 'week'
     ? `${format(startOfWeek(currentMonth), 'MMM d')} – ${format(endOfWeek(currentMonth), 'MMM d, yyyy')}`
-    : format(currentMonth, 'MMMM yyyy')
+    : format(currentMonth, 'MMMM yyyy').replace(/\b\w/g, c => c.toUpperCase())
 
   return (
     <div className="month-selector">

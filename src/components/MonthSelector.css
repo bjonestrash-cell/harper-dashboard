@@ -17,11 +17,12 @@
 .month-arrow:hover { color: var(--ink); }
 
 .month-label {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 32px;
-  font-weight: 300;
-  letter-spacing: 3px;
-  text-transform: uppercase;
+  font-family: 'SloopScriptThree', cursive;
+  font-size: 44px;
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: 1px;
+  text-transform: none;
   color: var(--ink);
   min-width: 280px;
   text-align: center;
@@ -29,5 +30,5 @@
 
 @media (max-width: 767px) {
   .month-selector { gap: 16px; margin-bottom: 20px; }
-  .month-label { font-size: 28px; min-width: auto; }
+  .month-label { font-size: 34px; min-width: auto; }
 }
