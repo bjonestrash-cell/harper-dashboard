@@ -220,6 +220,7 @@ export default function CalendarPage() {
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.caption || 'No caption'}
+                      {getMeetingTime(post) && <span style={{ fontSize: 10, color: 'var(--ink-light)', marginLeft: 8 }}>{formatTime12(getMeetingTime(post))}</span>}
                     </span>
                     <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0, color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
                       {post.assigned_to}
@@ -458,6 +459,7 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
                     style={{ borderLeftColor: dotColors[evType] }}
                     onClick={(e) => onPostClick(post, e)}>
                     <span className="dwv-event-title">{post.caption || post.content_type || evType}</span>
+                    {getMeetingTime(post) && <span style={{ fontSize: 9, color: 'var(--ink-light)', display: 'block' }}>{formatTime12(getMeetingTime(post))}</span>}
                     <span className="dwv-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
                   </div>
                 )
@@ -473,7 +475,7 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
 /* ─── Mobile Week View ─── */
 function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClick }) {
   const todayInWeek = weekDays.find(d => isToday(d))
-  const [selectedDay, setSelectedDay] = useState(todayInWeek || weekDays[0])
+  const [selectedDay, setSelectedDay] = useState(null)
   const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
   const getEvType = (p) => {
     if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
@@ -482,18 +484,63 @@ function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClic
     return 'post'
   }
 
-  const dayPosts = posts.filter(p => p.date === format(selectedDay, 'yyyy-MM-dd'))
+  // Reset selection when week changes
+  const weekKey = weekDays[0]?.toString()
+  useEffect(() => { setSelectedDay(null) }, [weekKey])
+
+  const handleDayTap = (day) => {
+    if (selectedDay && isSameDay(day, selectedDay)) {
+      setSelectedDay(null) // deselect → back to full week
+    } else {
+      setSelectedDay(day)
+    }
+  }
+
+  // Events: filtered to one day or full week
+  const weekEvents = posts.filter(p => {
+    const startStr = format(weekDays[0], 'yyyy-MM-dd')
+    const endStr = format(weekDays[6], 'yyyy-MM-dd')
+    return p.date >= startStr && p.date <= endStr
+  }).sort((a, b) => a.date.localeCompare(b.date))
+
+  const displayEvents = selectedDay
+    ? weekEvents.filter(p => p.date === format(selectedDay, 'yyyy-MM-dd'))
+    : weekEvents
+
+  // Group by day for full week view
+  const groupedByDay = {}
+  displayEvents.forEach(p => {
+    if (!groupedByDay[p.date]) groupedByDay[p.date] = []
+    groupedByDay[p.date].push(p)
+  })
+
+  const renderEventRow = (post) => {
+    const evType = getEvType(post)
+    return (
+      <div key={post.id} className="mwv-event-row" onClick={(e) => onPostClick(post, e)}>
+        <span className="mwv-event-dot" style={{ backgroundColor: dotColors[evType] }} />
+        <div className="mwv-event-body">
+          <span className="mwv-event-title">{post.caption || post.content_type || evType}</span>
+          {getMeetingTime(post) && <span style={{ fontSize: 10, color: 'var(--ink-light)', display: 'block', marginTop: 2 }}>{formatTime12(getMeetingTime(post))}</span>}
+          <div className="mwv-event-meta">
+            <span className="mwv-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
+            {post.assigned_to && <span className="mwv-event-creator">{post.assigned_to}</span>}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mobile-week-view">
       {/* Day strip */}
       <div className="mwv-day-strip">
         {weekDays.map(day => {
-          const isActive = isSameDay(day, selectedDay)
+          const isActive = selectedDay && isSameDay(day, selectedDay)
           const todayMark = isToday(day)
           const hasEvents = posts.some(p => p.date === format(day, 'yyyy-MM-dd'))
           return (
-            <button key={day.toString()} className={`mwv-day ${isActive ? 'active' : ''}`} onClick={() => setSelectedDay(day)}>
+            <button key={day.toString()} className={`mwv-day ${isActive ? 'active' : ''}`} onClick={() => handleDayTap(day)}>
               <span className="mwv-day-letter">{format(day, 'EEEEE')}</span>
               <span className={`mwv-day-num ${todayMark && !isActive ? 'today-ring' : ''}`}>{format(day, 'd')}</span>
               {hasEvents && <span className="mwv-day-dot" />}
@@ -504,25 +551,24 @@ function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClic
 
       {/* Event list */}
       <div className="mwv-events">
-        <div className="mwv-date-label">{format(selectedDay, 'EEEE, MMMM d')}</div>
-        {dayPosts.length === 0 && (
-          <p className="mwv-empty">Nothing scheduled</p>
+        {selectedDay && (
+          <div className="mwv-date-label">{format(selectedDay, 'EEEE, MMMM d')}</div>
         )}
-        {dayPosts.map(post => {
-          const evType = getEvType(post)
-          return (
-            <div key={post.id} className="mwv-event-row" onClick={(e) => onPostClick(post, e)}>
-              <span className="mwv-event-dot" style={{ backgroundColor: dotColors[evType] }} />
-              <div className="mwv-event-body">
-                <span className="mwv-event-title">{post.caption || post.content_type || evType}</span>
-                <div className="mwv-event-meta">
-                  <span className="mwv-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
-                  {post.assigned_to && <span className="mwv-event-creator">{post.assigned_to}</span>}
-                </div>
-              </div>
+
+        {displayEvents.length === 0 && (
+          <p className="mwv-empty">{selectedDay ? 'Nothing scheduled' : 'No events this week'}</p>
+        )}
+
+        {selectedDay ? (
+          displayEvents.map(renderEventRow)
+        ) : (
+          Object.entries(groupedByDay).map(([dateStr, events]) => (
+            <div key={dateStr}>
+              <div className="mwv-group-header">{format(parseISO(dateStr), 'EEE d').toUpperCase()}</div>
+              {events.map(renderEventRow)}
             </div>
-          )
-        })}
+          ))
+        )}
       </div>
     </div>
   )
@@ -569,6 +615,7 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
                   <div style={{ fontSize: 15, fontWeight: 400, color: 'var(--ink)', lineHeight: 1.5 }}>
                     {post.caption || post.content_type || evType}
                   </div>
+                  {getMeetingTime(post) && <div style={{ fontSize: 11, color: 'var(--ink-light)', marginTop: 2 }}>{formatTime12(getMeetingTime(post))}</div>}
                   <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
                     <span style={{
                       fontSize: 9, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
@@ -658,6 +705,23 @@ function WeeklyStrip({ posts }) {
 
 /* ─── Event Type Colors ─── */
 const EVENT_COLORS = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+
+function getMeetingTime(post) {
+  if (post.time) return post.time
+  if ((post.platform === 'meeting' || post.content_type === 'meeting') && post.status?.includes('|')) {
+    const t = post.status.split('|')[0]
+    if (t.includes(':')) return t
+  }
+  return null
+}
+
+function formatTime12(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+}
 const EVENT_TYPES = ['post', 'meeting', 'holiday', 'other']
 
 /* ─── Post/Event Modal ─── */
@@ -669,6 +733,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
     caption: post?.caption || '',
     status: post?.status || 'draft',
     assigned_to: post?.assigned_to || currentUser || 'natalie',
+    time: post?.time || '',
   })
   const [saving, setSaving] = useState(false)
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
@@ -680,7 +745,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
       if (eventType === 'post') {
         payload = { ...form, date, updated_at: new Date().toISOString() }
       } else if (eventType === 'meeting') {
-        payload = { date, platform: 'meeting', content_type: 'meeting', caption: form.caption, status: form.status || 'scheduled', assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
+        payload = { date, platform: 'meeting', content_type: 'meeting', caption: form.caption, status: form.time ? `${form.time}|${form.status || ''}` : (form.status || 'scheduled'), assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
       } else if (eventType === 'holiday') {
         payload = { date, platform: 'holiday', content_type: 'holiday', caption: form.caption, status: form.status || 'scheduled', assigned_to: 'both', updated_at: new Date().toISOString() }
       } else {
@@ -732,7 +797,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
           <label className="form-label">Type</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {EVENT_TYPES.map(t => (
-              <button key={t} onClick={() => setEventType(t)}
+              <button key={t} onClick={() => { setEventType(t); if (t !== 'meeting') update('time', '') }}
                 style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', backgroundColor: eventType === t ? EVENT_COLORS[t] : 'var(--cream-mid)', color: eventType === t ? '#fff' : 'var(--ink-mid)', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease' }}>{t}</button>
             ))}
           </div>
@@ -763,6 +828,10 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Title</label>
             <input type="text" value={form.content_type === 'meeting' ? form.caption.split('\n')[0] || '' : form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Meeting title" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Time</label>
+            <input type="time" value={form.time || ''} onChange={(e) => update('time', e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Attendees</label>

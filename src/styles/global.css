@@ -439,3 +439,41 @@ input[type=number]::-webkit-outer-spin-button {
     cursor: none !important;
   }
 }
+
+/* ───── PAGE LOAD ANIMATION ───── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-container {
+  animation: pageIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+.page-container > *:nth-child(1) { animation-delay: 0ms; }
+.page-container > *:nth-child(2) { animation-delay: 60ms; }
+.page-container > *:nth-child(3) { animation-delay: 120ms; }
+.page-container > *:nth-child(4) { animation-delay: 180ms; }
+.page-container > *:nth-child(5) { animation-delay: 240ms; }
+.page-container > * {
+  animation: pageIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+/* ───── MOBILE NATIVE FEEL ───── */
+@media (max-width: 767px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a, [role="button"] {
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  button:active, a:active, [role="button"]:active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+  .scroll-container,
+  .mobile-day-posts,
+  .mwv-events,
+  .weekly-strip-events {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
