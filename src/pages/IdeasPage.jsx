@@ -36,7 +36,8 @@ export default function IdeasPage() {
     try {
       const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
       if (!apiKey || apiKey === 'your_key') {
-        // Generate mock data if no API key
+        // Simulate loading with mock data
+        await new Promise(r => setTimeout(r, 2500))
         setData(getMockData())
         setLoading(false)
         return
@@ -112,6 +113,7 @@ export default function IdeasPage() {
             color: loading ? 'var(--ink-light)' : 'var(--cream)',
             fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
             fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
+            opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto',
           }}>
           {loading ? 'Refreshing...' : 'Refresh Ideas'}
         </button>

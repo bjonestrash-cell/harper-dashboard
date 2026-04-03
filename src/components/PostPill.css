@@ -9,38 +9,23 @@
   cursor: pointer;
   transition: all 150ms ease;
   white-space: nowrap;
-  background: var(--cream-mid);
-  color: var(--ink-mid);
+  text-transform: uppercase;
 }
-.post-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 6px var(--shadow); }
+.post-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow);
+}
 
-.post-pill-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.post-pill-text {
+  letter-spacing: 0.5px;
 }
-.post-pill-text { letter-spacing: 0.5px; }
 
 .post-pill-assignee {
   font-size: 8px;
   font-weight: 500;
-  opacity: 0.6;
+  opacity: 0.7;
   margin-left: 2px;
 }
-
-/* Platform colors */
-.platform-instagram { background: var(--pink-light); color: var(--pink-deep); }
-.platform-tiktok { background: #1a1a2e; color: #fff; }
-.platform-email { background: #E8F4E8; color: #2C5C2C; }
-.platform-other { background: var(--cream-mid); color: var(--ink-mid); }
-.platform-meeting { background: #E3EEF3; color: #5A7A8A; }
-.platform-holiday { background: #F3EBE0; color: #8A7050; }
-.platform-other-event { background: #E8EDE6; color: #5A6A55; }
-
-/* Master view: assignee color override */
-.post-pill.assignee-natalie { background: #F4A7B9; color: var(--white); }
-.post-pill.assignee-grace { background: #D4C4B0; color: var(--ink); }
 
 /* Mobile: show as colored dots */
 @media (max-width: 767px) {
@@ -50,9 +35,8 @@
     padding: 0;
     border-radius: 50%;
     overflow: hidden;
-    background: var(--event-color, var(--cream-deep));
+    background: var(--event-color, var(--cream-deep)) !important;
   }
-  .post-pill-dot,
   .post-pill-text,
   .post-pill-assignee { display: none; }
 }
