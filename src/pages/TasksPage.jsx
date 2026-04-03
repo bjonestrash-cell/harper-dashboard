@@ -167,43 +167,38 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Monthly Todos */}
-        <div className="monthly-todos card">
-          <h2 className="section-header" style={{ marginBottom: 16 }}>This Month's Checklist</h2>
-          <div className="todo-list">
+        {/* Monthly Checklist */}
+        <div className="monthly-todos">
+          <h2 className="checklist-title">This Month's Checklist</h2>
+
+          {/* Filter pills */}
+          <div className="checklist-filters">
+            <div className="checklist-filter-group">
+              {['both', 'natalie', 'grace'].map(v => (
+                <button key={v} onClick={() => setTodoAssignee(v)}
+                  className={`checklist-pill ${todoAssignee === v ? 'active' : ''}`}>
+                  {v === 'both' ? 'Both' : v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="checklist-filter-group">
+              {['normal', 'high', 'low'].map(v => (
+                <button key={v} onClick={() => setTodoPriority(v)}
+                  className={`checklist-pill ${todoPriority === v ? 'active' : ''}`}>
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Checklist items */}
+          <div className="checklist-items">
+            {todos.length === 0 && (
+              <p className="checklist-empty">Nothing here yet.</p>
+            )}
             {todos.map(todo => (
               <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
             ))}
-          </div>
-          <div className="todo-add-row" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <input placeholder="Add a checklist item..." value={todoInput}
-              onChange={(e) => setTodoInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
-              style={{ flex: 1, minWidth: 180 }} />
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {['both', 'natalie', 'grace'].map(v => (
-                <button key={v} onClick={() => setTodoAssignee(v)}
-                  style={{
-                    padding: '5px 12px', borderRadius: 9999, border: 'none',
-                    backgroundColor: todoAssignee === v ? 'var(--ink)' : 'var(--cream-mid)',
-                    color: todoAssignee === v ? 'var(--cream)' : 'var(--ink-mid)',
-                    fontSize: 10, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
-                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
-                  }}>{v === 'both' ? 'Both' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {['normal', 'high', 'low'].map(v => (
-                <button key={v} onClick={() => setTodoPriority(v)}
-                  style={{
-                    padding: '5px 12px', borderRadius: 9999, border: 'none',
-                    backgroundColor: todoPriority === v ? 'var(--ink)' : 'var(--cream-mid)',
-                    color: todoPriority === v ? 'var(--cream)' : 'var(--ink-mid)',
-                    fontSize: 10, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
-                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
-                  }}>{v.charAt(0).toUpperCase() + v.slice(1)}</button>
-              ))}
-            </div>
           </div>
         </div>
       </div>

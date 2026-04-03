@@ -103,44 +103,68 @@
   margin-top: 8px;
 }
 
-/* Monthly Todos */
+/* Monthly Checklist */
 .monthly-todos {
-  margin-top: 8px;
+  margin-top: 16px;
   background: var(--white);
   padding: 32px;
   box-shadow: 0 2px 12px rgba(26,20,18,0.06);
   border-radius: 2px;
 }
-.monthly-todos .section-header {
+
+.checklist-title {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-light);
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--cream-deep);
 }
-.todo-list {
+
+.checklist-filters {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 24px;
-}
-.todo-progress {
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 1px;
-  color: var(--ink-light);
-  margin-bottom: 16px;
-}
-.todo-add-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 20px 0;
+  gap: 16px;
   flex-wrap: wrap;
-  border-top: 1px solid var(--cream-deep);
-  margin-top: 8px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--cream-deep);
+  margin-bottom: 8px;
 }
-.todo-add-row select {
-  padding: 10px;
-  font-size: 12px;
-  min-width: 80px;
+.checklist-filter-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.checklist-pill {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: none;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 200ms ease;
+  background: var(--cream-mid);
+  color: var(--ink-mid);
+}
+.checklist-pill.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.checklist-items {
+  padding-top: 8px;
+}
+
+.checklist-empty {
+  text-align: center;
+  padding: 48px 0;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink-light);
 }
 
 /* Task card hover */
