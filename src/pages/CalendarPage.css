@@ -80,6 +80,7 @@
   gap: 4px;
   margin-top: 4px;
 }
+.mobile-cell-label { display: none; }
 
 /* Week View — Desktop */
 .week-view {
@@ -256,6 +257,27 @@
     flex-wrap: wrap;
     margin-top: 1px;
   }
+  .mobile-cell-label {
+    display: block;
+    margin-top: 1px;
+    overflow: hidden;
+    line-height: 1.2;
+  }
+  .mobile-cell-title {
+    display: block;
+    font-size: 8px;
+    font-weight: 400;
+    color: var(--ink-mid);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .mobile-cell-more {
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--ink-light);
+  }
 
   /* Week view: compact for mobile */
   .week-view {
@@ -312,6 +334,62 @@
     width: 48px;
     height: 48px;
     font-size: 24px;
+  }
+}
+
+/* Weekly strip — hidden on desktop */
+.weekly-strip { display: none; }
+
+@media (max-width: 767px) {
+  .weekly-strip {
+    display: block;
+    margin-top: 16px;
+    border-top: 1px solid var(--cream-deep);
+    padding-top: 12px;
+  }
+  .weekly-strip-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .weekly-strip-events {
+    display: flex;
+    flex-direction: column;
+  }
+  .weekly-strip-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--cream-deep);
+  }
+  .weekly-strip-date {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-light);
+    width: 48px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .weekly-strip-title {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .weekly-strip-type {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    flex-shrink: 0;
   }
 }
 

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks,
   format, isSameMonth, isSameDay, isToday, isWeekend, parseISO,
   eachDayOfInterval,
 } from 'date-fns'
@@ -185,6 +185,9 @@ export default function CalendarPage() {
             onDayClick={handleDayClick}
           />
         )}
+
+        {/* Mobile weekly event strip */}
+        {isMobile && viewMode === 'month' && <WeeklyStrip posts={filteredPosts} />}
 
         {/* Selected day posts panel */}
         {selectedDay && !isMobile && (
@@ -403,6 +406,12 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay,
                   currentUser={currentUser} onClick={(e) => onPostClick(post, e)} />
               ))}
             </div>
+            {isMobileGrid && dayPosts.length > 0 && (
+              <div className="mobile-cell-label">
+                <span className="mobile-cell-title">{dayPosts[0].caption || dayPosts[0].content_type || 'Event'}</span>
+                {dayPosts.length > 1 && <span className="mobile-cell-more">+{dayPosts.length - 1}</span>}
+              </div>
+            )}
           </div>
         )
       })}
@@ -459,6 +468,14 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
 
 /* ─── Mobile Day Panel ─── */
 function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPostClick, onAdd }) {
+  const getEvType = (p) => {
+    if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
+    if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
+    if (p.platform === 'other-event' || p.content_type === 'other') return 'other'
+    return 'post'
+  }
+  const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+
   return (
     <div className="mobile-day-overlay" onClick={onClose}>
       <div className="mobile-day-panel" onClick={e => e.stopPropagation()}>
@@ -469,13 +486,96 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
           <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>&times;</button>
         </div>
         <div className="mobile-day-posts">
-          {posts.length === 0 && <p className="caption" style={{ padding: 16 }}>No posts for this day</p>}
-          {posts.map(post => (
-            <PostPill key={post.id} post={post} showAssignee={calendarView === 'master'}
-              currentUser={currentUser} onClick={(e) => onPostClick(post, e)} />
-          ))}
+          {posts.length === 0 && <p className="caption" style={{ padding: 16 }}>No events for this day</p>}
+          {posts.map(post => {
+            const evType = getEvType(post)
+            return (
+              <div key={post.id} onClick={(e) => onPostClick(post, e)}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--cream-deep)', cursor: 'pointer' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: dotColors[evType], flexShrink: 0, marginTop: 4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {post.caption || post.content_type || evType}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
+                    <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
+                      {evType}
+                    </span>
+                    {post.assigned_to && (
+                      <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
+                        {post.assigned_to}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
         <button className="btn-save" onClick={onAdd} style={{ margin: 16 }}>+ Add Post</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Mobile Weekly Event Strip ─── */
+function WeeklyStrip({ posts }) {
+  const [weekOffset, setWeekOffset] = useState(0)
+  const touchStartX = useRef(0)
+  const currentWeekStart = startOfWeek(addWeeks(new Date(), weekOffset))
+  const currentWeekEnd = endOfWeek(currentWeekStart)
+  const weekDays = eachDayOfInterval({ start: currentWeekStart, end: currentWeekEnd })
+
+  const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+  const getEvType = (p) => {
+    if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
+    if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
+    if (p.platform === 'other-event' || p.content_type === 'other') return 'other'
+    return 'post'
+  }
+
+  const weekEvents = posts.filter(p => {
+    const d = p.date
+    return d >= format(currentWeekStart, 'yyyy-MM-dd') && d <= format(currentWeekEnd, 'yyyy-MM-dd')
+  }).sort((a, b) => a.date.localeCompare(b.date))
+
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
+  const handleTouchEnd = (e) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      setWeekOffset(prev => diff > 0 ? prev + 1 : prev - 1)
+    }
+  }
+
+  return (
+    <div className="weekly-strip"
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="weekly-strip-header">
+        <button onClick={() => setWeekOffset(prev => prev - 1)}
+          style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', padding: '4px 8px' }}>&lsaquo;</button>
+        <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
+          {format(currentWeekStart, 'MMM d')} – {format(currentWeekEnd, 'MMM d')}
+        </span>
+        <button onClick={() => setWeekOffset(prev => prev + 1)}
+          style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', padding: '4px 8px' }}>&rsaquo;</button>
+      </div>
+      <div className="weekly-strip-events">
+        {weekEvents.length === 0 && (
+          <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', padding: '12px 0', textAlign: 'center' }}>
+            No events this week
+          </p>
+        )}
+        {weekEvents.map(ev => {
+          const evType = getEvType(ev)
+          return (
+            <div key={ev.id} className="weekly-strip-event">
+              <span className="weekly-strip-date">{format(parseISO(ev.date), 'EEE d')}</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: dotColors[evType], flexShrink: 0 }} />
+              <span className="weekly-strip-title">{ev.caption || ev.content_type || evType}</span>
+              <span className="weekly-strip-type">{evType}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
