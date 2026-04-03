@@ -591,8 +591,8 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
             )
           })}
         </div>
-        <div style={{ padding: '16px 20px' }}>
-          <button className="btn-save" onClick={onAdd} style={{ width: '100%' }}>+ Add Post</button>
+        <div style={{ padding: '40px 20px 24px', textAlign: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 300, color: 'var(--ink-light)', letterSpacing: 1, opacity: 0.5 }}>powered by forme</span>
         </div>
       </div>
     </div>
