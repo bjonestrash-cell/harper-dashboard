@@ -402,6 +402,151 @@
   }
 }
 
+/* ─── Desktop Day Modal ─── */
+.desktop-day-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,20,18,0.35);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ddmOverlayIn 250ms ease forwards;
+}
+@keyframes ddmOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.desktop-day-modal {
+  background: var(--cream);
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: ddmIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes ddmIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.ddm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid var(--cream-deep);
+}
+.ddm-date {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+.ddm-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  font-size: 18px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+.ddm-add-btn:hover { background: var(--pink-deep); }
+.ddm-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--ink-light);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 200ms ease;
+}
+.ddm-close:hover { color: var(--ink); }
+
+.ddm-events {
+  padding: 20px 32px 32px;
+}
+.ddm-empty {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink-light);
+  padding: 24px 0;
+  text-align: center;
+}
+.ddm-event-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--cream-deep);
+  cursor: pointer;
+  transition: background 150ms ease;
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.ddm-event-row:hover { background: var(--cream-mid); }
+.ddm-event-row:last-child { border-bottom: none; }
+.ddm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.ddm-event-body { flex: 1; min-width: 0; }
+.ddm-event-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  display: block;
+  line-height: 1.5;
+}
+.ddm-event-time {
+  font-size: 11px;
+  color: var(--ink-light);
+  display: block;
+  margin-top: 2px;
+}
+.ddm-event-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+.ddm-event-type {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.ddm-event-creator {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.ddm-delete {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--ink-light);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.ddm-event-row:hover .ddm-delete { opacity: 1; }
+
 /* ─── Desktop Week View (column-based) ─── */
 .dwv-grid {
   display: grid;

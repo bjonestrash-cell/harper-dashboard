@@ -189,61 +189,17 @@ export default function CalendarPage() {
         {/* Mobile weekly event strip */}
         {isMobile && viewMode === 'month' && <WeeklyStrip posts={filteredPosts} />}
 
-        {/* Selected day posts panel */}
+        {/* Desktop day detail modal */}
         {selectedDay && !isMobile && (
-          <div style={{ marginTop: 32, borderTop: '1px solid var(--cream-deep)', paddingTop: 24 }}>
-            <div style={{ marginBottom: 16 }}>
-              <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
-                {format(selectedDay, 'EEEE, MMMM d, yyyy')}
-              </span>
-            </div>
-
-            {selectedDayPosts.length === 0 ? (
-              <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>
-                Nothing scheduled for this day.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {selectedDayPosts.map(post => (
-                  <div key={post.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px',
-                    backgroundColor: 'var(--white)', border: '1px solid var(--cream-deep)',
-                  }}>
-                    <div style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      backgroundColor: post.platform === 'instagram' ? '#F4A7B9' : post.platform === 'tiktok' ? '#1a1a2e' : post.platform === 'email' ? '#A8D4A8' : '#C4B8A8',
-                    }}/>
-                    <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', width: 100, flexShrink: 0 }}>
-                      {post.platform === post.content_type || ['meeting', 'holiday', 'other-event'].includes(post.platform)
-                        ? post.content_type
-                        : `${post.platform} · ${post.content_type}`}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {post.caption || 'No caption'}
-                      {getMeetingTime(post) && <span style={{ fontSize: 10, color: 'var(--ink-light)', marginLeft: 8 }}>{formatTime12(getMeetingTime(post))}</span>}
-                    </span>
-                    <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0, color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
-                      {post.assigned_to}
-                    </span>
-                    <button onClick={(e) => { e.stopPropagation(); deletePost(post.id) }}
-                      style={{ background: 'none', border: 'none', color: 'var(--ink-light)', fontSize: 16, padding: 4, lineHeight: 1 }}>&times;</button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Daily notes section */}
-            <div style={{ marginTop: 32, borderTop: '1px solid var(--cream-deep)', paddingTop: 24 }}>
-              <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 20 }}>
-                Notes — {format(selectedDay, 'MMMM d')}
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                <DailyNoteColumn date={selectedDay} author="natalie" label="Natalie" accentColor="#F4A7B9" currentUser={currentUser} />
-                <DailyNoteColumn date={selectedDay} author="shared" label="Shared" accentColor="#C4B8A8" currentUser={currentUser} />
-                <DailyNoteColumn date={selectedDay} author="grace" label="Grace" accentColor="#D4C4A8" currentUser={currentUser} />
-              </div>
-            </div>
-          </div>
+          <DesktopDayModal
+            date={selectedDay}
+            posts={selectedDayPosts}
+            currentUser={currentUser}
+            onClose={() => setSelectedDay(null)}
+            onPostClick={handlePostClick}
+            onAddPost={() => openAddModal(selectedDay)}
+            onDeletePost={deletePost}
+          />
         )}
 
         {/* Recent Meeting Notes */}
@@ -575,6 +531,60 @@ function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClic
             </div>
           ))
         )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Desktop Day Modal ─── */
+function DesktopDayModal({ date, posts, currentUser, onClose, onPostClick, onAddPost, onDeletePost }) {
+  const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+  const getEvType = (p) => {
+    if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
+    if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
+    if (p.platform === 'other-event' || p.content_type === 'other') return 'other'
+    return 'post'
+  }
+
+  return (
+    <div className="desktop-day-overlay" onClick={onClose}>
+      <div className="desktop-day-modal" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="ddm-header">
+          <span className="ddm-date">{format(date, 'EEEE, MMMM d, yyyy')}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={onAddPost} className="ddm-add-btn">+</button>
+            <button onClick={onClose} className="ddm-close">&times;</button>
+          </div>
+        </div>
+
+        {/* Events */}
+        <div className="ddm-events">
+          {posts.length === 0 && (
+            <p className="ddm-empty">Nothing scheduled for this day.</p>
+          )}
+          {posts.map(post => {
+            const evType = getEvType(post)
+            return (
+              <div key={post.id} className="ddm-event-row" onClick={(e) => onPostClick(post, e)}>
+                <span className="ddm-dot" style={{ backgroundColor: dotColors[evType] }} />
+                <div className="ddm-event-body">
+                  <span className="ddm-event-title">{post.caption || post.content_type || evType}</span>
+                  {getMeetingTime(post) && <span className="ddm-event-time">{formatTime12(getMeetingTime(post))}</span>}
+                  <div className="ddm-event-meta">
+                    <span className="ddm-event-type" style={{ color: dotColors[evType] }}>{evType}</span>
+                    {post.assigned_to && (
+                      <span className="ddm-event-creator" style={{ color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
+                        {post.assigned_to}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); onDeletePost(post.id) }} className="ddm-delete">&times;</button>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

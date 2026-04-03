@@ -1,7 +1,7 @@
 import './PostPill.css'
 
-const EVENT_COLORS = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
-const EVENT_TEXT_COLORS = { post: '#8A4050', meeting: '#4A6A7A', holiday: '#7A6040', other: '#4A5A45' }
+const EVENT_COLORS = { post: '#ED95A0', meeting: '#96B8CC', holiday: '#CCAA82', other: '#A4B89E' }
+const EVENT_TEXT_COLORS = { post: '#6E2838', meeting: '#2E4E5E', holiday: '#5E4420', other: '#2E4228' }
 
 function getEventType(post) {
   if (post.platform === 'meeting' || post.content_type === 'meeting') return 'meeting'
