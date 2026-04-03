@@ -148,6 +148,24 @@
 }
 .week-cell:hover { background: var(--cream); }
 
+.week-event-block {
+  padding: 3px 6px;
+  border-left: 3px solid var(--cream-deep);
+  background: var(--cream);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.week-event-block:hover { background: var(--cream-deep); }
+.week-event-title {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Mobile day panel */
 .mobile-day-overlay {
   position: fixed;

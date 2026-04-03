@@ -452,10 +452,16 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
               const dayPosts = posts.filter(p => p.date === dateStr)
               return (
                 <div key={day.toString()} className="week-cell" onClick={() => onDayClick(day)}>
-                  {hour === 9 && dayPosts.map(post => (
-                    <PostPill key={post.id} post={post} showAssignee={calendarView === 'master'}
-                      currentUser={currentUser} onClick={(e) => onPostClick(post, e)} />
-                  ))}
+                  {hour === 9 && dayPosts.map(post => {
+                    const evType = post.platform === 'meeting' || post.content_type === 'meeting' ? 'meeting' : post.platform === 'holiday' || post.content_type === 'holiday' ? 'holiday' : post.platform === 'other-event' || post.content_type === 'other' ? 'other' : 'post'
+                    const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+                    return (
+                      <div key={post.id} className="week-event-block" onClick={(e) => onPostClick(post, e)}
+                        style={{ borderLeftColor: dotColors[evType] }}>
+                        <span className="week-event-title">{post.caption || post.content_type || evType}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })}
@@ -521,7 +527,6 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
 /* ─── Mobile Weekly Event Strip ─── */
 function WeeklyStrip({ posts }) {
   const [weekOffset, setWeekOffset] = useState(0)
-  const touchStartX = useRef(0)
   const currentWeekStart = startOfWeek(addWeeks(new Date(), weekOffset))
   const currentWeekEnd = endOfWeek(currentWeekStart)
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: currentWeekEnd })
@@ -539,21 +544,20 @@ function WeeklyStrip({ posts }) {
     return d >= format(currentWeekStart, 'yyyy-MM-dd') && d <= format(currentWeekEnd, 'yyyy-MM-dd')
   }).sort((a, b) => a.date.localeCompare(b.date))
 
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
-  const handleTouchEnd = (e) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 50) {
-      setWeekOffset(prev => diff > 0 ? prev + 1 : prev - 1)
-    }
-  }
-
   return (
-    <div className="weekly-strip"
-      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="weekly-strip">
       <div className="weekly-strip-header">
+        <button onClick={() => setWeekOffset(prev => prev - 1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-light)', padding: '4px 8px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
           {format(currentWeekStart, 'MMM d')} – {format(currentWeekEnd, 'MMM d')}
         </span>
+        <button onClick={() => setWeekOffset(prev => prev + 1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-light)', padding: '4px 8px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
       <div className="weekly-strip-events">
         {weekEvents.length === 0 && (
