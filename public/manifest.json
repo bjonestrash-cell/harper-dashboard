@@ -1,0 +1,15 @@
+{
+  "name": "Harper",
+  "short_name": "Harper",
+  "start_url": "/calendar",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#1A1412",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
