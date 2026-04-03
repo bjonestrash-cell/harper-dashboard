@@ -552,7 +552,13 @@ function MobileWeekView({ weekDays, posts, calendarView, currentUser, onPostClic
       {/* Event list */}
       <div className="mwv-events">
         {selectedDay && (
-          <div className="mwv-date-label">{format(selectedDay, 'EEEE, MMMM d')}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="mwv-date-label">{format(selectedDay, 'EEEE, MMMM d')}</div>
+            <span onClick={() => setSelectedDay(null)} style={{
+              fontSize: 10, fontWeight: 400, color: 'var(--ink-light)', letterSpacing: 0.5,
+              cursor: 'pointer', padding: '4px 0',
+            }}>View all</span>
+          </div>
         )}
 
         {displayEvents.length === 0 && (

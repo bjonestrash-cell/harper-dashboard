@@ -132,7 +132,7 @@ export default function TasksPage() {
 
   return (
     <div className="tasks-page">
-      <PageHeader title="Tasks" />
+      <PageHeader title="To Do's" />
 
       <div className="page-container">
         <MonthSelector />

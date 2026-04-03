@@ -442,19 +442,31 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* ───── PAGE LOAD ANIMATION ───── */
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .page-container {
-  animation: pageIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  animation: pageIn 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .page-container > *:nth-child(1) { animation-delay: 0ms; }
-.page-container > *:nth-child(2) { animation-delay: 60ms; }
-.page-container > *:nth-child(3) { animation-delay: 120ms; }
-.page-container > *:nth-child(4) { animation-delay: 180ms; }
-.page-container > *:nth-child(5) { animation-delay: 240ms; }
+.page-container > *:nth-child(2) { animation-delay: 90ms; }
+.page-container > *:nth-child(3) { animation-delay: 180ms; }
+.page-container > *:nth-child(4) { animation-delay: 270ms; }
+.page-container > *:nth-child(5) { animation-delay: 360ms; }
+.page-container > *:nth-child(6) { animation-delay: 450ms; }
 .page-container > * {
-  animation: pageIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  animation: pageIn 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 767px) {
+  .page-container > * {
+    animation-duration: 400ms;
+  }
+  .page-container > *:nth-child(2) { animation-delay: 60ms; }
+  .page-container > *:nth-child(3) { animation-delay: 120ms; }
+  .page-container > *:nth-child(4) { animation-delay: 180ms; }
+  .page-container > *:nth-child(5) { animation-delay: 240ms; }
+  .page-container > *:nth-child(6) { animation-delay: 300ms; }
 }
 
 /* ───── MOBILE NATIVE FEEL ───── */

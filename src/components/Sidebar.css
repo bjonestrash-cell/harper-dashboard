@@ -32,11 +32,11 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 24px;
-  border-radius: 12px;
-  background: var(--pink);
-  color: var(--white);
+  width: 28px;
+  height: 18px;
+  border-radius: 9px;
+  background: rgba(244,167,185,0.15);
+  color: rgba(255,255,255,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,14 +45,15 @@
   z-index: 51;
 }
 .sidebar-toggle:hover {
-  background: var(--pink-deep);
+  background: rgba(244,167,185,0.3);
+  color: rgba(255,255,255,0.7);
 }
 .sidebar.collapsed .sidebar-toggle {
   position: static;
   align-self: center;
   margin-bottom: 8px;
-  width: 32px;
-  height: 22px;
+  width: 28px;
+  height: 18px;
 }
 
 .sidebar-logo {
@@ -161,12 +162,12 @@
   right: 0;
   background: var(--ink);
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  justify-content: space-around;
   z-index: 9999;
-  min-height: 56px;
-  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  height: 56px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 -2px 12px rgba(26,20,18,0.1);
 }
 
 .mobile-nav-item {
@@ -175,19 +176,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 0;
-  height: 44px;
+  gap: 4px;
+  padding: 8px 0;
   text-decoration: none;
   color: rgba(255,255,255,0.4);
   transition: color 150ms ease;
+  min-width: 0;
 }
 .mobile-nav-item.active {
   color: var(--pink);
 }
 .mobile-nav-item svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 
@@ -197,6 +198,10 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 @media (min-width: 768px) {
