@@ -406,13 +406,13 @@
 .desktop-day-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(26,20,18,0.35);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(6px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: ddmOverlayIn 250ms ease forwards;
+  animation: ddmOverlayIn 300ms ease forwards;
 }
 @keyframes ddmOverlayIn {
   from { opacity: 0; }
@@ -420,21 +420,22 @@
 }
 .desktop-day-modal {
   background: var(--cream);
-  width: 520px;
-  max-width: 90vw;
-  max-height: 80vh;
+  width: 60%;
+  max-width: 800px;
+  min-height: 480px;
+  max-height: 85vh;
   overflow-y: auto;
-  animation: ddmIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: ddmIn 400ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
 }
 @keyframes ddmIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 .ddm-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28px 32px 20px;
+  padding: 40px 48px 28px;
   border-bottom: 1px solid var(--cream-deep);
 }
 .ddm-date {
@@ -473,7 +474,7 @@
 .ddm-close:hover { color: var(--ink); }
 
 .ddm-events {
-  padding: 20px 32px 32px;
+  padding: 28px 48px 48px;
 }
 .ddm-empty {
   font-size: 13px;

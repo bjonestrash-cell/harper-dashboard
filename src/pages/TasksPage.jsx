@@ -116,12 +116,6 @@ export default function TasksPage() {
         </div>
         <button className="kanban-add" onClick={() => handleAddTaskModal(user)}>+</button>
       </div>
-      <div className="quick-add-row">
-        <input placeholder="Quick add task..."
-          value={quickAdd[user]}
-          onChange={(e) => setQuickAdd(prev => ({ ...prev, [user]: e.target.value }))}
-          onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd(user)} />
-      </div>
       <div className="kanban-tasks">
         {activeTasks(taskList).map(task => (
           <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} />
@@ -253,7 +247,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     description: task?.description || '',
     assigned_to: task?.assigned_to || defaultUser,
     due_date: task?.due_date || '',
-    priority: task?.priority || 'normal',
+    priority: task?.priority || '#F4A7B9',
     status: task?.status || 'todo',
   })
   const [saving, setSaving] = useState(false)
@@ -288,39 +282,50 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
           onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>&times;</button>
 
-        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
-          {task ? 'Edit Task' : 'New Task'}
+        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 32 }}>
+          {task ? 'Edit To Do' : 'New To Do'}
         </h2>
 
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <label className="form-label">Title</label>
-          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Task title" />
+          <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="What needs to be done?" />
         </div>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <label className="form-label">Description</label>
           <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Details..." />
         </div>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <label className="form-label">Assigned to</label>
           <PillSelect options={['natalie', 'grace']} value={form.assigned_to} onChange={(v) => update('assigned_to', v)} />
         </div>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <label className="form-label">Due Date</label>
           <DatePicker value={form.due_date} onChange={(v) => update('due_date', v)} />
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <label className="form-label">Priority</label>
-          <PillSelect options={['high', 'normal', 'low']} value={form.priority} onChange={(v) => update('priority', v)} />
+        <div style={{ marginBottom: 28 }}>
+          <label className="form-label">Color</label>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            {['#F4A7B9', '#B5C4B1', '#A8C4D4', '#D4B896', '#C4A8D4', '#1A1412'].map(c => (
+              <button key={c} onClick={() => update('priority', c)}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%', border: 'none',
+                  backgroundColor: c, cursor: 'pointer', transition: 'all 200ms ease',
+                  outline: form.priority === c ? `2px solid ${c}` : 'none',
+                  outlineOffset: 3,
+                  transform: form.priority === c ? 'scale(1.15)' : 'scale(1)',
+                }} />
+            ))}
+          </div>
         </div>
         <div style={{ marginBottom: 32 }}>
           <label className="form-label">Status</label>
-          <PillSelect options={['todo', 'in-progress', 'done']} value={form.status} onChange={(v) => update('status', v)} />
+          <PillSelect options={[{ value: 'todo', label: 'To Do' }, { value: 'in-progress', label: 'In Progress' }, { value: 'done', label: 'Done' }]} value={form.status} onChange={(v) => update('status', v)} />
         </div>
 
         <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {task && (
           <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none' }}
-            onClick={handleDelete}>Delete task</button>
+            onClick={handleDelete}>Delete to do</button>
         )}
       </div>
     </Modal>
