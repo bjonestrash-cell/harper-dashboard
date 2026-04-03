@@ -175,46 +175,6 @@ export default function PromotionsPage() {
           })}
         </div>
 
-        {/* Order Volume — flat, no box */}
-        <div style={{ paddingTop: 32, borderTop: '1px solid var(--cream-deep)' }}>
-          <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 24 }}>Order Volume</span>
-
-          {orderLog.map(o => (
-            <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--cream-deep)' }}>
-              <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', width: 80 }}>{format(parseISO(o.date), 'MMM d')}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', width: 60 }}>{o.orders}</span>
-              <span style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', flex: 1 }}>{o.notes}</span>
-            </div>
-          ))}
-
-          {orderLog.length > 0 && (
-            <div style={{ display: 'flex', gap: 24, fontSize: 12, fontWeight: 300, color: 'var(--ink-mid)', padding: '12px 0' }}>
-              <span>Total: <strong>{totalOrders}</strong></span>
-              {peakDay && <span>Peak: <strong>{peakDay.orders}</strong> on {format(parseISO(peakDay.date), 'MMM d')}</span>}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 24, padding: '16px 0', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1 }}>
-              <DatePicker label="Date" value={orderForm.date} onChange={(v) => setOrderForm(prev => ({ ...prev, date: v }))} />
-            </div>
-            <div style={{ width: 80 }}>
-              <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Orders</span>
-              <input type="number" placeholder="#" value={orderForm.orders} onChange={(e) => setOrderForm(prev => ({ ...prev, orders: e.target.value }))} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', display: 'block', marginBottom: 8 }}>Notes</span>
-              <input type="text" placeholder="Notes" value={orderForm.notes} onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))} />
-            </div>
-            <button onClick={handleAddOrder}
-              style={{
-                padding: '8px 20px', borderRadius: 9999, border: 'none',
-                backgroundColor: 'var(--ink)', color: 'var(--cream)',
-                fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
-                fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease', flexShrink: 0,
-              }}>Add</button>
-          </div>
-        </div>
       </div>
 
       {/* Floating + button */}

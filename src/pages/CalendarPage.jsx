@@ -192,16 +192,10 @@ export default function CalendarPage() {
         {/* Selected day posts panel */}
         {selectedDay && !isMobile && (
           <div style={{ marginTop: 32, borderTop: '1px solid var(--cream-deep)', paddingTop: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ marginBottom: 16 }}>
               <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
-                {format(selectedDay, 'MMMM d, yyyy')}
+                {format(selectedDay, 'EEEE, MMMM d, yyyy')}
               </span>
-              <button
-                onClick={() => openAddModal(selectedDay)}
-                className="add-post-inline"
-              >
-                + Add Post
-              </button>
             </div>
 
             {selectedDayPosts.length === 0 ? (
@@ -220,7 +214,9 @@ export default function CalendarPage() {
                       backgroundColor: post.platform === 'instagram' ? '#F4A7B9' : post.platform === 'tiktok' ? '#1a1a2e' : post.platform === 'email' ? '#A8D4A8' : '#C4B8A8',
                     }}/>
                     <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', width: 100, flexShrink: 0 }}>
-                      {post.platform} &middot; {post.content_type}
+                      {post.platform === post.content_type || ['meeting', 'holiday', 'other-event'].includes(post.platform)
+                        ? post.content_type
+                        : `${post.platform} · ${post.content_type}`}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.caption || 'No caption'}

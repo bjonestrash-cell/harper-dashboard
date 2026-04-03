@@ -136,10 +136,13 @@
 
 /* Mobile */
 @media (max-width: 767px) {
-  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat-card { padding: 16px 8px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .stat-card { padding: 20px 12px; }
   .stat-value { font-size: 28px; }
   .stat-label { font-size: 9px; letter-spacing: 2px; }
+
+  .timeline-section { margin-bottom: 24px; }
+  .promos-list { gap: 16px; margin-bottom: 24px; }
 
   .timeline-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 

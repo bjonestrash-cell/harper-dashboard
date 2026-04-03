@@ -249,50 +249,24 @@ export default function IdeasPage() {
 }
 
 const LIVE_TIMES = [
-  { day: 'Tuesday', time: '7–9pm EST', heat: 0.9 },
-  { day: 'Thursday', time: '7–9pm EST', heat: 0.95 },
-  { day: 'Sunday', time: '3–5pm EST', heat: 0.85 },
-  { day: 'Saturday', time: '12–2pm EST', heat: 0.7 },
-  { day: 'Wednesday', time: '8–10pm EST', heat: 0.65 },
-]
-
-const ALL_LIVE_PROMPTS = [
-  'Style 3 looks under $50',
-  '11:11 make a wish unboxing',
-  'This or That: gold vs silver',
-  'Guess the price challenge',
-  'Blind box mystery jewelry picks',
-  'Rate my ring stack 1–10',
-  'New arrivals try-on haul',
-  'Gift guide: under $40 for her',
-  'Restock alert — what sold out last week',
-  'Build a set from scratch with me',
-  'Jewelry for every zodiac sign',
-  'POV: you\'re treating yourself',
-]
-
-const TOP_HOOKS = [
-  'Stay for the giveaway at the end...',
-  'I\'m about to show you the piece everyone\'s been asking about',
-  'This just dropped and it\'s already almost gone',
-  'Don\'t scroll — this one\'s under $40',
-  'You\'re gonna want to see this before it sells out',
+  { day: 'Thursday', time: '5–7pm PST', heat: 0.95 },
+  { day: 'Tuesday', time: '5–7pm PST', heat: 0.9 },
+  { day: 'Sunday', time: '12–2pm PST', heat: 0.88 },
+  { day: 'Wednesday', time: '6–8pm PST', heat: 0.82 },
+  { day: 'Saturday', time: '11am–1pm PST', heat: 0.78 },
+  { day: 'Friday', time: '7–9pm PST', heat: 0.72 },
+  { day: 'Monday', time: '5–7pm PST', heat: 0.65 },
 ]
 
 function TikTokShopLiveSection() {
-  const [prompts, setPrompts] = useState(() => shuffleArray(ALL_LIVE_PROMPTS).slice(0, 6))
-
-  const refreshPrompts = () => {
-    setPrompts(shuffleArray(ALL_LIVE_PROMPTS).slice(0, 6))
-  }
-
   return (
     <section className="ideas-section">
       <h2 className="ideas-section-title">TikTok Shop Live</h2>
-
-      {/* Best Times */}
       <div className="tiktok-subsection">
         <h3 className="tiktok-sub-title">Best Times to Go Live</h3>
+        <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 16, lineHeight: 1.5 }}>
+          Peak windows for US women 18–34 shopping fashion and jewelry on TikTok Live
+        </p>
         <div className="live-times-grid">
           {LIVE_TIMES.map((slot, i) => (
             <div key={i} className="live-time-row">
@@ -301,38 +275,6 @@ function TikTokShopLiveSection() {
                 <div className="live-time-bar-fill" style={{ width: `${slot.heat * 100}%` }} />
               </div>
               <span className="live-time-label">{slot.time}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Live Content Prompts */}
-      <div className="tiktok-subsection">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 className="tiktok-sub-title" style={{ marginBottom: 0 }}>Live Content Prompts</h3>
-          <button onClick={refreshPrompts} style={{
-            background: 'none', border: 'none', fontSize: 10, fontWeight: 500,
-            letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pink-deep)',
-            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-          }}>Refresh</button>
-        </div>
-        <div className="live-prompts-grid">
-          {prompts.map((prompt, i) => (
-            <div key={i} className="live-prompt-card">
-              <span className="live-prompt-number">{String(i + 1).padStart(2, '0')}</span>
-              <span className="live-prompt-text">{prompt}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Top Hooks */}
-      <div className="tiktok-subsection">
-        <h3 className="tiktok-sub-title">Top Performing Hooks</h3>
-        <div className="live-hooks">
-          {TOP_HOOKS.map((hook, i) => (
-            <div key={i} className="live-hook-row">
-              <span className="live-hook-quote">"{hook}"</span>
             </div>
           ))}
         </div>
