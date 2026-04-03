@@ -474,6 +474,7 @@ function WeekView({ currentMonth, posts, calendarView, currentUser, onPostClick,
 
 /* ─── Mobile Day Panel ─── */
 function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPostClick, onAdd }) {
+  const [closing, setClosing] = useState(false)
   const getEvType = (p) => {
     if (p.platform === 'meeting' || p.content_type === 'meeting') return 'meeting'
     if (p.platform === 'holiday' || p.content_type === 'holiday') return 'holiday'
@@ -482,33 +483,49 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
   }
   const dotColors = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
 
+  const handleClose = () => {
+    setClosing(true)
+    setTimeout(onClose, 250)
+  }
+
   return (
-    <div className="mobile-day-overlay" onClick={onClose}>
-      <div className="mobile-day-panel" onClick={e => e.stopPropagation()}>
+    <div className={`mobile-day-overlay ${closing ? 'closing' : ''}`} onClick={handleClose}>
+      <div className={`mobile-day-panel ${closing ? 'closing' : ''}`} onClick={e => e.stopPropagation()}>
         <div className="mobile-day-header">
           <h3 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
             {format(date, 'EEEE, MMMM d')}
           </h3>
-          <button onClick={onClose} style={{ fontSize: 20, color: 'var(--ink-light)' }}>&times;</button>
+          <button className="mobile-day-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="mobile-day-posts">
-          {posts.length === 0 && <p className="caption" style={{ padding: 16 }}>No events for this day</p>}
+          {posts.length === 0 && (
+            <p style={{ padding: '40px 0', textAlign: 'center', fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>
+              Nothing scheduled
+            </p>
+          )}
           {posts.map(post => {
             const evType = getEvType(post)
             return (
               <div key={post.id} onClick={(e) => onPostClick(post, e)}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--cream-deep)', cursor: 'pointer' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: dotColors[evType], flexShrink: 0, marginTop: 4 }} />
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 0', borderBottom: '1px solid var(--cream-deep)', cursor: 'pointer' }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: dotColors[evType], flexShrink: 0, marginTop: 3 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 15, fontWeight: 400, color: 'var(--ink)', lineHeight: 1.5 }}>
                     {post.caption || post.content_type || evType}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
-                    <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                    <span style={{
+                      fontSize: 9, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                      color: dotColors[evType], backgroundColor: 'var(--white)',
+                      padding: '2px 8px', borderRadius: 9999,
+                    }}>
                       {evType}
                     </span>
                     {post.assigned_to && (
-                      <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)' }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
+                        color: post.assigned_to === 'natalie' ? '#D4849A' : 'var(--ink-light)',
+                      }}>
                         {post.assigned_to}
                       </span>
                     )}
@@ -518,7 +535,9 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
             )
           })}
         </div>
-        <button className="btn-save" onClick={onAdd} style={{ margin: 16 }}>+ Add Post</button>
+        <div style={{ padding: '16px 20px' }}>
+          <button className="btn-save" onClick={onAdd} style={{ width: '100%' }}>+ Add Post</button>
+        </div>
       </div>
     </div>
   )

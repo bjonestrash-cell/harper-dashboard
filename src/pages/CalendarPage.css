@@ -166,34 +166,78 @@
   white-space: nowrap;
 }
 
-/* Mobile day panel */
+/* Mobile day panel — full screen modal */
 .mobile-day-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(26,20,18,0.4);
+  background: rgba(26,20,18,0.45);
   z-index: 90;
-  display: flex;
-  align-items: flex-end;
+  animation: overlayIn 200ms ease forwards;
 }
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mobile-day-overlay.closing {
+  animation: overlayOut 250ms ease forwards;
+}
+@keyframes overlayOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 .mobile-day-panel {
-  background: var(--white);
-  width: 100%;
-  max-height: 60vh;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: var(--cream);
   overflow-y: auto;
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
+  animation: panelSlideUp 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  z-index: 91;
 }
+@keyframes panelSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.mobile-day-panel.closing {
+  animation: panelSlideDown 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes panelSlideDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
 .mobile-day-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 16px 12px;
+  padding: 24px 20px 16px;
   border-bottom: 1px solid var(--cream-deep);
+  position: sticky;
+  top: 0;
+  background: var(--cream);
+  z-index: 2;
 }
+.mobile-day-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--ink-light);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 150ms ease;
+}
+.mobile-day-close:hover { color: var(--ink); }
+
 .mobile-day-posts {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
+  padding: 20px;
 }
 
 /* Floating Add Post button */
