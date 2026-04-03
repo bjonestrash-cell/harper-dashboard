@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 import './IdeasPage.css'
 
@@ -113,19 +113,16 @@ export default function IdeasPage() {
             fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
             fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
           }}>
-          {loading ? 'Generating...' : 'Refresh Ideas'}
+          {loading ? 'Refreshing...' : 'Refresh Ideas'}
         </button>
       </PageHeader>
 
       <div className="page-container">
-        {loading && !data && (
-          <div className="ideas-loading">
-            <div className="ideas-loading-dot" />
-            <span>Generating ideas for Harper Jewelry...</span>
-          </div>
+        {loading && (
+          <IdeasLoadingState />
         )}
 
-        {error && !data && (
+        {!loading && error && !data && (
           <div className="ideas-empty">
             <p>Could not load ideas. Check your API key or try again.</p>
             <button onClick={fetchIdeas} style={{
@@ -136,8 +133,8 @@ export default function IdeasPage() {
           </div>
         )}
 
-        {data && (
-          <>
+        {!loading && data && (
+          <div className="ideas-content-fade-in">
             {/* TRENDING NOW */}
             <section className="ideas-section">
               <h2 className="ideas-section-title">Trending Now</h2>
@@ -190,9 +187,36 @@ export default function IdeasPage() {
                 ))}
               </div>
             </section>
-          </>
+          </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const LOADING_PHRASES = ['Scanning trends...', 'Reading the moment...', 'Curating for Harper...', 'Almost there...']
+
+function IdeasLoadingState() {
+  const [phraseIdx, setPhraseIdx] = useState(0)
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setPhraseIdx(prev => (prev + 1) % LOADING_PHRASES.length)
+        setVisible(true)
+      }, 300)
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="ideas-loading-container">
+      <div className="ideas-loading-ring" />
+      <span className="ideas-loading-text" style={{ opacity: visible ? 1 : 0 }}>
+        {LOADING_PHRASES[phraseIdx]}
+      </span>
     </div>
   )
 }

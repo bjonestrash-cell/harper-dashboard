@@ -19,26 +19,45 @@
 }
 
 /* Loading */
-.ideas-loading {
+.ideas-loading-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 48px 0;
   justify-content: center;
-  color: var(--ink-light);
-  font-size: 13px;
-  font-weight: 300;
+  gap: 24px;
+  padding: 120px 0 160px;
 }
-.ideas-loading-dot {
-  width: 8px;
-  height: 8px;
+
+.ideas-loading-ring {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--pink);
-  animation: pulse 1.2s ease-in-out infinite;
+  border: 2px solid var(--cream-deep);
+  border-top-color: var(--ink);
+  animation: spin 1s linear infinite;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ideas-loading-text {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  font-family: 'Inter', sans-serif;
+  transition: opacity 0.3s ease;
+}
+
+/* Content fade-in */
+.ideas-content-fade-in {
+  animation: fadeInContent 0.3s ease forwards;
+}
+@keyframes fadeInContent {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .ideas-empty {

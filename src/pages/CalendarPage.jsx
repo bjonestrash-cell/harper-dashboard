@@ -151,6 +151,16 @@ export default function CalendarPage() {
       <div className="page-container">
         <MonthSelector />
 
+        {/* Color legend */}
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 20 }}>
+          {[{l:'Post',c:'#F2A7B0'},{l:'Meeting',c:'#A8C4D4'},{l:'Holiday',c:'#D4B896'},{l:'Other',c:'#B5C4B1'}].map(i => (
+            <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: i.c, flexShrink: 0 }} />
+              <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--ink-light)' }}>{i.l}</span>
+            </div>
+          ))}
+        </div>
+
         {viewMode === 'month' ? (
           <MonthGrid
             days={days}
@@ -477,8 +487,13 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
   )
 }
 
-/* ─── Post Modal ─── */
+/* ─── Event Type Colors ─── */
+const EVENT_COLORS = { post: '#F2A7B0', meeting: '#A8C4D4', holiday: '#D4B896', other: '#B5C4B1' }
+const EVENT_TYPES = ['post', 'meeting', 'holiday', 'other']
+
+/* ─── Post/Event Modal ─── */
 function PostModal({ date, post, currentUser, setPosts, onClose }) {
+  const [eventType, setEventType] = useState(post?.content_type === 'meeting' || post?.content_type === 'holiday' ? post.content_type : (post?.platform === 'meeting' || post?.platform === 'holiday' || post?.platform === 'other-event' ? post.platform.replace('-event','') : 'post'))
   const [form, setForm] = useState({
     platform: post?.platform || 'instagram',
     content_type: post?.content_type || 'Post',
@@ -492,7 +507,16 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const payload = { ...form, date, updated_at: new Date().toISOString() }
+      let payload
+      if (eventType === 'post') {
+        payload = { ...form, date, updated_at: new Date().toISOString() }
+      } else if (eventType === 'meeting') {
+        payload = { date, platform: 'meeting', content_type: 'meeting', caption: form.caption, status: form.status || 'scheduled', assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
+      } else if (eventType === 'holiday') {
+        payload = { date, platform: 'holiday', content_type: 'holiday', caption: form.caption, status: form.status || 'scheduled', assigned_to: 'both', updated_at: new Date().toISOString() }
+      } else {
+        payload = { date, platform: 'other-event', content_type: 'other', caption: form.caption, status: form.status || 'draft', assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
+      }
       if (post) {
         const { data, error } = await supabase.from('calendar_posts').update(payload).eq('id', post.id).select()
         if (!error && data?.[0]) setPosts(prev => prev.map(p => p.id === post.id ? data[0] : p))
@@ -501,7 +525,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
         if (!error && data?.[0]) setPosts(prev => { if (prev.find(p => p.id === data[0].id)) return prev; return [...prev, data[0]] })
       }
       onClose()
-    } catch (err) { console.error('Error saving post:', err) }
+    } catch (err) { console.error('Error saving:', err) }
     finally { setSaving(false) }
   }
 
@@ -513,17 +537,14 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
   }
 
   const contentTypes = CONTENT_TYPES[form.platform] || ['Post']
+  const titles = { post: post ? 'Edit Post' : 'New Post', meeting: post ? 'Edit Meeting' : 'New Meeting', holiday: post ? 'Edit Holiday' : 'New Holiday', other: post ? 'Edit Event' : 'New Event' }
+  const inputStyle = { width: '100%', border: 'none', borderBottom: '1px solid var(--cream-deep)', background: 'transparent', padding: '10px 0', fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 300, color: 'var(--ink)', outline: 'none' }
 
   const PillSelect = ({ options, value, onChange }) => (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       {options.map(opt => (
         <button key={opt} onClick={() => onChange(opt)}
-          style={{
-            padding: '6px 16px', borderRadius: 20, border: 'none',
-            backgroundColor: value === opt ? 'var(--ink)' : 'var(--cream-mid)',
-            color: value === opt ? 'var(--cream)' : 'var(--ink-mid)',
-            fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease',
-          }}>{opt}</button>
+          style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', backgroundColor: value === opt ? 'var(--ink)' : 'var(--cream-mid)', color: value === opt ? 'var(--cream)' : 'var(--ink-mid)', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease' }}>{opt}</button>
       ))}
     </div>
   )
@@ -532,37 +553,102 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
     <Modal onClose={onClose}>
       <div style={{ padding: 32, position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-light)', lineHeight: 1, padding: 4 }}>&times;</button>
-        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>
-          {post ? 'Edit Post' : 'New Post'}
+        <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 20 }}>
+          {titles[eventType]}
         </h2>
-        {date && <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 24 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}
+        {date && <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 20 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}
 
+        {/* Event type selector */}
         <div style={{ marginBottom: 24 }}>
-          <label className="form-label">Platform</label>
-          <PillSelect options={PLATFORMS} value={form.platform} onChange={(v) => { update('platform', v); update('content_type', CONTENT_TYPES[v]?.[0] || 'Post') }} />
+          <label className="form-label">Type</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {EVENT_TYPES.map(t => (
+              <button key={t} onClick={() => setEventType(t)}
+                style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', backgroundColor: eventType === t ? EVENT_COLORS[t] : 'var(--cream-mid)', color: eventType === t ? '#fff' : 'var(--ink-mid)', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease' }}>{t}</button>
+            ))}
+          </div>
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <label className="form-label">Content Type</label>
-          <PillSelect options={contentTypes} value={form.content_type} onChange={(v) => update('content_type', v)} />
-        </div>
-        <div style={{ marginBottom: 24 }}>
-          <label className="form-label">Caption / Copy</label>
-          <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Write your caption..."
-            style={{ width: '100%', border: 'none', borderBottom: '1px solid var(--cream-deep)', background: 'transparent', padding: '10px 0', fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 300, color: 'var(--ink)', outline: 'none', resize: 'vertical' }}
-            onFocus={(e) => e.target.style.borderBottomColor = 'var(--pink-deep)'} onBlur={(e) => e.target.style.borderBottomColor = 'var(--cream-deep)'} />
-        </div>
-        <div style={{ marginBottom: 24 }}>
-          <label className="form-label">Status</label>
-          <PillSelect options={STATUSES} value={form.status} onChange={(v) => update('status', v)} />
-        </div>
-        <div style={{ marginBottom: 32 }}>
-          <label className="form-label">Assigned to</label>
-          <PillSelect options={ASSIGNEES.map(capitalize)} value={capitalize(form.assigned_to)} onChange={(v) => update('assigned_to', v.toLowerCase())} />
-        </div>
+
+        {/* POST fields */}
+        {eventType === 'post' && (<>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Platform</label>
+            <PillSelect options={PLATFORMS} value={form.platform} onChange={(v) => { update('platform', v); update('content_type', CONTENT_TYPES[v]?.[0] || 'Post') }} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Content Type</label>
+            <PillSelect options={contentTypes} value={form.content_type} onChange={(v) => update('content_type', v)} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Caption / Copy</label>
+            <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Write your caption..." style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Status</label>
+            <PillSelect options={STATUSES} value={form.status} onChange={(v) => update('status', v)} />
+          </div>
+          <div style={{ marginBottom: 32 }}>
+            <label className="form-label">Assigned to</label>
+            <PillSelect options={ASSIGNEES.map(capitalize)} value={capitalize(form.assigned_to)} onChange={(v) => update('assigned_to', v.toLowerCase())} />
+          </div>
+        </>)}
+
+        {/* MEETING fields */}
+        {eventType === 'meeting' && (<>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Title</label>
+            <input type="text" value={form.content_type === 'meeting' ? form.caption.split('\n')[0] || '' : form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Meeting title" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Attendees</label>
+            <PillSelect options={ASSIGNEES.map(capitalize)} value={capitalize(form.assigned_to)} onChange={(v) => update('assigned_to', v.toLowerCase())} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Location / Link</label>
+            <input type="text" value={form.status} onChange={(e) => update('status', e.target.value)} placeholder="Zoom link or address" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 32 }}>
+            <label className="form-label">Notes</label>
+            <textarea rows={3} value={form.content_type === 'meeting' ? '' : ''} onChange={() => {}} placeholder="Meeting notes..." style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+        </>)}
+
+        {/* HOLIDAY fields */}
+        {eventType === 'holiday' && (<>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Holiday Name</label>
+            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Mother's Day" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Category</label>
+            <PillSelect options={['federal', 'cultural', 'retail', 'custom']} value={form.status} onChange={(v) => update('status', v)} />
+          </div>
+          <div style={{ marginBottom: 32 }}>
+            <label className="form-label">Notes</label>
+            <textarea rows={2} value={''} onChange={() => {}} placeholder="Content angle or reminder..." style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+        </>)}
+
+        {/* OTHER fields */}
+        {eventType === 'other' && (<>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Title</label>
+            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Notes</label>
+            <textarea rows={3} value={''} onChange={() => {}} placeholder="Details..." style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+          <div style={{ marginBottom: 32 }}>
+            <label className="form-label">Assigned to</label>
+            <PillSelect options={ASSIGNEES.map(capitalize)} value={capitalize(form.assigned_to)} onChange={(v) => update('assigned_to', v.toLowerCase())} />
+          </div>
+        </>)}
+
         <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {post && (
           <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none' }}
-            onClick={handleDelete}>Delete post</button>
+            onClick={handleDelete}>Delete</button>
         )}
       </div>
     </Modal>
