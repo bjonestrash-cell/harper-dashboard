@@ -60,18 +60,23 @@
   padding: 20px 20px 12px;
 }
 .feed-ig-avatar {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: var(--pink);
-  color: white;
+  background: #FFFFFF;
+  border: 1px solid var(--cream-deep);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Horizon', 'Inter', sans-serif;
-  font-size: 20px;
-  font-weight: 500;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.feed-ig-avatar-text {
+  font-family: 'Horizon', 'Inter', sans-serif;
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: var(--ink);
+  font-weight: normal;
 }
 .feed-ig-stats {
   display: flex;
@@ -105,7 +110,23 @@
   font-weight: 600;
   color: var(--ink);
 }
+.feed-ig-handle {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-light);
+}
+.feed-ig-category {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-light);
+  opacity: 0.7;
+}
 .feed-ig-name span {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink);
+}
+.feed-ig-features {
   font-size: 12px;
   font-weight: 300;
   color: var(--ink-mid);
@@ -254,9 +275,12 @@
     gap: 16px;
   }
   .feed-ig-avatar {
-    width: 48px;
-    height: 48px;
-    font-size: 18px;
+    width: 52px;
+    height: 52px;
+  }
+  .feed-ig-avatar-text {
+    font-size: 7px;
+    letter-spacing: 2px;
   }
   .feed-ig-stat strong {
     font-size: 14px;

@@ -308,25 +308,30 @@ export default function FeedPage() {
         <div className="feed-frame">
           {/* Fake IG profile header */}
           <div className="feed-ig-header">
-            <div className="feed-ig-avatar">H</div>
+            <div className="feed-ig-avatar">
+              <span className="feed-ig-avatar-text">HARPER</span>
+            </div>
             <div className="feed-ig-stats">
               <div className="feed-ig-stat">
-                <strong>{filledCount}</strong>
+                <strong>757</strong>
                 <span>posts</span>
               </div>
               <div className="feed-ig-stat">
-                <strong>12.4K</strong>
+                <strong>28.7K</strong>
                 <span>followers</span>
               </div>
               <div className="feed-ig-stat">
-                <strong>847</strong>
+                <strong>265</strong>
                 <span>following</span>
               </div>
             </div>
           </div>
           <div className="feed-ig-name">
             <strong>Harper Jewelry</strong>
-            <span>Fine jewelry for every moment</span>
+            <span className="feed-ig-handle">@harperjewelry</span>
+            <span className="feed-ig-category">Jewelry/watches</span>
+            <span>Where luxury meets affordability</span>
+            <span className="feed-ig-features">Featured in @voguemagazine & @glamourmag</span>
           </div>
 
           {/* The 3×4 grid */}
