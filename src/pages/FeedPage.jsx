@@ -14,7 +14,7 @@ import './FeedPage.css'
   );
 */
 
-const GRID_SIZE = 12 // 3 columns × 4 rows
+const GRID_SIZE = 27 // 3 columns × 9 rows
 const STORAGE_KEY = 'harper-feed-grid'
 
 // Persist to localStorage (works immediately, no DB needed)

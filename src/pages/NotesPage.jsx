@@ -142,10 +142,37 @@ export default function NotesPage() {
         {/* RIGHT PANEL */}
         <div className="meeting-detail">
           {!selectedMeeting ? (
-            <div className="meeting-empty">
-              <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>
-                Select a meeting or create a new one
+            <div className="meeting-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <p style={{ fontSize: 14, fontWeight: 300, color: 'var(--ink-light)' }}>
+                Start a new meeting note
               </p>
+              <button
+                onClick={() => {
+                  const newMeeting = {
+                    id: crypto.randomUUID(),
+                    month: format(new Date(), 'yyyy-MM-dd'),
+                    content: '',
+                    updated_by: currentUser,
+                    updated_at: new Date().toISOString(),
+                  }
+                  setMeetings(prev => [newMeeting, ...prev])
+                  setSelectedMeeting(newMeeting)
+                  // Also try Supabase
+                  supabase.from('notes').insert([{
+                    month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
+                  }]).select().single().then(({ data }) => {
+                    if (data) {
+                      setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
+                      setSelectedMeeting(data)
+                    }
+                  })
+                }}
+                style={{
+                  backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
+                  borderRadius: 9999, padding: '10px 28px', fontSize: 11, fontWeight: 500,
+                  letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Inter, sans-serif',
+                }}
+              >Start Writing</button>
             </div>
           ) : (
             <>

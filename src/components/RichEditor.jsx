@@ -198,7 +198,7 @@ export default function RichEditor({ content, onChange, placeholder }) {
         <div className="re-toolbar-group" ref={emojiRef} style={{ position: 'relative' }}>
           <button
             className={`re-toolbar-btn re-emoji-trigger ${showEmoji ? 're-btn-active' : ''}`}
-            onMouseDown={e => { e.preventDefault(); setShowEmoji(!showEmoji) }}
+            onMouseDown={e => { e.preventDefault(); saveCursorPosition(); setShowEmoji(!showEmoji) }}
             title="Emoji"
           >☺</button>
 
