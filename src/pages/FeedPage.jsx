@@ -485,7 +485,6 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="forme-footer">powered by forme</div>
       </div>
     </div>
   )

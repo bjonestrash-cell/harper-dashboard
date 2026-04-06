@@ -96,8 +96,13 @@ export default function TasksPage() {
   const handleAddTodo = async () => {
     const text = todoInput.trim()
     if (!text) return
+    const newTodo = { id: crypto.randomUUID(), text, month: monthStr, assigned_to: todoAssignee, priority: todoPriority, completed: false, created_at: new Date().toISOString() }
     const { data, error } = await supabase.from('todos').insert({ text, month: monthStr, assigned_to: todoAssignee, priority: todoPriority }).select()
-    if (!error && data?.[0]) setTodos(prev => [...prev, data[0]])
+    if (!error && data?.[0]) {
+      setTodos(prev => [...prev, data[0]])
+    } else {
+      setTodos(prev => [...prev, newTodo])
+    }
     setTodoInput('')
   }
 
@@ -264,14 +269,34 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     setSaving(true)
     try {
       if (task) {
+        // Try Supabase first
         const { data, error } = await supabase.from('tasks').update(form).eq('id', task.id).select()
-        if (!error && data?.[0]) setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
+        if (!error && data?.[0]) {
+          setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
+        } else {
+          // Fallback: update locally
+          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...form } : t))
+        }
       } else {
+        const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
+        // Try Supabase first
         const { data, error } = await supabase.from('tasks').insert({ ...form, month }).select()
-        if (!error && data?.[0]) setTasks(prev => [...prev, data[0]])
+        if (!error && data?.[0]) {
+          setTasks(prev => [...prev, data[0]])
+        } else {
+          // Fallback: save locally
+          setTasks(prev => [...prev, newTask])
+        }
       }
       onClose()
-    } catch (err) { console.error('Error saving task:', err) }
+    } catch (err) {
+      // Even on network error, save locally
+      if (!task) {
+        const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
+        setTasks(prev => [...prev, newTask])
+      }
+      onClose()
+    }
     finally { setSaving(false) }
   }
 
