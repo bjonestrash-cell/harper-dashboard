@@ -213,16 +213,66 @@ export default function NotesPage() {
               <div className="meeting-divider" />
 
               <div className="meeting-content-area">
+                {/* Formatting toolbar */}
+                <div style={{
+                  display: 'flex', gap: 4, padding: '8px 0 12px',
+                  borderBottom: '1px solid var(--cream-deep)', marginBottom: 8,
+                }}>
+                  {[
+                    { label: 'B', style: { fontWeight: 700 }, wrap: ['**', '**'], title: 'Bold' },
+                    { label: 'I', style: { fontStyle: 'italic' }, wrap: ['_', '_'], title: 'Italic' },
+                    { label: 'S', style: { textDecoration: 'line-through' }, wrap: ['~~', '~~'], title: 'Strikethrough' },
+                    { label: '•', style: {}, prefix: '\n- ', title: 'Bullet list' },
+                    { label: '1.', style: { fontSize: 10 }, prefix: '\n1. ', title: 'Numbered list' },
+                    { label: 'H', style: { fontWeight: 600, fontSize: 10 }, prefix: '\n## ', title: 'Heading' },
+                  ].map((btn, i) => (
+                    <button
+                      key={i}
+                      title={btn.title}
+                      onClick={() => {
+                        const ta = document.getElementById('meeting-editor')
+                        if (!ta) return
+                        const start = ta.selectionStart
+                        const end = ta.selectionEnd
+                        const selected = editContent.slice(start, end)
+                        let newContent
+                        if (btn.wrap) {
+                          newContent = editContent.slice(0, start) + btn.wrap[0] + selected + btn.wrap[1] + editContent.slice(end)
+                        } else if (btn.prefix) {
+                          newContent = editContent.slice(0, start) + btn.prefix + selected + editContent.slice(end)
+                        }
+                        if (newContent !== undefined) handleContentChange(newContent)
+                        setTimeout(() => ta.focus(), 10)
+                      }}
+                      style={{
+                        width: 32, height: 32, display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--cream)', border: 'none',
+                        borderRadius: 4, cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif', fontSize: 13,
+                        color: 'var(--ink-mid)', transition: 'all 0.15s ease',
+                        ...btn.style,
+                      }}
+                      onMouseEnter={e => { e.target.style.background = 'var(--cream-deep)'; e.target.style.color = 'var(--ink)' }}
+                      onMouseLeave={e => { e.target.style.background = 'var(--cream)'; e.target.style.color = 'var(--ink-mid)' }}
+                    >{btn.label}</button>
+                  ))}
+                </div>
+
                 <textarea
+                  id="meeting-editor"
                   value={editContent}
                   onChange={e => handleContentChange(e.target.value)}
                   placeholder="Start typing your meeting notes..."
+                  spellCheck="true"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
                   style={{
-                    width: '100%', minHeight: 'calc(100vh - 200px)',
+                    width: '100%', minHeight: 'calc(100vh - 260px)',
                     border: 'none', outline: 'none', resize: 'none',
                     fontFamily: 'Inter, sans-serif', fontSize: 15,
                     fontWeight: 300, lineHeight: 1.9, color: 'var(--ink)',
-                    backgroundColor: 'transparent', padding: '24px 0',
+                    backgroundColor: 'transparent', padding: '16px 0',
                   }}
                 />
               </div>
