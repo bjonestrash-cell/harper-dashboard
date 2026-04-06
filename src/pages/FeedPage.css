@@ -1,0 +1,280 @@
+/* ───── FEED PLANNER ───── */
+
+.feed-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 32px;
+}
+.feed-intro-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0.3px;
+}
+.feed-intro-sub {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink-light);
+  letter-spacing: 0.3px;
+}
+
+.feed-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.feed-counter {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--ink-mid);
+}
+.feed-saving {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: var(--pink-deep);
+  animation: pulse 1.2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ───── PHONE FRAME ───── */
+.feed-frame {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--white);
+  border: 1px solid var(--cream-deep);
+  box-shadow: 0 2px 20px rgba(26,20,18,0.06);
+  overflow: hidden;
+}
+
+/* Fake IG header */
+.feed-ig-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 20px 12px;
+}
+.feed-ig-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Horizon', 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.feed-ig-stats {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+.feed-ig-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.feed-ig-stat strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.feed-ig-stat span {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-light);
+}
+.feed-ig-name {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.feed-ig-name strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.feed-ig-name span {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink-mid);
+}
+
+/* ───── 3×4 GRID ───── */
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--cream-deep);
+  border-top: 1px solid var(--cream-deep);
+}
+
+.feed-slot {
+  aspect-ratio: 4 / 5;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* Empty slot */
+.feed-slot-empty {
+  background: var(--cream);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s ease;
+}
+.feed-slot-empty:hover {
+  background: var(--cream-mid);
+}
+.feed-slot-plus {
+  color: var(--ink-light);
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+.feed-slot-empty:hover .feed-slot-plus {
+  opacity: 0.8;
+}
+.feed-slot-label {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink-light);
+  opacity: 0.4;
+}
+
+/* Filled slot */
+.feed-slot-filled {
+  background: var(--cream-mid);
+}
+.feed-slot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.feed-slot-filled:hover .feed-slot-image {
+  transform: scale(1.03);
+}
+
+/* Drag state */
+.feed-slot-filled.drag-over {
+  outline: 2px solid var(--pink);
+  outline-offset: -2px;
+}
+
+/* Position badge */
+.feed-position-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(26,20,18,0.6);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.feed-slot-filled:hover .feed-position-badge {
+  opacity: 1;
+}
+
+/* Action buttons overlay */
+.feed-slot-actions {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,20,18,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  animation: fadeIn 150ms ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.feed-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.feed-action-btn:hover {
+  background: white;
+  transform: scale(1.1);
+}
+.feed-action-remove:hover {
+  background: #f5dede;
+  color: #B85450;
+}
+
+/* ───── MOBILE ───── */
+@media (max-width: 767px) {
+  .feed-frame {
+    max-width: 100%;
+    border-left: none;
+    border-right: none;
+    margin: 0 -16px;
+    width: calc(100% + 32px);
+  }
+  .feed-ig-header {
+    padding: 16px 16px 10px;
+    gap: 16px;
+  }
+  .feed-ig-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+  .feed-ig-stat strong {
+    font-size: 14px;
+  }
+  .feed-ig-stat span {
+    font-size: 10px;
+  }
+  .feed-ig-name {
+    padding: 0 16px 12px;
+  }
+  .feed-slot-actions {
+    /* Always show on mobile via tap */
+  }
+  .feed-action-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .feed-position-badge {
+    opacity: 1;
+  }
+}
