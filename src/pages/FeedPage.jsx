@@ -32,39 +32,44 @@ function loadFeedLocal() {
   return null
 }
 
-// Upload image to Supabase Storage, return public URL
-async function uploadToStorage(file, position) {
+// Sync feed via the existing 'notes' table using a special month key
+const FEED_SYNC_KEY = '9999-01-01' // special date that won't conflict with real meetings
+
+async function syncFeedToSupabase(slots) {
   try {
-    const fileName = `feed-${position}-${Date.now()}.jpg`
-    // Convert data URL to blob if needed
-    let blob = file
-    if (typeof file === 'string' && file.startsWith('data:')) {
-      const res = await fetch(file)
-      blob = await res.blob()
+    const serializable = slots.map(s => s ? { position: s.position, image_url: s.image_url, caption: s.caption } : null)
+    const content = JSON.stringify(serializable)
+
+    // Check if feed record exists
+    const { data: existing } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('month', FEED_SYNC_KEY)
+      .single()
+
+    if (existing) {
+      await supabase.from('notes')
+        .update({ content, updated_at: new Date().toISOString(), updated_by: 'feed' })
+        .eq('id', existing.id)
+    } else {
+      await supabase.from('notes')
+        .insert([{ month: FEED_SYNC_KEY, content, updated_by: 'feed' }])
     }
-    const { data, error } = await supabase.storage
-      .from('feed-images')
-      .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
-    if (error) throw error
-    const { data: urlData } = supabase.storage.from('feed-images').getPublicUrl(fileName)
-    return urlData?.publicUrl || null
-  } catch (e) {
-    console.warn('Storage upload failed:', e.message)
-    return null
-  }
+  } catch (e) { /* silently fail */ }
 }
 
-// Sync feed state to Supabase table
-async function trySyncToSupabase(slots) {
+async function loadFeedFromSupabase() {
   try {
-    await supabase.from('feed_posts').delete().gte('position', 0)
-    const rows = slots.filter(Boolean).map(s => ({
-      position: s.position,
-      image_url: s.image_url,
-      caption: s.caption || '',
-    }))
-    if (rows.length > 0) await supabase.from('feed_posts').insert(rows)
-  } catch (e) { /* table may not exist yet */ }
+    const { data } = await supabase
+      .from('notes')
+      .select('content')
+      .eq('month', FEED_SYNC_KEY)
+      .single()
+    if (data?.content) {
+      return JSON.parse(data.content)
+    }
+  } catch (e) { /* no feed saved yet */ }
+  return null
 }
 
 function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver, onFileDrop }) {
@@ -226,7 +231,10 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
 export default function FeedPage() {
   const [slots, setSlots] = useState(() => {
     const local = loadFeedLocal()
-    return local || Array(GRID_SIZE).fill(null)
+    if (!local) return Array(GRID_SIZE).fill(null)
+    // Pad to current GRID_SIZE if localStorage has fewer slots
+    while (local.length < GRID_SIZE) local.push(null)
+    return local.slice(0, GRID_SIZE)
   })
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
@@ -235,25 +243,37 @@ export default function FeedPage() {
   const gridRef = useRef(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
-  // Also try loading from Supabase (merge if it has newer data)
+  // Load from Supabase on mount (cross-device sync)
   useEffect(() => {
     const load = async () => {
-      try {
-        const { data } = await supabase
-          .from('feed_posts')
-          .select('*')
-          .order('position', { ascending: true })
-        if (data && data.length > 0) {
-          const grid = Array(GRID_SIZE).fill(null)
-          data.forEach(item => {
-            if (item.position >= 0 && item.position < GRID_SIZE) grid[item.position] = item
-          })
-          setSlots(grid)
-          saveFeedLocal(grid)
-        }
-      } catch (e) { /* table may not exist */ }
+      const remote = await loadFeedFromSupabase()
+      if (remote && remote.length > 0) {
+        // Pad to GRID_SIZE
+        while (remote.length < GRID_SIZE) remote.push(null)
+        setSlots(remote.slice(0, GRID_SIZE))
+        saveFeedLocal(remote.slice(0, GRID_SIZE))
+      }
     }
     load()
+
+    // Real-time subscription for cross-device updates
+    const channel = supabase
+      .channel('feed-sync')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${FEED_SYNC_KEY}` },
+        async (payload) => {
+          if (payload.new?.content && payload.new?.updated_by === 'feed') {
+            try {
+              const remote = JSON.parse(payload.new.content)
+              while (remote.length < GRID_SIZE) remote.push(null)
+              setSlots(remote.slice(0, GRID_SIZE))
+              saveFeedLocal(remote.slice(0, GRID_SIZE))
+            } catch (e) {}
+          }
+        }
+      )
+      .subscribe()
+    return () => supabase.removeChannel(channel)
   }, [])
 
   const fileToDataUrl = (file) => new Promise((resolve, reject) => {
@@ -296,7 +316,7 @@ export default function FeedPage() {
     setSlots(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       saveFeedLocal(next)
-      trySyncToSupabase(next) // fire-and-forget
+      syncFeedToSupabase(next) // fire-and-forget cross-device sync
       return next
     })
   }, [])
@@ -305,23 +325,12 @@ export default function FeedPage() {
     setSaving(true)
     try {
       const dataUrl = await fileToDataUrl(file)
-      // Show locally immediately
       const newSlot = { id: crypto.randomUUID(), position, image_url: dataUrl, caption: '' }
       updateSlots(prev => {
         const next = [...prev]
         next[position] = newSlot
         return next
       })
-      // Try uploading to Supabase Storage for cross-device sync
-      const publicUrl = await uploadToStorage(dataUrl, position)
-      if (publicUrl) {
-        // Update with public URL so other devices can see it
-        updateSlots(prev => {
-          const next = [...prev]
-          if (next[position]) next[position] = { ...next[position], image_url: publicUrl }
-          return next
-        })
-      }
     } catch (err) {
       console.error('Upload failed:', err)
     }
@@ -338,15 +347,6 @@ export default function FeedPage() {
         next[position] = { ...(existing || {}), id: existing?.id || crypto.randomUUID(), position, image_url: dataUrl }
         return next
       })
-      // Try Storage upload for sync
-      const publicUrl = await uploadToStorage(dataUrl, position)
-      if (publicUrl) {
-        updateSlots(prev => {
-          const next = [...prev]
-          if (next[position]) next[position] = { ...next[position], image_url: publicUrl }
-          return next
-        })
-      }
     } catch (err) {
       console.error('Replace failed:', err)
     }

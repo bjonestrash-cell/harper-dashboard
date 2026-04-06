@@ -53,6 +53,7 @@
 .re-toolbar-btn.re-btn-active {
   background: var(--ink);
   color: var(--cream);
+  box-shadow: 0 0 0 2px var(--pink);
 }
 
 /* Emoji */
@@ -63,14 +64,16 @@
 .re-emoji-picker {
   position: absolute;
   top: 100%;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   margin-top: 8px;
   background: var(--white);
   border: 1px solid var(--cream-deep);
   box-shadow: 0 8px 32px rgba(26,20,18,0.12);
-  padding: 12px;
+  padding: 16px;
   z-index: 100;
-  width: 280px;
+  width: 340px;
+  border-radius: 8px;
   animation: fadeSlideIn 150ms ease;
 }
 
