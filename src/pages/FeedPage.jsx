@@ -32,10 +32,31 @@ function loadFeedLocal() {
   return null
 }
 
-// Try Supabase, fall back gracefully
+// Upload image to Supabase Storage, return public URL
+async function uploadToStorage(file, position) {
+  try {
+    const fileName = `feed-${position}-${Date.now()}.jpg`
+    // Convert data URL to blob if needed
+    let blob = file
+    if (typeof file === 'string' && file.startsWith('data:')) {
+      const res = await fetch(file)
+      blob = await res.blob()
+    }
+    const { data, error } = await supabase.storage
+      .from('feed-images')
+      .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from('feed-images').getPublicUrl(fileName)
+    return urlData?.publicUrl || null
+  } catch (e) {
+    console.warn('Storage upload failed:', e.message)
+    return null
+  }
+}
+
+// Sync feed state to Supabase table
 async function trySyncToSupabase(slots) {
   try {
-    // Delete all then re-insert (simple sync)
     await supabase.from('feed_posts').delete().gte('position', 0)
     const rows = slots.filter(Boolean).map(s => ({
       position: s.position,
@@ -284,12 +305,23 @@ export default function FeedPage() {
     setSaving(true)
     try {
       const dataUrl = await fileToDataUrl(file)
+      // Show locally immediately
       const newSlot = { id: crypto.randomUUID(), position, image_url: dataUrl, caption: '' }
       updateSlots(prev => {
         const next = [...prev]
         next[position] = newSlot
         return next
       })
+      // Try uploading to Supabase Storage for cross-device sync
+      const publicUrl = await uploadToStorage(dataUrl, position)
+      if (publicUrl) {
+        // Update with public URL so other devices can see it
+        updateSlots(prev => {
+          const next = [...prev]
+          if (next[position]) next[position] = { ...next[position], image_url: publicUrl }
+          return next
+        })
+      }
     } catch (err) {
       console.error('Upload failed:', err)
     }
@@ -306,6 +338,15 @@ export default function FeedPage() {
         next[position] = { ...(existing || {}), id: existing?.id || crypto.randomUUID(), position, image_url: dataUrl }
         return next
       })
+      // Try Storage upload for sync
+      const publicUrl = await uploadToStorage(dataUrl, position)
+      if (publicUrl) {
+        updateSlots(prev => {
+          const next = [...prev]
+          if (next[position]) next[position] = { ...next[position], image_url: publicUrl }
+          return next
+        })
+      }
     } catch (err) {
       console.error('Replace failed:', err)
     }

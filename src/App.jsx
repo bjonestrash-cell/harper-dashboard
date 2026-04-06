@@ -13,6 +13,16 @@ import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
 import CustomCursor from './components/CustomCursor'
 
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.querySelector('.main-content')?.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     const params = new URLSearchParams(window.location.search)
@@ -131,6 +141,7 @@ export default function App() {
             <LiveIndicator />
           </div>
 
+          <ScrollToTop />
           <Routes>
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />

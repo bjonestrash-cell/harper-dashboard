@@ -85,9 +85,27 @@ export default function RichEditor({ content, onChange, placeholder }) {
     }
   }
 
+  // Save cursor position before emoji picker opens
+  const savedRange = useRef(null)
+  const saveCursorPosition = () => {
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      savedRange.current = sel.getRangeAt(0).cloneRange()
+    }
+  }
+
   const insertEmoji = (emoji) => {
-    editorRef.current?.focus()
+    const editor = editorRef.current
+    if (!editor) return
+    editor.focus()
+    // Restore saved cursor position
+    if (savedRange.current) {
+      const sel = window.getSelection()
+      sel.removeAllRanges()
+      sel.addRange(savedRange.current)
+    }
     document.execCommand('insertText', false, emoji)
+    savedRange.current = null
     setShowEmoji(false)
   }
 

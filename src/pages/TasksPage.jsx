@@ -269,8 +269,9 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     setSaving(true)
     try {
       if (task) {
-        // Try Supabase first
-        const { data, error } = await supabase.from('tasks').update(form).eq('id', task.id).select()
+        // Try Supabase first — strip fields that may not exist in DB
+        const { priority: _p, ...dbUpdateForm } = form
+        const { data, error } = await supabase.from('tasks').update(dbUpdateForm).eq('id', task.id).select()
         if (!error && data?.[0]) {
           setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
         } else {
@@ -279,8 +280,9 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         }
       } else {
         const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
-        // Try Supabase first
-        const { data, error } = await supabase.from('tasks').insert({ ...form, month }).select()
+        // Try Supabase first — strip fields that may not exist in DB
+        const { priority, ...dbForm } = form
+        const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
         if (!error && data?.[0]) {
           setTasks(prev => [...prev, data[0]])
         } else {
