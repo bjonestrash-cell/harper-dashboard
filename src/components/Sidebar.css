@@ -176,10 +176,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 3px;
+  padding: 6px 2px;
   text-decoration: none;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.45);
   transition: color 150ms ease;
   min-width: 0;
 }
@@ -187,21 +187,22 @@
   color: var(--pink);
 }
 .mobile-nav-item svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
 .mobile-nav-label {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  text-align: center;
 }
 
 @media (min-width: 768px) {

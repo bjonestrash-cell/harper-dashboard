@@ -46,13 +46,15 @@ async function trySyncToSupabase(slots) {
   } catch (e) { /* table may not exist yet */ }
 }
 
-function EmptySlot({ index, onUpload }) {
+function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver }) {
   const inputRef = useRef(null)
 
   return (
     <button
-      className="feed-slot feed-slot-empty"
+      className={`feed-slot feed-slot-empty ${dragOver ? 'drag-over' : ''}`}
       onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); onDragOver?.(e, index) }}
+      onDrop={e => onDrop?.(e, index)}
       title="Add photo"
     >
       <input
@@ -77,20 +79,57 @@ function EmptySlot({ index, onUpload }) {
   )
 }
 
-function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver }) {
+function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged }) {
   const inputRef = useRef(null)
   const [showActions, setShowActions] = useState(false)
+  const longPressTimer = useRef(null)
+  const isDragging = useRef(false)
+
+  const handleTouchStart = (e) => {
+    // Long press to start drag on mobile
+    longPressTimer.current = setTimeout(() => {
+      isDragging.current = true
+      setShowActions(false)
+      onTouchDragStart?.(index)
+      // Vibrate if available
+      navigator.vibrate?.(30)
+    }, 300)
+  }
+
+  const handleTouchMove = (e) => {
+    if (isDragging.current) {
+      e.preventDefault()
+      const touch = e.touches[0]
+      onTouchDragMove?.(touch.clientX, touch.clientY)
+    } else {
+      // Cancel long press if finger moves
+      clearTimeout(longPressTimer.current)
+    }
+  }
+
+  const handleTouchEnd = (e) => {
+    clearTimeout(longPressTimer.current)
+    if (isDragging.current) {
+      isDragging.current = false
+      const touch = e.changedTouches[0]
+      onTouchDragEnd?.(touch.clientX, touch.clientY)
+    }
+  }
 
   return (
     <div
-      className={`feed-slot feed-slot-filled ${dragOver ? 'drag-over' : ''}`}
+      className={`feed-slot feed-slot-filled ${dragOver ? 'drag-over' : ''} ${isBeingDragged ? 'is-dragging' : ''}`}
       draggable
       onDragStart={e => onDragStart(e, index)}
-      onDragOver={e => onDragOver(e, index)}
+      onDragOver={e => { e.preventDefault(); onDragOver(e, index) }}
       onDrop={e => onDrop(e, index)}
-      onMouseEnter={() => setShowActions(true)}
+      onDragEnd={() => setShowActions(false)}
+      onMouseEnter={() => !isDragging.current && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
-      onClick={() => setShowActions(!showActions)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      data-index={index}
     >
       <img
         src={slot.image_url}
@@ -109,8 +148,8 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
           e.target.value = ''
         }}
       />
-      {showActions && (
-        <div className="feed-slot-actions">
+      {showActions && !isBeingDragged && (
+        <div className="feed-slot-actions" onClick={e => e.stopPropagation()}>
           <button
             className="feed-action-btn"
             onClick={e => { e.stopPropagation(); inputRef.current?.click() }}
@@ -147,6 +186,8 @@ export default function FeedPage() {
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
+  const [touchDragIndex, setTouchDragIndex] = useState(null)
+  const gridRef = useRef(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
   // Also try loading from Supabase (merge if it has newer data)
@@ -287,6 +328,58 @@ export default function FeedPage() {
     setDragIndex(null)
   }, [dragIndex, updateSlots])
 
+  // Touch drag for mobile
+  const handleTouchDragStart = useCallback((index) => {
+    setTouchDragIndex(index)
+    setDragOverIndex(null)
+  }, [])
+
+  const handleTouchDragMove = useCallback((x, y) => {
+    if (!gridRef.current) return
+    // Find which slot we're over
+    const els = gridRef.current.querySelectorAll('.feed-slot')
+    for (let i = 0; i < els.length; i++) {
+      const rect = els[i].getBoundingClientRect()
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        setDragOverIndex(i)
+        return
+      }
+    }
+    setDragOverIndex(null)
+  }, [])
+
+  const handleTouchDragEnd = useCallback((x, y) => {
+    if (touchDragIndex === null) return
+    if (!gridRef.current) { setTouchDragIndex(null); return }
+
+    // Find drop target
+    const els = gridRef.current.querySelectorAll('.feed-slot')
+    let dropIndex = null
+    for (let i = 0; i < els.length; i++) {
+      const rect = els[i].getBoundingClientRect()
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        dropIndex = i
+        break
+      }
+    }
+
+    if (dropIndex !== null && dropIndex !== touchDragIndex) {
+      updateSlots(prev => {
+        const next = [...prev]
+        const fromSlot = next[touchDragIndex]
+        const toSlot = next[dropIndex]
+        if (fromSlot) fromSlot.position = dropIndex
+        if (toSlot) toSlot.position = touchDragIndex
+        next[dropIndex] = fromSlot
+        next[touchDragIndex] = toSlot
+        return next
+      })
+    }
+
+    setTouchDragIndex(null)
+    setDragOverIndex(null)
+  }, [touchDragIndex, updateSlots])
+
   const filledCount = slots.filter(Boolean).length
 
   return (
@@ -299,10 +392,8 @@ export default function FeedPage() {
       </PageHeader>
 
       <div className="page-container">
-        {/* Natalie's personal note */}
         <div className="feed-intro">
-          <span className="feed-intro-label">Natalie's Instagram Grid</span>
-          <span className="feed-intro-sub">Drag to reorder. Tap to add or replace. 4:5 ratio auto-cropped.</span>
+          <span className="feed-intro-sub">Tap to add. Hold and drag to reorder. Auto-cropped to 4:5.</span>
         </div>
 
         {/* Instagram-style phone frame */}
@@ -336,7 +427,7 @@ export default function FeedPage() {
           </div>
 
           {/* The 3×4 grid */}
-          <div className="feed-grid">
+          <div className="feed-grid" ref={gridRef}>
             {slots.map((slot, i) => (
               slot ? (
                 <FilledSlot
@@ -349,9 +440,20 @@ export default function FeedPage() {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   dragOver={dragOverIndex === i}
+                  onTouchDragStart={handleTouchDragStart}
+                  onTouchDragMove={handleTouchDragMove}
+                  onTouchDragEnd={handleTouchDragEnd}
+                  isBeingDragged={touchDragIndex === i}
                 />
               ) : (
-                <EmptySlot key={i} index={i} onUpload={handleUpload} />
+                <EmptySlot
+                  key={i}
+                  index={i}
+                  onUpload={handleUpload}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  dragOver={dragOverIndex === i}
+                />
               )
             ))}
           </div>
