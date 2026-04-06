@@ -3,6 +3,7 @@ import { format, parseISO, subDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import DatePicker from '../components/DatePicker'
+import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
 import './NotesPage.css'
 
@@ -104,23 +105,8 @@ export default function NotesPage() {
         <div className="meeting-sidebar">
           <div className="meeting-sidebar-header" />
 
-          <button onClick={() => setShowAddModal(true)}
+          <button className="new-meeting-btn" onClick={() => setShowAddModal(true)}
             style={{
-              backgroundColor: 'var(--ink)',
-              color: 'var(--cream)',
-              border: 'none',
-              borderRadius: 9999,
-              padding: '12px 28px',
-              fontSize: '11px',
-              fontWeight: 500,
-              letterSpacing: '2px',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-              width: 'auto',
-              display: 'inline-block',
-              transition: 'all 0.2s ease',
-              margin: '0 16px 16px',
             }}>
             + New Meeting
           </button>
@@ -213,67 +199,10 @@ export default function NotesPage() {
               <div className="meeting-divider" />
 
               <div className="meeting-content-area">
-                {/* Formatting toolbar */}
-                <div style={{
-                  display: 'flex', gap: 4, padding: '8px 0 12px',
-                  borderBottom: '1px solid var(--cream-deep)', marginBottom: 8,
-                }}>
-                  {[
-                    { label: 'B', style: { fontWeight: 700 }, wrap: ['**', '**'], title: 'Bold' },
-                    { label: 'I', style: { fontStyle: 'italic' }, wrap: ['_', '_'], title: 'Italic' },
-                    { label: 'S', style: { textDecoration: 'line-through' }, wrap: ['~~', '~~'], title: 'Strikethrough' },
-                    { label: '•', style: {}, prefix: '\n- ', title: 'Bullet list' },
-                    { label: '1.', style: { fontSize: 10 }, prefix: '\n1. ', title: 'Numbered list' },
-                    { label: 'H', style: { fontWeight: 600, fontSize: 10 }, prefix: '\n## ', title: 'Heading' },
-                  ].map((btn, i) => (
-                    <button
-                      key={i}
-                      title={btn.title}
-                      onClick={() => {
-                        const ta = document.getElementById('meeting-editor')
-                        if (!ta) return
-                        const start = ta.selectionStart
-                        const end = ta.selectionEnd
-                        const selected = editContent.slice(start, end)
-                        let newContent
-                        if (btn.wrap) {
-                          newContent = editContent.slice(0, start) + btn.wrap[0] + selected + btn.wrap[1] + editContent.slice(end)
-                        } else if (btn.prefix) {
-                          newContent = editContent.slice(0, start) + btn.prefix + selected + editContent.slice(end)
-                        }
-                        if (newContent !== undefined) handleContentChange(newContent)
-                        setTimeout(() => ta.focus(), 10)
-                      }}
-                      style={{
-                        width: 32, height: 32, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        background: 'var(--cream)', border: 'none',
-                        borderRadius: 4, cursor: 'pointer',
-                        fontFamily: 'Inter, sans-serif', fontSize: 13,
-                        color: 'var(--ink-mid)', transition: 'all 0.15s ease',
-                        ...btn.style,
-                      }}
-                      onMouseEnter={e => { e.target.style.background = 'var(--cream-deep)'; e.target.style.color = 'var(--ink)' }}
-                      onMouseLeave={e => { e.target.style.background = 'var(--cream)'; e.target.style.color = 'var(--ink-mid)' }}
-                    >{btn.label}</button>
-                  ))}
-                </div>
-
-                <textarea
-                  id="meeting-editor"
-                  value={editContent}
-                  onChange={e => handleContentChange(e.target.value)}
+                <RichEditor
+                  content={editContent}
+                  onChange={handleContentChange}
                   placeholder="Start typing your meeting notes..."
-                  spellCheck="true"
-                  autoCorrect="on"
-                  autoCapitalize="sentences"
-                  style={{
-                    width: '100%', minHeight: 'calc(100vh - 260px)',
-                    border: 'none', outline: 'none', resize: 'none',
-                    fontFamily: 'Inter, sans-serif', fontSize: 15,
-                    fontWeight: 300, lineHeight: 1.9, color: 'var(--ink)',
-                    backgroundColor: 'transparent', padding: '16px 0',
-                  }}
                 />
               </div>
             </>
@@ -310,17 +239,31 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
   const handleDone = async () => {
     if (!notes.trim()) return
     setSaving(true)
-    const { data, error } = await supabase
-      .from('notes')
-      .insert([{ month: date, content: notes, updated_by: currentUser, updated_at: new Date().toISOString() }])
-      .select()
-      .single()
-    if (!error && data) {
+    try {
+      const newMeeting = {
+        id: crypto.randomUUID(),
+        month: date,
+        content: notes,
+        updated_by: currentUser,
+        updated_at: new Date().toISOString(),
+      }
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{ month: date, content: notes, updated_by: currentUser, updated_at: new Date().toISOString() }])
+        .select()
+        .single()
+      const saved = (!error && data) ? data : newMeeting
       setMeetings(prev => {
-        if (prev.find(m => m.id === data.id)) return prev
-        return [data, ...prev]
+        if (prev.find(m => m.id === saved.id)) return prev
+        return [saved, ...prev]
       })
-      setSelectedMeeting(data)
+      setSelectedMeeting(saved)
+      onClose()
+    } catch (err) {
+      // Save locally even if Supabase fails
+      const fallback = { id: crypto.randomUUID(), month: date, content: notes, updated_by: currentUser, updated_at: new Date().toISOString() }
+      setMeetings(prev => [fallback, ...prev])
+      setSelectedMeeting(fallback)
       onClose()
     }
     setSaving(false)

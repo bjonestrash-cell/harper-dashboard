@@ -1,0 +1,221 @@
+/* ───── RICH EDITOR ───── */
+.rich-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Toolbar */
+.re-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--cream-deep);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 5;
+}
+
+.re-toolbar-group {
+  display: flex;
+  gap: 2px;
+}
+
+.re-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--cream-deep);
+  margin: 0 4px;
+}
+
+.re-toolbar-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--ink-mid);
+  transition: all 0.12s ease;
+}
+.re-toolbar-btn:hover {
+  background: var(--cream);
+  color: var(--ink);
+}
+.re-toolbar-btn.re-btn-active {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+/* Emoji */
+.re-emoji-trigger {
+  font-size: 16px !important;
+}
+
+.re-emoji-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: var(--white);
+  border: 1px solid var(--cream-deep);
+  box-shadow: 0 8px 32px rgba(26,20,18,0.12);
+  padding: 12px;
+  z-index: 100;
+  width: 280px;
+  animation: fadeSlideIn 150ms ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.re-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.re-emoji-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.1s ease;
+}
+.re-emoji-btn:hover {
+  background: var(--cream);
+  transform: scale(1.2);
+}
+
+/* Editor area */
+.re-editor-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+}
+
+.re-editor {
+  padding: 20px 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--ink);
+  outline: none;
+  min-height: 400px;
+  cursor: text;
+}
+
+/* Typography within editor */
+.re-editor h1,
+.re-editor h2,
+.re-editor h3 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 24px 0 8px;
+  line-height: 1.3;
+}
+.re-editor h3 {
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+
+.re-editor p {
+  margin: 0 0 4px;
+}
+
+.re-editor ul,
+.re-editor ol {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+.re-editor li {
+  margin: 4px 0;
+}
+
+.re-editor b,
+.re-editor strong {
+  font-weight: 600;
+}
+
+.re-editor hr {
+  border: none;
+  border-top: 1px solid var(--cream-deep);
+  margin: 16px 0;
+}
+
+.re-editor a {
+  color: var(--pink-deep);
+  text-decoration: underline;
+}
+
+/* Placeholder */
+.re-placeholder {
+  position: absolute;
+  top: 20px;
+  left: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--ink-light);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Selection */
+.re-editor ::selection {
+  background: var(--pink-light);
+  color: var(--ink);
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .re-toolbar {
+    padding: 6px 2px;
+    gap: 2px;
+  }
+  .re-toolbar-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  .re-toolbar-divider {
+    height: 16px;
+    margin: 0 2px;
+  }
+  .re-emoji-picker {
+    width: 240px;
+    left: auto;
+    right: 0;
+  }
+  .re-emoji-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .re-emoji-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .re-editor {
+    font-size: 14px;
+    padding: 16px 2px;
+    min-height: 300px;
+  }
+}
