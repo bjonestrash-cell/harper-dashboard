@@ -759,70 +759,57 @@ function ModalDatePicker({ date, onChange }) {
     end: endOfWeek(endOfMonth(viewMonth)),
   })
 
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} style={{
-        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
-        padding: '0 0 20px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', letterSpacing: 0.3 }}>
-          {format(selected, 'EEEE, MMMM d, yyyy')}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--ink-light)', marginLeft: 4 }}>change</span>
-      </button>
-    )
+  const pillStyle = {
+    display: 'inline-flex', alignItems: 'center', gap: 8,
+    padding: '8px 18px', borderRadius: 9999, cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500,
+    letterSpacing: 0.5, border: 'none', transition: 'all 0.2s ease',
+    backgroundColor: open ? 'var(--ink)' : 'var(--cream-mid)',
+    color: open ? 'var(--cream)' : 'var(--ink)',
   }
 
   return (
     <div style={{ marginBottom: 20 }}>
-      <button onClick={() => setOpen(false)} style={{
-        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
-        padding: '0 0 12px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', letterSpacing: 0.3 }}>
-          {format(selected, 'EEEE, MMMM d, yyyy')}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--pink-deep)' }}>done</span>
+      <button onClick={() => setOpen(!open)} style={pillStyle}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        {format(selected, 'EEE, MMM d, yyyy')}
       </button>
 
-      <div style={{ border: '1px solid var(--cream-deep)', padding: 16, maxWidth: 320 }}>
-        {/* Month nav */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-            style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>←</button>
-          <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink)' }}>
-            {format(viewMonth, 'MMM yyyy')}
-          </span>
-          <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-            style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>→</button>
+      {open && (
+        <div style={{ border: '1px solid var(--cream-deep)', padding: 16, maxWidth: 320, marginTop: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+              style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>←</button>
+            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink)' }}>
+              {format(viewMonth, 'MMM yyyy')}
+            </span>
+            <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+              style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>→</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
+            {['S','M','T','W','T','F','S'].map((d, i) => (
+              <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 500, letterSpacing: 1, color: 'var(--ink-light)', padding: '4px 0' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {days.map((day, i) => {
+              const isSelected = isSameDay(day, selected)
+              const isCurrMonth = isSameMonth(day, viewMonth)
+              const isTdy = isSameDay(day, new Date())
+              return (
+                <button key={i} onClick={() => { onChange(format(day, 'yyyy-MM-dd')); setOpen(false) }}
+                  style={{
+                    width: '100%', aspectRatio: '1', border: 'none', borderRadius: '50%',
+                    backgroundColor: isSelected ? 'var(--ink)' : isTdy ? 'var(--pink-light)' : 'transparent',
+                    color: isSelected ? 'var(--cream)' : isCurrMonth ? 'var(--ink)' : 'var(--cream-deep)',
+                    fontSize: 12, fontWeight: isSelected ? 500 : 300, cursor: 'pointer',
+                    fontFamily: "'Inter', sans-serif", transition: 'all 0.15s ease',
+                  }}>{format(day, 'd')}</button>
+              )
+            })}
+          </div>
         </div>
-
-        {/* Day headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
-          {['S','M','T','W','T','F','S'].map((d, i) => (
-            <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 500, letterSpacing: 1, color: 'var(--ink-light)', padding: '4px 0' }}>{d}</div>
-          ))}
-        </div>
-
-        {/* Day grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-          {days.map((day, i) => {
-            const isSelected = isSameDay(day, selected)
-            const isCurrMonth = isSameMonth(day, viewMonth)
-            const isTdy = isSameDay(day, new Date())
-            return (
-              <button key={i} onClick={() => { onChange(format(day, 'yyyy-MM-dd')); setOpen(false) }}
-                style={{
-                  width: '100%', aspectRatio: '1', border: 'none', borderRadius: '50%',
-                  backgroundColor: isSelected ? 'var(--ink)' : isTdy ? 'var(--pink-light)' : 'transparent',
-                  color: isSelected ? 'var(--cream)' : isCurrMonth ? 'var(--ink)' : 'var(--cream-deep)',
-                  fontSize: 12, fontWeight: isSelected ? 500 : 300, cursor: 'pointer',
-                  fontFamily: "'Inter', sans-serif", transition: 'all 0.15s ease',
-                }}>{format(day, 'd')}</button>
-            )
-          })}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

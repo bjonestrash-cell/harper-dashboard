@@ -30,9 +30,17 @@ export default function PromotionsPage() {
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
 
+  const getPromoStatus = (p) => {
+    if (!p.start_date || !p.end_date) return p.status || 'upcoming'
+    if (p.end_date < todayStr) return 'ended'
+    if (p.start_date <= todayStr && p.end_date >= todayStr) return 'active'
+    if (p.start_date > todayStr) return 'upcoming'
+    return p.status || 'upcoming'
+  }
+
   const stats = {
-    active: promotions.filter(p => p.start_date <= todayStr && p.end_date >= todayStr).length,
-    upcoming: promotions.filter(p => p.start_date > todayStr).length,
+    active: promotions.filter(p => getPromoStatus(p) === 'active').length,
+    upcoming: promotions.filter(p => getPromoStatus(p) === 'upcoming').length,
     thisMonth: promotions.filter(p => {
       const monthStr = format(currentMonth, 'yyyy-MM')
       return p.start_date?.startsWith(monthStr) || p.end_date?.startsWith(monthStr)
@@ -118,9 +126,10 @@ export default function PromotionsPage() {
         <div style={{ marginBottom: 48 }}>
           {monthPromos.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', padding: '24px 0' }}>No promotions this month</p>}
           {monthPromos.map(promo => {
-            const statusStyle = promo.status === 'active'
+            const computedStatus = getPromoStatus(promo)
+            const statusStyle = computedStatus === 'active'
               ? { backgroundColor: 'var(--pink-light)', color: 'var(--pink-deep)' }
-              : promo.status === 'upcoming'
+              : computedStatus === 'upcoming'
               ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
               : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' }
             return (
@@ -151,7 +160,7 @@ export default function PromotionsPage() {
                   </div>
                 </div>
                 <span style={{ ...statusStyle, borderRadius: 20, padding: '4px 14px', fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>
-                  {promo.status}
+                  {computedStatus}
                 </span>
               </div>
             )
