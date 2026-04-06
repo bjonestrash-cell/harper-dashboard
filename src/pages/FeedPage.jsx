@@ -46,15 +46,28 @@ async function trySyncToSupabase(slots) {
   } catch (e) { /* table may not exist yet */ }
 }
 
-function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver }) {
+function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver, onFileDrop }) {
   const inputRef = useRef(null)
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    // Check if external file is being dropped
+    const files = e.dataTransfer?.files
+    if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+      onFileDrop?.(index, files[0])
+      return
+    }
+    // Otherwise it's an internal reorder
+    onDrop?.(e, index)
+  }
 
   return (
     <button
       className={`feed-slot feed-slot-empty ${dragOver ? 'drag-over' : ''}`}
       onClick={() => inputRef.current?.click()}
-      onDragOver={e => { e.preventDefault(); onDragOver?.(e, index) }}
-      onDrop={e => onDrop?.(e, index)}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; onDragOver?.(e, index) }}
+      onDrop={handleDrop}
+      onDragLeave={() => onDragOver?.(null, -1)}
       title="Add photo"
     >
       <input
@@ -79,11 +92,21 @@ function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver }) {
   )
 }
 
-function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged }) {
+function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged, onFileDrop }) {
   const inputRef = useRef(null)
   const [showActions, setShowActions] = useState(false)
   const longPressTimer = useRef(null)
   const isDragging = useRef(false)
+
+  const handleFileDrop = (e) => {
+    e.preventDefault()
+    const files = e.dataTransfer?.files
+    if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+      onFileDrop?.(index, files[0])
+      return
+    }
+    onDrop(e, index)
+  }
 
   const handleTouchStart = (e) => {
     // Long press to start drag on mobile
@@ -121,8 +144,9 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
       className={`feed-slot feed-slot-filled ${dragOver ? 'drag-over' : ''} ${isBeingDragged ? 'is-dragging' : ''}`}
       draggable
       onDragStart={e => onDragStart(e, index)}
-      onDragOver={e => { e.preventDefault(); onDragOver(e, index) }}
-      onDrop={e => onDrop(e, index)}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; onDragOver(e, index) }}
+      onDrop={handleFileDrop}
+      onDragLeave={() => setShowActions(false)}
       onDragEnd={() => setShowActions(false)}
       onMouseEnter={() => !isDragging.current && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -444,6 +468,7 @@ export default function FeedPage() {
                   onTouchDragMove={handleTouchDragMove}
                   onTouchDragEnd={handleTouchDragEnd}
                   isBeingDragged={touchDragIndex === i}
+                  onFileDrop={handleReplace}
                 />
               ) : (
                 <EmptySlot
@@ -451,6 +476,7 @@ export default function FeedPage() {
                   index={i}
                   onUpload={handleUpload}
                   onDragOver={handleDragOver}
+                  onFileDrop={handleUpload}
                   onDrop={handleDrop}
                   dragOver={dragOverIndex === i}
                 />

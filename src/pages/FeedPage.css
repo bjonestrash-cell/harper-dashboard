@@ -274,39 +274,47 @@
 
 /* ───── MOBILE ───── */
 @media (max-width: 767px) {
+  .feed-page .page-container {
+    padding: 0 !important;
+  }
   .feed-intro {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+  }
+  .feed-intro-sub {
+    font-size: 11px;
   }
   .feed-frame {
     max-width: 100%;
     border: none;
     box-shadow: none;
-    margin: 0 -16px;
-    width: calc(100% + 32px);
+    margin: 0;
+    width: 100%;
   }
   .feed-ig-header {
-    padding: 14px 16px 8px;
-    gap: 14px;
+    padding: 12px 16px 6px;
+    gap: 12px;
   }
   .feed-ig-avatar {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
   }
   .feed-ig-avatar-text {
-    font-size: 6.5px;
-    letter-spacing: 1.8px;
+    font-size: 6px;
+    letter-spacing: 1.5px;
   }
   .feed-ig-stat strong {
-    font-size: 13px;
+    font-size: 14px;
   }
   .feed-ig-stat span {
     font-size: 9px;
   }
   .feed-ig-stats {
-    gap: 16px;
+    gap: 14px;
   }
   .feed-ig-name {
-    padding: 0 16px 10px;
+    padding: 0 16px 8px;
+    gap: 1px;
   }
   .feed-ig-name strong {
     font-size: 12px;
@@ -319,6 +327,10 @@
   }
   .feed-grid {
     gap: 1px;
+    border-top: none;
+  }
+  .feed-slot-empty {
+    background: var(--cream-mid);
   }
   .feed-slot-actions {
     /* Always show on mobile via tap */
