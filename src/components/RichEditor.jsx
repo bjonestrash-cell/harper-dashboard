@@ -73,15 +73,42 @@ export default function RichEditor({ content, onChange, placeholder }) {
   const handleKeyDown = (e) => {
     if (e.metaKey || e.ctrlKey) {
       switch (e.key) {
-        case 'b': e.preventDefault(); document.execCommand('bold'); break
-        case 'i': e.preventDefault(); document.execCommand('italic'); break
-        case 'u': e.preventDefault(); document.execCommand('underline'); break
+        case 'b': e.preventDefault(); document.execCommand('bold'); updateActiveFormats(); break
+        case 'i': e.preventDefault(); document.execCommand('italic'); updateActiveFormats(); break
+        case 'u': e.preventDefault(); document.execCommand('underline'); updateActiveFormats(); break
       }
     }
-    // Tab for indent
+
+    // Tab key — indent in lists, insert tab elsewhere
     if (e.key === 'Tab') {
       e.preventDefault()
-      document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;')
+      const inList = document.queryCommandState('insertUnorderedList') || document.queryCommandState('insertOrderedList')
+      if (inList) {
+        if (e.shiftKey) {
+          document.execCommand('outdent')
+        } else {
+          document.execCommand('indent')
+        }
+      } else {
+        document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;')
+      }
+    }
+
+    // Enter in empty list item — exit list instead of deleting
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const sel = window.getSelection()
+      if (sel && sel.rangeCount > 0) {
+        const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
+        if (li && li.textContent.trim() === '') {
+          // Empty list item — exit the list
+          e.preventDefault()
+          document.execCommand('insertUnorderedList', false, null) // toggle off
+          if (document.queryCommandState('insertOrderedList')) {
+            document.execCommand('insertOrderedList', false, null)
+          }
+          document.execCommand('formatBlock', false, '<p>')
+        }
+      }
     }
   }
 

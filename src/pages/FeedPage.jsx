@@ -14,38 +14,54 @@ import './FeedPage.css'
   );
 */
 
-const GRID_SIZE = 27 // 3 columns × 9 rows
+const MIN_GRID = 12 // start with 4 rows
 const STORAGE_KEY = 'harper-feed-grid'
+const FEED_SYNC_KEY = '9999-01-01'
 
-// Persist to localStorage (works immediately, no DB needed)
+// Ensure grid size is always a multiple of 3 and at least MIN_GRID
+function ensureGridSize(slots) {
+  // Check if top row (first 3 slots) has any filled slot
+  const topRowFilled = slots[0] || slots[1] || slots[2]
+  if (topRowFilled) {
+    // Add a new empty row at the top (3 slots)
+    const newSlots = [null, null, null, ...slots]
+    // Update all positions
+    return newSlots.map((s, i) => s ? { ...s, position: i } : null)
+  }
+  return slots
+}
+
 function saveFeedLocal(slots) {
   try {
     const serializable = slots.map(s => s ? { id: s.id, position: s.position, image_url: s.image_url, caption: s.caption } : null)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable))
-  } catch (e) { /* localStorage full — silently ignore */ }
+  } catch (e) {}
 }
 function loadFeedLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      // Ensure minimum size
+      while (parsed.length < MIN_GRID) parsed.push(null)
+      return parsed
+    }
   } catch (e) {}
   return null
 }
 
-// Sync feed via the existing 'notes' table using a special month key
-const FEED_SYNC_KEY = '9999-01-01' // special date that won't conflict with real meetings
-
+// Sync feed via the existing 'notes' table
 async function syncFeedToSupabase(slots) {
   try {
     const serializable = slots.map(s => s ? { position: s.position, image_url: s.image_url, caption: s.caption } : null)
     const content = JSON.stringify(serializable)
 
-    // Check if feed record exists
+    // Use upsert pattern — check with maybeSingle to avoid .single() throwing
     const { data: existing } = await supabase
       .from('notes')
       .select('id')
       .eq('month', FEED_SYNC_KEY)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       await supabase.from('notes')
@@ -55,7 +71,9 @@ async function syncFeedToSupabase(slots) {
       await supabase.from('notes')
         .insert([{ month: FEED_SYNC_KEY, content, updated_by: 'feed' }])
     }
-  } catch (e) { /* silently fail */ }
+  } catch (e) {
+    console.warn('Feed sync failed:', e.message)
+  }
 }
 
 async function loadFeedFromSupabase() {
@@ -64,11 +82,13 @@ async function loadFeedFromSupabase() {
       .from('notes')
       .select('content')
       .eq('month', FEED_SYNC_KEY)
-      .single()
+      .maybeSingle()
     if (data?.content) {
-      return JSON.parse(data.content)
+      const parsed = JSON.parse(data.content)
+      while (parsed.length < MIN_GRID) parsed.push(null)
+      return parsed
     }
-  } catch (e) { /* no feed saved yet */ }
+  } catch (e) {}
   return null
 }
 
@@ -231,10 +251,9 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
 export default function FeedPage() {
   const [slots, setSlots] = useState(() => {
     const local = loadFeedLocal()
-    if (!local) return Array(GRID_SIZE).fill(null)
-    // Pad to current GRID_SIZE if localStorage has fewer slots
-    while (local.length < GRID_SIZE) local.push(null)
-    return local.slice(0, GRID_SIZE)
+    if (!local) return Array(MIN_GRID).fill(null)
+    while (local.length < MIN_GRID) local.push(null)
+    return local
   })
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
@@ -247,11 +266,10 @@ export default function FeedPage() {
   useEffect(() => {
     const load = async () => {
       const remote = await loadFeedFromSupabase()
-      if (remote && remote.length > 0) {
-        // Pad to GRID_SIZE
-        while (remote.length < GRID_SIZE) remote.push(null)
-        setSlots(remote.slice(0, GRID_SIZE))
-        saveFeedLocal(remote.slice(0, GRID_SIZE))
+      if (remote && remote.some(s => s !== null)) {
+        while (remote.length < MIN_GRID) remote.push(null)
+        setSlots(remote)
+        saveFeedLocal(remote)
       }
     }
     load()
@@ -265,9 +283,9 @@ export default function FeedPage() {
           if (payload.new?.content && payload.new?.updated_by === 'feed') {
             try {
               const remote = JSON.parse(payload.new.content)
-              while (remote.length < GRID_SIZE) remote.push(null)
-              setSlots(remote.slice(0, GRID_SIZE))
-              saveFeedLocal(remote.slice(0, GRID_SIZE))
+              while (remote.length < MIN_GRID) remote.push(null)
+              setSlots(remote)
+              saveFeedLocal(remote)
             } catch (e) {}
           }
         }
@@ -311,12 +329,14 @@ export default function FeedPage() {
     reader.readAsDataURL(file)
   })
 
-  // Helper to update slots + persist
+  // Helper to update slots + persist + auto-grow
   const updateSlots = useCallback((updater) => {
     setSlots(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
+      let next = typeof updater === 'function' ? updater(prev) : updater
+      // Auto-grow: if top row has any filled slot, add empty row above
+      next = ensureGridSize(next)
       saveFeedLocal(next)
-      syncFeedToSupabase(next) // fire-and-forget cross-device sync
+      syncFeedToSupabase(next)
       return next
     })
   }, [])
@@ -451,7 +471,7 @@ export default function FeedPage() {
     <div className="feed-page page-animate">
       <PageHeader title="Feed Planner">
         <div className="feed-header-meta">
-          <span className="feed-counter">{filledCount} / {GRID_SIZE}</span>
+          <span className="feed-counter">{filledCount} / {slots.length}</span>
           {saving && <span className="feed-saving">Saving...</span>}
         </div>
       </PageHeader>
