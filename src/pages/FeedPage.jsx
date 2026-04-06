@@ -15,6 +15,36 @@ import './FeedPage.css'
 */
 
 const GRID_SIZE = 12 // 3 columns × 4 rows
+const STORAGE_KEY = 'harper-feed-grid'
+
+// Persist to localStorage (works immediately, no DB needed)
+function saveFeedLocal(slots) {
+  try {
+    const serializable = slots.map(s => s ? { id: s.id, position: s.position, image_url: s.image_url, caption: s.caption } : null)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable))
+  } catch (e) { /* localStorage full — silently ignore */ }
+}
+function loadFeedLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  return null
+}
+
+// Try Supabase, fall back gracefully
+async function trySyncToSupabase(slots) {
+  try {
+    // Delete all then re-insert (simple sync)
+    await supabase.from('feed_posts').delete().gte('position', 0)
+    const rows = slots.filter(Boolean).map(s => ({
+      position: s.position,
+      image_url: s.image_url,
+      caption: s.caption || '',
+    }))
+    if (rows.length > 0) await supabase.from('feed_posts').insert(rows)
+  } catch (e) { /* table may not exist yet */ }
+}
 
 function EmptySlot({ index, onUpload }) {
   const inputRef = useRef(null)
@@ -110,65 +140,49 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
 }
 
 export default function FeedPage() {
-  const [slots, setSlots] = useState(() => Array(GRID_SIZE).fill(null))
+  const [slots, setSlots] = useState(() => {
+    const local = loadFeedLocal()
+    return local || Array(GRID_SIZE).fill(null)
+  })
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
-  // Load feed from Supabase
+  // Also try loading from Supabase (merge if it has newer data)
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('feed_posts')
-        .select('*')
-        .order('position', { ascending: true })
-      if (data) {
-        const grid = Array(GRID_SIZE).fill(null)
-        data.forEach(item => {
-          if (item.position >= 0 && item.position < GRID_SIZE) {
-            grid[item.position] = item
-          }
-        })
-        setSlots(grid)
-      }
+      try {
+        const { data } = await supabase
+          .from('feed_posts')
+          .select('*')
+          .order('position', { ascending: true })
+        if (data && data.length > 0) {
+          const grid = Array(GRID_SIZE).fill(null)
+          data.forEach(item => {
+            if (item.position >= 0 && item.position < GRID_SIZE) grid[item.position] = item
+          })
+          setSlots(grid)
+          saveFeedLocal(grid)
+        }
+      } catch (e) { /* table may not exist */ }
     }
     load()
   }, [])
 
-  // Real-time sync
-  useEffect(() => {
-    const channel = supabase
-      .channel('feed_posts_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'feed_posts' }, () => {
-        // Refetch all on any change
-        supabase.from('feed_posts').select('*').order('position', { ascending: true }).then(({ data }) => {
-          if (data) {
-            const grid = Array(GRID_SIZE).fill(null)
-            data.forEach(item => {
-              if (item.position >= 0 && item.position < GRID_SIZE) grid[item.position] = item
-            })
-            setSlots(grid)
-          }
-        })
-      })
-      .subscribe()
-    return () => supabase.removeChannel(channel)
-  }, [])
-
   const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-    // Resize to 1080x1350 before storing
+    // Resize to 540x675 (half of 1080x1350) for storage efficiency
     const img = new Image()
     const reader = new FileReader()
     reader.onload = e => {
       img.onload = () => {
         const canvas = document.createElement('canvas')
-        canvas.width = 1080
-        canvas.height = 1350
+        canvas.width = 540
+        canvas.height = 675
         const ctx = canvas.getContext('2d')
         // Cover fit — crop to 4:5
         const srcRatio = img.width / img.height
-        const tgtRatio = 1080 / 1350
+        const tgtRatio = 4 / 5
         let sw, sh, sx, sy
         if (srcRatio > tgtRatio) {
           sh = img.height
@@ -181,7 +195,7 @@ export default function FeedPage() {
           sx = 0
           sy = (img.height - sh) / 2
         }
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 1080, 1350)
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 540, 675)
         resolve(canvas.toDataURL('image/jpeg', 0.85))
       }
       img.onerror = reject
@@ -191,63 +205,55 @@ export default function FeedPage() {
     reader.readAsDataURL(file)
   })
 
+  // Helper to update slots + persist
+  const updateSlots = useCallback((updater) => {
+    setSlots(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      saveFeedLocal(next)
+      trySyncToSupabase(next) // fire-and-forget
+      return next
+    })
+  }, [])
+
   const handleUpload = useCallback(async (position, file) => {
     setSaving(true)
     try {
       const dataUrl = await fileToDataUrl(file)
-      const { data, error } = await supabase
-        .from('feed_posts')
-        .insert([{ position, image_url: dataUrl, caption: '' }])
-        .select()
-        .single()
-      if (!error && data) {
-        setSlots(prev => {
-          const next = [...prev]
-          next[position] = data
-          return next
-        })
-      }
+      const newSlot = { id: crypto.randomUUID(), position, image_url: dataUrl, caption: '' }
+      updateSlots(prev => {
+        const next = [...prev]
+        next[position] = newSlot
+        return next
+      })
     } catch (err) {
       console.error('Upload failed:', err)
     }
     setSaving(false)
-  }, [])
+  }, [updateSlots])
 
   const handleReplace = useCallback(async (position, file) => {
-    const existing = slots[position]
-    if (!existing) return handleUpload(position, file)
     setSaving(true)
     try {
       const dataUrl = await fileToDataUrl(file)
-      const { data, error } = await supabase
-        .from('feed_posts')
-        .update({ image_url: dataUrl })
-        .eq('id', existing.id)
-        .select()
-        .single()
-      if (!error && data) {
-        setSlots(prev => {
-          const next = [...prev]
-          next[position] = data
-          return next
-        })
-      }
+      updateSlots(prev => {
+        const next = [...prev]
+        const existing = next[position]
+        next[position] = { ...(existing || {}), id: existing?.id || crypto.randomUUID(), position, image_url: dataUrl }
+        return next
+      })
     } catch (err) {
       console.error('Replace failed:', err)
     }
     setSaving(false)
-  }, [slots])
+  }, [updateSlots])
 
-  const handleRemove = useCallback(async (position) => {
-    const existing = slots[position]
-    if (!existing) return
-    await supabase.from('feed_posts').delete().eq('id', existing.id)
-    setSlots(prev => {
+  const handleRemove = useCallback((position) => {
+    updateSlots(prev => {
       const next = [...prev]
       next[position] = null
       return next
     })
-  }, [slots])
+  }, [updateSlots])
 
   // Drag and drop reordering
   const handleDragStart = (e, index) => {
@@ -261,30 +267,25 @@ export default function FeedPage() {
     setDragOverIndex(index)
   }
 
-  const handleDrop = useCallback(async (e, toIndex) => {
+  const handleDrop = useCallback((e, toIndex) => {
     e.preventDefault()
     setDragOverIndex(null)
     if (dragIndex === null || dragIndex === toIndex) return
 
-    const fromSlot = slots[dragIndex]
-    const toSlot = slots[toIndex]
-
-    // Swap in local state first (optimistic)
-    setSlots(prev => {
+    updateSlots(prev => {
       const next = [...prev]
+      const fromSlot = next[dragIndex]
+      const toSlot = next[toIndex]
+      // Swap positions
+      if (fromSlot) fromSlot.position = toIndex
+      if (toSlot) toSlot.position = dragIndex
       next[toIndex] = fromSlot
       next[dragIndex] = toSlot
       return next
     })
 
-    // Update positions in DB
-    const updates = []
-    if (fromSlot) updates.push(supabase.from('feed_posts').update({ position: toIndex }).eq('id', fromSlot.id))
-    if (toSlot) updates.push(supabase.from('feed_posts').update({ position: dragIndex }).eq('id', toSlot.id))
-    await Promise.all(updates)
-
     setDragIndex(null)
-  }, [dragIndex, slots])
+  }, [dragIndex, updateSlots])
 
   const filledCount = slots.filter(Boolean).length
 
