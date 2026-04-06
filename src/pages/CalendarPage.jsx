@@ -613,7 +613,15 @@ function MobileDayPanel({ date, posts, calendarView, currentUser, onClose, onPos
           <h3 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)' }}>
             {format(date, 'EEEE, MMMM d')}
           </h3>
-          <button className="mobile-day-close" onClick={handleClose}>&times;</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <button onClick={onAdd} style={{
+              width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--ink)',
+              color: 'var(--cream)', border: 'none', fontSize: 20, fontWeight: 200,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', lineHeight: 1,
+            }}>+</button>
+            <button className="mobile-day-close" onClick={handleClose}>&times;</button>
+          </div>
         </div>
         <div className="mobile-day-posts">
           {posts.length === 0 && (
@@ -740,8 +748,89 @@ function formatTime12(t) {
 }
 const EVENT_TYPES = ['post', 'meeting', 'holiday', 'other']
 
+/* ─── Inline Modal Date Picker ─── */
+function ModalDatePicker({ date, onChange }) {
+  const [open, setOpen] = useState(false)
+  const selected = date ? parseISO(date) : new Date()
+  const [viewMonth, setViewMonth] = useState(selected)
+
+  const days = eachDayOfInterval({
+    start: startOfWeek(startOfMonth(viewMonth)),
+    end: endOfWeek(endOfMonth(viewMonth)),
+  })
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{
+        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
+        padding: '0 0 20px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', letterSpacing: 0.3 }}>
+          {format(selected, 'EEEE, MMMM d, yyyy')}
+        </span>
+        <span style={{ fontSize: 10, color: 'var(--ink-light)', marginLeft: 4 }}>change</span>
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <button onClick={() => setOpen(false)} style={{
+        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
+        padding: '0 0 12px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink)', letterSpacing: 0.3 }}>
+          {format(selected, 'EEEE, MMMM d, yyyy')}
+        </span>
+        <span style={{ fontSize: 10, color: 'var(--pink-deep)' }}>done</span>
+      </button>
+
+      <div style={{ border: '1px solid var(--cream-deep)', padding: 16, maxWidth: 320 }}>
+        {/* Month nav */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+            style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>←</button>
+          <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink)' }}>
+            {format(viewMonth, 'MMM yyyy')}
+          </span>
+          <button onClick={() => setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+            style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--ink-light)', cursor: 'pointer', padding: '4px 8px' }}>→</button>
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
+          {['S','M','T','W','T','F','S'].map((d, i) => (
+            <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 500, letterSpacing: 1, color: 'var(--ink-light)', padding: '4px 0' }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Day grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+          {days.map((day, i) => {
+            const isSelected = isSameDay(day, selected)
+            const isCurrMonth = isSameMonth(day, viewMonth)
+            const isTdy = isSameDay(day, new Date())
+            return (
+              <button key={i} onClick={() => { onChange(format(day, 'yyyy-MM-dd')); setOpen(false) }}
+                style={{
+                  width: '100%', aspectRatio: '1', border: 'none', borderRadius: '50%',
+                  backgroundColor: isSelected ? 'var(--ink)' : isTdy ? 'var(--pink-light)' : 'transparent',
+                  color: isSelected ? 'var(--cream)' : isCurrMonth ? 'var(--ink)' : 'var(--cream-deep)',
+                  fontSize: 12, fontWeight: isSelected ? 500 : 300, cursor: 'pointer',
+                  fontFamily: "'Inter', sans-serif", transition: 'all 0.15s ease',
+                }}>{format(day, 'd')}</button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Post/Event Modal ─── */
-function PostModal({ date, post, currentUser, setPosts, onClose }) {
+function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) {
+  const [modalDate, setModalDate] = useState(initialDate)
+  const date = modalDate
   const [eventType, setEventType] = useState(post?.content_type === 'meeting' || post?.content_type === 'holiday' ? post.content_type : (post?.platform === 'meeting' || post?.platform === 'holiday' || post?.platform === 'other-event' ? post.platform.replace('-event','') : 'post'))
   const [form, setForm] = useState({
     platform: post?.platform || 'instagram',
@@ -806,7 +895,7 @@ function PostModal({ date, post, currentUser, setPosts, onClose }) {
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 20 }}>
           {titles[eventType]}
         </h2>
-        {date && <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 20 }}>{format(parseISO(date), 'EEEE, MMMM d, yyyy')}</p>}
+        {date && <ModalDatePicker date={date} onChange={setModalDate} />}
 
         {/* Event type selector */}
         <div style={{ marginBottom: 24 }}>
