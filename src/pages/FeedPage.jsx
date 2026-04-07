@@ -271,10 +271,19 @@ export default function FeedPage() {
       const remoteHasData = remote && remote.some(s => s !== null)
 
       if (remoteHasData) {
-        // Remote has data — use it (cross-device sync)
-        while (remote.length < MIN_GRID) remote.push(null)
-        setSlots(remote)
-        saveFeedLocal(remote)
+        // Compact: trim trailing empties, keep at least MIN_GRID
+        let lastFilled = -1
+        for (let i = remote.length - 1; i >= 0; i--) {
+          if (remote[i] !== null) { lastFilled = i; break }
+        }
+        // Snap to end of that row
+        let endRow = lastFilled === -1 ? MIN_GRID : Math.ceil((lastFilled + 1) / 3) * 3
+        if (endRow < MIN_GRID) endRow = MIN_GRID
+        let compacted = remote.slice(0, endRow)
+        while (compacted.length < MIN_GRID) compacted.push(null)
+        setSlots(compacted)
+        saveFeedLocal(compacted)
+        if (compacted.length !== remote.length) syncFeedToSupabase(compacted)
       } else if (localHasData) {
         // Local has data but remote doesn't — push local to Supabase
         // This handles the case where someone uploaded before sync was deployed
@@ -292,9 +301,14 @@ export default function FeedPage() {
           if (payload.new?.content && payload.new?.updated_by === 'feed') {
             try {
               const remote = JSON.parse(payload.new.content)
-              while (remote.length < MIN_GRID) remote.push(null)
-              setSlots(remote)
-              saveFeedLocal(remote)
+              let lf = -1
+              for (let i = remote.length - 1; i >= 0; i--) { if (remote[i] !== null) { lf = i; break } }
+              let end = lf === -1 ? MIN_GRID : Math.ceil((lf + 1) / 3) * 3
+              if (end < MIN_GRID) end = MIN_GRID
+              let compacted = remote.slice(0, end)
+              while (compacted.length < MIN_GRID) compacted.push(null)
+              setSlots(compacted)
+              saveFeedLocal(compacted)
             } catch (e) {}
           }
         }
