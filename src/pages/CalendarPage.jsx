@@ -97,10 +97,13 @@ export default function CalendarPage() {
   const isPromoStart = (promo, date) => promo.start_date === format(date, 'yyyy-MM-dd')
 
   const handleDayClick = (date) => {
+    const dayPosts = getPostsForDate(date)
     if (isMobile) {
+      if (dayPosts.length === 0) { openAddModal(date); return }
       setMobileDay(date)
       return
     }
+    if (dayPosts.length === 0) { openAddModal(date); return }
     setSelectedDay(date)
   }
 
