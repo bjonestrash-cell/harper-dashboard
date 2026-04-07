@@ -170,12 +170,12 @@ export default function PromotionsPage() {
         })()}
 
         {/* Timeline — thin editorial line */}
-        <div style={{ marginBottom: 48 }}>
+        {!statFilter && <div style={{ marginBottom: 48 }}>
           <div style={{ height: 1, backgroundColor: 'var(--cream-deep)', width: '100%' }} />
-        </div>
+        </div>}
 
         {/* Promotions — flat rows */}
-        <div style={{ marginBottom: 48 }}>
+        {!statFilter && <div style={{ marginBottom: 48 }}>
           {monthPromos.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', padding: '24px 0' }}>No promotions this month</p>}
           {monthPromos.map(promo => {
             const computedStatus = getPromoStatus(promo)
@@ -220,7 +220,7 @@ export default function PromotionsPage() {
               </SwipeToDelete>
             )
           })}
-        </div>
+        </div>}
 
       </div>
 

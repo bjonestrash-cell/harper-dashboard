@@ -55,12 +55,13 @@ export function NotificationBell({ onClick }) {
 
   useEffect(() => {
     fetchCount()
+    const channelName = `notifications-bell-${currentUser}-${Date.now()}`
     const channel = supabase
-      .channel('notifications-bell')
+      .channel(channelName)
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        { event: '*', schema: 'public', table: 'notifications' },
         (payload) => {
-          if (payload.new.to_user === currentUser) {
+          if (payload.eventType === 'INSERT' && payload.new?.to_user === currentUser) {
             setCount(prev => {
               const n = prev + 1
               try { if ('setAppBadge' in navigator) navigator.setAppBadge(n) } catch(e) {}
@@ -69,20 +70,14 @@ export function NotificationBell({ onClick }) {
             })
             setPulse(true)
             setTimeout(() => setPulse(false), 2000)
+          } else {
+            fetchCount()
           }
         }
       )
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'notifications' },
-        () => fetchCount()
-      )
-      .on('postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'notifications' },
-        () => fetchCount()
-      )
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [currentUser, fetchCount])
+  }, [currentUser])
 
   return (
     <button className={`notif-bell ${pulse ? 'pulse' : ''}`} onClick={onClick} title="Notifications">
