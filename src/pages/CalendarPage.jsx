@@ -131,6 +131,23 @@ export default function CalendarPage() {
     if (!error) setPosts(prev => prev.filter(p => p.id !== id))
   }
 
+  const [draggedPost, setDraggedPost] = useState(null)
+
+  const handleEventDragStart = (post) => {
+    setDraggedPost(post)
+  }
+
+  const handleEventDrop = async (targetDate) => {
+    if (!draggedPost) return
+    const dateStr = format(targetDate, 'yyyy-MM-dd')
+    if (dateStr === draggedPost.date) { setDraggedPost(null); return }
+    const { error } = await supabase.from('calendar_posts').update({ date: dateStr }).eq('id', draggedPost.id)
+    if (!error) {
+      setPosts(prev => prev.map(p => p.id === draggedPost.id ? { ...p, date: dateStr } : p))
+    }
+    setDraggedPost(null)
+  }
+
   const selectedDayPosts = selectedDay ? getPostsForDate(selectedDay) : []
 
   return (
@@ -191,6 +208,9 @@ export default function CalendarPage() {
             onDayClick={handleDayClick}
             onDayDoubleClick={openAddModal}
             onPostClick={handlePostClick}
+            onEventDragStart={handleEventDragStart}
+            onEventDrop={handleEventDrop}
+            draggedPost={draggedPost}
           />
         ) : (
           <WeekView
@@ -325,9 +345,10 @@ function DailyNoteColumn({ date, author, label, accentColor, currentUser }) {
 }
 
 /* ─── Month Grid ─── */
-function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onDayDoubleClick, onPostClick }) {
+function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay, getPostsForDate, getPromosForDate, isPromoStart, onDayClick, onDayDoubleClick, onPostClick, onEventDragStart, onEventDrop, draggedPost }) {
   const isMobileGrid = window.innerWidth < 768
   const weekDays = isMobileGrid ? ['S','M','T','W','T','F','S'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const [dropTarget, setDropTarget] = useState(null)
 
   return (
     <div className="calendar-grid">
@@ -341,6 +362,7 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay,
         const todayFlag = isToday(day)
         const weekend = isWeekend(day)
         const isSelected = selectedDay && isSameDay(day, selectedDay)
+        const isDragOver = draggedPost && dropTarget && isSameDay(day, dropTarget)
 
         return (
           <div
@@ -349,9 +371,13 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay,
               ${!isCurrentMonth ? 'other-month' : ''}
               ${todayFlag ? 'today' : ''}
               ${weekend && isCurrentMonth ? 'weekend' : ''}
-              ${isSelected ? 'selected' : ''}`}
+              ${isSelected ? 'selected' : ''}
+              ${isDragOver ? 'drag-over' : ''}`}
             onClick={() => onDayClick(day)}
             onDoubleClick={(e) => { e.stopPropagation(); onDayDoubleClick(day) }}
+            onDragOver={(e) => { if (draggedPost) { e.preventDefault(); setDropTarget(day) } }}
+            onDragLeave={() => setDropTarget(null)}
+            onDrop={(e) => { e.preventDefault(); setDropTarget(null); onEventDrop(day) }}
           >
             <span className={`day-number ${todayFlag ? 'today-number' : ''}`}>
               {format(day, 'd')}
@@ -373,7 +399,8 @@ function MonthGrid({ days, currentMonth, calendarView, currentUser, selectedDay,
             <div className="cell-posts">
               {dayPosts.map(post => (
                 <PostPill key={post.id} post={post} showAssignee={calendarView === 'master'}
-                  currentUser={currentUser} onClick={(e) => onPostClick(post, e)} />
+                  currentUser={currentUser} onClick={(e) => onPostClick(post, e)}
+                  draggable onDragStart={() => onEventDragStart(post)} />
               ))}
             </div>
             {isMobileGrid && dayPosts.length > 0 && (

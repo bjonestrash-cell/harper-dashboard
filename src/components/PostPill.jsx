@@ -10,7 +10,7 @@ function getEventType(post) {
   return 'post'
 }
 
-export default function PostPill({ post, onClick, showAssignee }) {
+export default function PostPill({ post, onClick, showAssignee, draggable, onDragStart }) {
   const evType = getEventType(post)
   const bgColor = EVENT_COLORS[evType]
   const textColor = EVENT_TEXT_COLORS[evType]
@@ -19,10 +19,13 @@ export default function PostPill({ post, onClick, showAssignee }) {
     <button
       className="post-pill"
       onClick={onClick}
+      draggable={draggable}
+      onDragStart={draggable ? (e) => { e.stopPropagation(); onDragStart && onDragStart(e) } : undefined}
       style={{
         '--event-color': bgColor,
         backgroundColor: bgColor,
         color: textColor,
+        cursor: draggable ? 'grab' : 'pointer',
       }}
     >
       <span className="post-pill-text">{post.caption || post.content_type || evType}</span>

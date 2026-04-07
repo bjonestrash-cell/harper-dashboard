@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "harper-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "name": "harper-dashboard",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["/tmp/harper-dev.sh"],
       "port": 5173
     }
   ]
