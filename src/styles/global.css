@@ -28,13 +28,13 @@
 }
 
 html {
-  height: 100%;
+  min-height: 100%;
   scroll-behavior: smooth;
   overflow-x: hidden;
 }
 
 body, #root {
-  height: 100%;
+  min-height: 100%;
   overflow-x: hidden;
 }
 
@@ -107,8 +107,8 @@ body {
   flex: 1;
   min-width: 0;
   overflow-x: hidden;
+  overflow-y: visible;
   transition: margin-left 220ms ease;
-  overscroll-behavior: contain;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -130,6 +130,37 @@ body {
   justify-content: flex-end;
   padding: 12px 48px 0;
   height: 36px;
+}
+
+/* Bell only shows on mobile */
+.mobile-bell-only {
+  display: none;
+}
+@media (max-width: 768px) {
+  .mobile-bell-only {
+    display: flex;
+    align-items: center;
+  }
+  .mobile-bell-only .notif-bell {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-bell-only .notif-bell svg {
+    width: 15px;
+    height: 15px;
+    stroke: var(--ink-light);
+  }
+  .mobile-bell-only .notif-badge {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+    top: -2px;
+    right: -2px;
+  }
 }
 
 /* page-header defined in PageHeader.css */

@@ -12,7 +12,7 @@ import NotesPage from './pages/NotesPage'
 import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
 import CustomCursor from './components/CustomCursor'
-import NotificationsPanel, { NotificationToastContainer } from './components/Notifications'
+import NotificationsPanel, { NotificationToastContainer, NotificationBell } from './components/Notifications'
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -139,6 +139,9 @@ export default function App() {
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} />
         <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div className="global-status">
+            <div className="mobile-bell-only">
+              <NotificationBell onClick={() => setShowNotifications(true)} />
+            </div>
             <LiveIndicator />
           </div>
 
