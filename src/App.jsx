@@ -139,7 +139,6 @@ export default function App() {
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} />
         <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div className="global-status">
-            <PresenceAvatars users={onlineUsers} currentUser={currentUser} />
             <LiveIndicator />
           </div>
 

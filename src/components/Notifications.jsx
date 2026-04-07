@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { format, parseISO } from 'date-fns'
+import SwipeToDelete from './SwipeToDelete'
 import './Notifications.css'
 
 // ─── Notification helpers ───
@@ -161,9 +162,6 @@ export function NotificationToastContainer() {
 export default function NotificationsPanel({ onClose, onNavigate }) {
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
-  const [swipingId, setSwipingId] = useState(null)
-  const [swipeX, setSwipeX] = useState(0)
-  const touchStart = { current: 0 }
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
   useEffect(() => {
@@ -210,27 +208,10 @@ export default function NotificationsPanel({ onClose, onNavigate }) {
     if (onClose) onClose()
   }
 
-  // Mouse swipe to dismiss
-  const handleMouseDown = (e, id) => {
-    setSwipingId(id)
-    touchStart.current = e.clientX
-    setSwipeX(0)
-  }
-  const handleMouseMove = (e) => {
-    if (!swipingId) return
-    const dx = e.clientX - touchStart.current
-    if (dx < 0) setSwipeX(dx) // only swipe left
-  }
-  const handleMouseUp = () => {
-    if (swipeX < -100) deleteNotif(swipingId)
-    setSwipingId(null)
-    setSwipeX(0)
-  }
-
   const capitalize = s => s ? s[0].toUpperCase() + s.slice(1) : ''
 
   return (
-    <div className="notif-panel" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+    <div className="notif-panel">
       <div className="notif-panel-header">
         <span className="notif-panel-title">Notifications</span>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -248,33 +229,31 @@ export default function NotificationsPanel({ onClose, onNavigate }) {
         )}
         {notifications.map(n => {
           const isNatalie = n.from_user === 'natalie'
-          const isSwiping = swipingId === n.id
           return (
-            <div
-              key={n.id}
-              className={`notif-item ${n.read ? 'read' : 'unread'}`}
-              style={{ transform: isSwiping ? `translateX(${swipeX}px)` : undefined }}
-              onMouseDown={(e) => handleMouseDown(e, n.id)}
-              onClick={() => handleClick(n)}
-            >
-              <div className="notif-item-dot" style={{
-                backgroundColor: !n.read ? 'var(--pink)' : 'transparent',
-              }} />
-              <div className="notif-item-avatar" style={{
-                backgroundColor: isNatalie ? 'var(--pink-light)' : 'var(--cream-mid)',
-                color: isNatalie ? 'var(--pink-deep)' : 'var(--ink-mid)',
-              }}>
-                {capitalize(n.from_user)[0]}
+            <SwipeToDelete key={n.id} onDelete={() => deleteNotif(n.id)}>
+              <div
+                className={`notif-item ${n.read ? 'read' : 'unread'}`}
+                onClick={() => handleClick(n)}
+              >
+                <div className="notif-item-dot" style={{
+                  backgroundColor: !n.read ? 'var(--pink)' : 'transparent',
+                }} />
+                <div className="notif-item-avatar" style={{
+                  backgroundColor: isNatalie ? 'var(--pink-light)' : 'var(--cream-mid)',
+                  color: isNatalie ? 'var(--pink-deep)' : 'var(--ink-mid)',
+                }}>
+                  {capitalize(n.from_user)[0]}
+                </div>
+                <div className="notif-item-content">
+                  <span className="notif-item-title">{n.title}</span>
+                  {n.body && <span className="notif-item-body">{n.body}</span>}
+                  <span className="notif-item-time">
+                    {n.created_at ? format(parseISO(n.created_at), 'MMM d, h:mm a') : ''}
+                  </span>
+                </div>
+                <button className="notif-item-delete" onClick={(e) => { e.stopPropagation(); deleteNotif(n.id) }}>×</button>
               </div>
-              <div className="notif-item-content">
-                <span className="notif-item-title">{n.title}</span>
-                {n.body && <span className="notif-item-body">{n.body}</span>}
-                <span className="notif-item-time">
-                  {n.created_at ? format(parseISO(n.created_at), 'MMM d, h:mm a') : ''}
-                </span>
-              </div>
-              <button className="notif-item-delete" onClick={(e) => { e.stopPropagation(); deleteNotif(n.id) }}>×</button>
-            </div>
+            </SwipeToDelete>
           )
         })}
       </div>
