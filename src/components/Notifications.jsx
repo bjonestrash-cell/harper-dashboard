@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { format, parseISO } from 'date-fns'
 import SwipeToDelete from './SwipeToDelete'
@@ -53,11 +53,19 @@ export function NotificationBell({ onClick }) {
     document.title = newCount > 0 ? `(${newCount}) Harper` : 'Harper'
   }, [currentUser])
 
+  const channelRef = useRef(null)
+
   useEffect(() => {
     fetchCount()
-    const channelName = `notifications-bell-${currentUser}-${Date.now()}`
+
+    // Always remove any existing channel before creating a new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
     const channel = supabase
-      .channel(channelName)
+      .channel(`notifications-bell-${currentUser}`)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
         (payload) => {
@@ -76,7 +84,12 @@ export function NotificationBell({ onClick }) {
         }
       )
       .subscribe()
-    return () => supabase.removeChannel(channel)
+
+    channelRef.current = channel
+    return () => {
+      supabase.removeChannel(channel)
+      channelRef.current = null
+    }
   }, [currentUser])
 
   return (

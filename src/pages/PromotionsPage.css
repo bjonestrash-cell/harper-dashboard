@@ -123,8 +123,15 @@
   transform: scale(1.08);
 }
 
+.promo-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
 /* Mobile */
 @media (max-width: 767px) {
+  .promo-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .stats-row { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
   .stat-card { padding: 20px 12px; }
   .stat-value { font-size: 28px; }

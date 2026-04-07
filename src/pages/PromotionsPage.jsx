@@ -106,7 +106,7 @@ export default function PromotionsPage() {
         <MonthSelector />
 
         {/* Stats — chic clickable cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+        <div className="promo-stats-grid" style={{ marginBottom: 48 }}>
           {[
             { label: 'Active Now', value: stats.active, key: 'active', accent: '#F2C4CE', bg: '#FEF7F9', bgHover: '#FDF0F3' },
             { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#E8A0B2', bg: '#FDF0F4', bgHover: '#FBE4EB' },
@@ -182,43 +182,42 @@ export default function PromotionsPage() {
           {monthPromos.map(promo => {
             const computedStatus = getPromoStatus(promo)
             const statusStyle = computedStatus === 'active'
-              ? { backgroundColor: '#FDE8EE', color: '#D4849A', borderColor: '#F4C4D4' }
+              ? { backgroundColor: '#FDE8EE', color: '#D4849A' }
               : computedStatus === 'upcoming'
-              ? { backgroundColor: '#F0EBF5', color: '#9B8AAE', borderColor: '#D8CEE4' }
-              : { backgroundColor: '#F0EDE8', color: '#A89888', borderColor: '#DDD5CB' }
+              ? { backgroundColor: '#F0EBF5', color: '#9B8AAE' }
+              : { backgroundColor: '#F0EDE8', color: '#A89888' }
             return (
               <SwipeToDelete key={promo.id} onDelete={() => deletePromotion(promo.id)}>
                 <div style={{
-                paddingTop: 24, paddingBottom: 24, paddingRight: 20,
-                borderBottom: '1px solid var(--cream-deep)',
-                borderLeft: `3px solid ${promo.color || '#D4849A'}`,
-                backgroundColor: 'var(--white)',
-                paddingLeft: 24,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                transition: 'all 0.2s ease',
-              }}>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--ink)' }}>{promo.name}</div>
-                  <div style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginTop: 4 }}>
-                    {promo.start_date && format(new Date(promo.start_date + 'T00:00:00'), 'MMM d')}
-                    {promo.end_date && ` \u2013 ${format(new Date(promo.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
-                    {promo.discount && <span style={{ marginLeft: 12, color: '#D4849A', backgroundColor: '#FDE8EE', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{promo.discount}</span>}
+                  padding: '14px 0', paddingLeft: 16, paddingRight: 16,
+                  borderBottom: '1px solid var(--cream-deep)',
+                  borderLeft: `2px solid ${promo.color || '#F4A7B9'}`,
+                  backgroundColor: 'var(--white)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  transition: 'all 0.2s ease',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{promo.name}</div>
+                    <div style={{ fontSize: 11, fontWeight: 300, color: 'var(--ink-light)', marginTop: 2 }}>
+                      {promo.start_date && format(new Date(promo.start_date + 'T00:00:00'), 'MMM d')}
+                      {promo.end_date && ` \u2013 ${format(new Date(promo.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
+                      {promo.discount && <span style={{ marginLeft: 10, color: '#D4849A', backgroundColor: '#FDE8EE', padding: '1px 8px', borderRadius: 20, fontSize: 10, fontWeight: 500 }}>{promo.discount}</span>}
+                    </div>
+                    {promo.notes && <div style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-mid)', marginTop: 4 }}>{promo.notes}</div>}
+                    <div style={{ marginTop: 8, display: 'flex', gap: 4, fontSize: 10, fontWeight: 400, color: 'var(--ink-light)' }}>
+                      <button style={{ background: 'none', border: 'none', fontSize: 10, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s', cursor: 'pointer' }}
+                        onClick={() => handleEdit(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Edit</button>
+                      <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
+                      <button style={{ background: 'none', border: 'none', fontSize: 10, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s', cursor: 'pointer' }}
+                        onClick={() => handleDuplicate(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Duplicate</button>
+                      <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
+                      <button style={{ background: 'none', border: 'none', fontSize: 10, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s', cursor: 'pointer' }}
+                        onClick={() => deletePromotion(promo.id)} onMouseEnter={e => e.target.style.color = '#B85450'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Delete</button>
+                    </div>
                   </div>
-                  {promo.notes && <div style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-mid)', marginTop: 8 }}>{promo.notes}</div>}
-                  <div style={{ marginTop: 12, display: 'flex', gap: 4, fontSize: 11, fontWeight: 400, color: 'var(--ink-light)' }}>
-                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
-                      onClick={() => handleEdit(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Edit</button>
-                    <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
-                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
-                      onClick={() => handleDuplicate(promo)} onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Duplicate</button>
-                    <span style={{ color: 'var(--cream-deep)' }}>&middot;</span>
-                    <button style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 400, color: 'var(--ink-light)', padding: 0, transition: 'color 0.2s' }}
-                      onClick={() => deletePromotion(promo.id)} onMouseEnter={e => e.target.style.color = '#B85450'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>Delete</button>
-                  </div>
-                </div>
-                <span style={{ ...statusStyle, borderRadius: 20, padding: '4px 14px', fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>
-                  {computedStatus}
-                </span>
+                  <span style={{ ...statusStyle, borderRadius: 20, padding: '3px 12px', fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>
+                    {computedStatus}
+                  </span>
                 </div>
               </SwipeToDelete>
             )
