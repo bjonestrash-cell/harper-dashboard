@@ -112,7 +112,7 @@ export default function CalendarPage() {
   }
 
   const openAddModal = (date) => {
-    const d = date || selectedDay || new Date()
+    const d = date || selectedDay || currentMonth
     setSelectedDate(format(d, 'yyyy-MM-dd'))
     setSelectedPost(null)
     setShowModal(true)
@@ -248,7 +248,7 @@ export default function CalendarPage() {
       )}
 
       {/* Floating Add Post button */}
-      <button className="fab-add-post" onClick={() => openAddModal(selectedDay || new Date())}>+</button>
+      <button className="fab-add-post" onClick={() => openAddModal(selectedDay)}>+</button>
 
       {showModal && (
         <PostModal date={selectedDate} post={selectedPost} currentUser={currentUser} setPosts={setPosts}
@@ -886,10 +886,12 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
       }
       if (post) {
         const { data, error } = await supabase.from('calendar_posts').update(payload).eq('id', post.id).select()
-        if (!error && data?.[0]) setPosts(prev => prev.map(p => p.id === post.id ? data[0] : p))
+        if (error) { console.error('Error updating:', error); return }
+        if (data?.[0]) setPosts(prev => prev.map(p => p.id === post.id ? data[0] : p))
       } else {
         const { data, error } = await supabase.from('calendar_posts').insert([payload]).select()
-        if (!error && data?.[0]) setPosts(prev => { if (prev.find(p => p.id === data[0].id)) return prev; return [...prev, data[0]] })
+        if (error) { console.error('Error inserting:', error); return }
+        if (data?.[0]) setPosts(prev => { if (prev.find(p => p.id === data[0].id)) return prev; return [...prev, data[0]] })
       }
       onClose()
     } catch (err) { console.error('Error saving:', err) }
