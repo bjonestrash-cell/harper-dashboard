@@ -925,6 +925,12 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 20 }}>
           {titles[eventType]}
         </h2>
+        {/* Title — always at the very top */}
+        <div style={{ marginBottom: 24 }}>
+          <label className="form-label">Title</label>
+          <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={{ ...inputStyle, fontSize: 16, fontWeight: 500 }} />
+        </div>
+
         {date && <ModalDatePicker date={date} onChange={setModalDate} />}
 
         {/* Event type selector */}
@@ -933,17 +939,13 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {EVENT_TYPES.map(t => (
               <button key={t} onClick={() => { setEventType(t); if (t !== 'meeting') update('time', '') }}
-                style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', backgroundColor: eventType === t ? EVENT_COLORS[t] : 'var(--cream-mid)', color: eventType === t ? '#fff' : 'var(--ink-mid)', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease' }}>{t}</button>
+                style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', backgroundColor: eventType === t ? EVENT_COLORS[t] : 'var(--cream-mid)', color: eventType === t ? '#fff' : 'var(--ink-mid)', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', transition: 'all 0.2s ease', cursor: 'pointer' }}>{t}</button>
             ))}
           </div>
         </div>
 
         {/* POST fields */}
         {eventType === 'post' && (<>
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Title</label>
-            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={{ ...inputStyle, fontSize: 16, fontWeight: 500 }} />
-          </div>
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Platform</label>
             <PillSelect options={PLATFORMS} value={form.platform} onChange={(v) => { update('platform', v); update('content_type', CONTENT_TYPES[v]?.[0] || 'Post') }} />
@@ -960,10 +962,6 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
 
         {/* MEETING fields */}
         {eventType === 'meeting' && (<>
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Title</label>
-            <input type="text" value={form.content_type === 'meeting' ? form.caption.split('\n')[0] || '' : form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Meeting title" style={inputStyle} />
-          </div>
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Time</label>
             <input type="time" value={form.time || ''} onChange={(e) => update('time', e.target.value)} style={inputStyle} />
@@ -985,10 +983,6 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
         {/* HOLIDAY fields */}
         {eventType === 'holiday' && (<>
           <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Holiday Name</label>
-            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Mother's Day" style={inputStyle} />
-          </div>
-          <div style={{ marginBottom: 24 }}>
             <label className="form-label">Category</label>
             <PillSelect options={['federal', 'cultural', 'retail', 'custom']} value={form.status} onChange={(v) => update('status', v)} />
           </div>
@@ -1000,10 +994,6 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
 
         {/* OTHER fields */}
         {eventType === 'other' && (<>
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Title</label>
-            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={inputStyle} />
-          </div>
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Notes</label>
             <textarea rows={3} value={''} onChange={() => {}} placeholder="Details..." style={{ ...inputStyle, resize: 'vertical' }} />
