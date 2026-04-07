@@ -949,8 +949,8 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
             <PillSelect options={contentTypes} value={form.content_type} onChange={(v) => update('content_type', v)} />
           </div>
           <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Caption / Copy</label>
-            <textarea rows={4} value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Write your caption..." style={{ ...inputStyle, resize: 'vertical' }} />
+            <label className="form-label">Title</label>
+            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={inputStyle} />
           </div>
           <div style={{ marginBottom: 32 }}>
             <label className="form-label">Assigned to</label>
