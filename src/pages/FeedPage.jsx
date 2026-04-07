@@ -266,10 +266,19 @@ export default function FeedPage() {
   useEffect(() => {
     const load = async () => {
       const remote = await loadFeedFromSupabase()
-      if (remote && remote.some(s => s !== null)) {
+      const local = loadFeedLocal()
+      const localHasData = local && local.some(s => s !== null)
+      const remoteHasData = remote && remote.some(s => s !== null)
+
+      if (remoteHasData) {
+        // Remote has data — use it (cross-device sync)
         while (remote.length < MIN_GRID) remote.push(null)
         setSlots(remote)
         saveFeedLocal(remote)
+      } else if (localHasData) {
+        // Local has data but remote doesn't — push local to Supabase
+        // This handles the case where someone uploaded before sync was deployed
+        syncFeedToSupabase(local)
       }
     }
     load()
@@ -333,8 +342,9 @@ export default function FeedPage() {
   const updateSlots = useCallback((updater) => {
     setSlots(prev => {
       let next = typeof updater === 'function' ? updater(prev) : updater
-      // Auto-grow: if top row has any filled slot, add empty row above
+      // Auto-grow: if top row (first 3 slots) has any filled slot, add empty row above
       next = ensureGridSize(next)
+      while (next.length < MIN_GRID) next.push(null)
       saveFeedLocal(next)
       syncFeedToSupabase(next)
       return next
