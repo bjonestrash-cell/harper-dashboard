@@ -108,10 +108,10 @@ export default function PromotionsPage() {
         {/* Stats — chic clickable cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
           {[
-            { label: 'Active Now', value: stats.active, key: 'active', accent: '#C75B7A', bg: '#FDE8EE', bgHover: '#F9D0DC' },
-            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#D4849A', bg: '#FDF0F4', bgHover: '#FADCE5' },
-            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#E8A8B8', bg: '#FEF4F7', bgHover: '#FCE8EF' },
-            { label: 'Total', value: stats.total, key: 'total', accent: '#B85C78', bg: '#FBDEE8', bgHover: '#F5CCDA' },
+            { label: 'Active Now', value: stats.active, key: 'active', accent: '#F2C4CE', bg: '#FEF7F9', bgHover: '#FDF0F3' },
+            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#E8A0B2', bg: '#FDF0F4', bgHover: '#FBE4EB' },
+            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#D4849A', bg: '#FCE8EF', bgHover: '#F9D6E1' },
+            { label: 'Total', value: stats.total, key: 'total', accent: '#B85C78', bg: '#FADCE5', bgHover: '#F5C8D6' },
           ].map((s) => (
             <div key={s.label} onClick={() => setStatFilter(statFilter === s.key ? null : s.key)}
               style={{

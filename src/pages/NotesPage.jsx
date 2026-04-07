@@ -107,7 +107,25 @@ export default function NotesPage() {
         <div className="meeting-sidebar">
           <div className="meeting-sidebar-header" />
 
-          <button className="new-meeting-btn" onClick={() => setShowAddModal(true)}
+          <button className="new-meeting-btn" onClick={() => {
+            const newMeeting = {
+              id: crypto.randomUUID(),
+              month: format(new Date(), 'yyyy-MM-dd'),
+              content: '',
+              updated_by: currentUser,
+              updated_at: new Date().toISOString(),
+            }
+            setMeetings(prev => [newMeeting, ...prev])
+            setSelectedMeeting(newMeeting)
+            supabase.from('notes').insert([{
+              month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
+            }]).select().single().then(({ data }) => {
+              if (data) {
+                setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
+                setSelectedMeeting(data)
+              }
+            })
+          }}
             style={{
             }}>
             + New Meeting

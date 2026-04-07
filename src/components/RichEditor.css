@@ -63,18 +63,21 @@
 
 .re-emoji-picker {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
+  top: calc(100% + 8px);
+  right: 0;
   background: var(--white);
   border: 1px solid var(--cream-deep);
   box-shadow: 0 8px 32px rgba(26,20,18,0.12);
-  padding: 16px;
-  z-index: 100;
-  width: 340px;
-  border-radius: 8px;
+  padding: 10px;
+  z-index: 200;
+  width: auto;
+  min-width: 220px;
+  max-width: 280px;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
   animation: fadeSlideIn 150ms ease;
+  box-sizing: border-box;
 }
 
 @keyframes fadeSlideIn {
@@ -84,26 +87,29 @@
 
 .re-emoji-grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(7, 28px);
+  gap: 3px;
+  justify-content: center;
 }
 
 .re-emoji-btn {
-  width: 30px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 18px;
-  transition: all 0.1s ease;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.1s ease;
+  box-sizing: border-box;
 }
 .re-emoji-btn:hover {
-  background: var(--cream);
-  transform: scale(1.2);
+  background: var(--cream-mid);
 }
 
 /* Editor area */
@@ -228,17 +234,20 @@
     margin: 0 2px;
   }
   .re-emoji-picker {
-    width: 240px;
-    left: auto;
-    right: 0;
+    right: -8px;
+    min-width: 200px;
+    max-width: calc(100vw - 32px);
+    max-height: 200px;
+    padding: 8px;
   }
   .re-emoji-grid {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, 30px);
+    gap: 4px;
   }
   .re-emoji-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 16px;
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
   }
   .re-editor {
     font-size: 14px;
