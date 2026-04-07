@@ -22,8 +22,12 @@ export function MonthProvider({ children }) {
     setCurrentMonth(prev => subWeeks(prev, 1))
   }, [])
 
+  const goToToday = useCallback(() => {
+    setCurrentMonth(startOfMonth(new Date()))
+  }, [])
+
   return (
-    <MonthContext.Provider value={{ currentMonth, nextMonth, prevMonth, nextWeek, prevWeek, setCurrentMonth }}>
+    <MonthContext.Provider value={{ currentMonth, nextMonth, prevMonth, nextWeek, prevWeek, setCurrentMonth, goToToday }}>
       {children}
     </MonthContext.Provider>
   )

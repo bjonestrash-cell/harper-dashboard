@@ -36,7 +36,7 @@ const navItems = [
   )},
 ]
 
-export default function Sidebar({ collapsed, onToggle, currentUser, onNotifClick }) {
+export default function Sidebar({ collapsed, onToggle, currentUser, onNotifClick, onCalendarClick }) {
   const location = useLocation()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
@@ -55,6 +55,7 @@ export default function Sidebar({ collapsed, onToggle, currentUser, onNotifClick
             key={item.path}
             to={item.path}
             className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+            onClick={item.path === '/calendar' ? onCalendarClick : undefined}
           >
             {item.icon}
             <span className="mobile-nav-label">{item.mobileLabel || item.label}</span>
@@ -90,6 +91,7 @@ export default function Sidebar({ collapsed, onToggle, currentUser, onNotifClick
             to={item.path}
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
             title={collapsed ? item.label : undefined}
+            onClick={item.path === '/calendar' ? onCalendarClick : undefined}
           >
             <span className="sidebar-icon">{item.icon}</span>
             {!collapsed && <span className="sidebar-label">{item.sidebarLabel || item.label}</span>}

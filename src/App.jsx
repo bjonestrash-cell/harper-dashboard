@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useMonth } from './hooks/useMonth'
 import Sidebar from './components/Sidebar'
 import LiveIndicator from './components/LiveIndicator'
 import PresenceAvatars from './components/PresenceAvatars'
@@ -25,6 +26,7 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const { goToToday } = useMonth()
   const [currentUser, setCurrentUser] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     const urlUser = params.get('user')
@@ -136,7 +138,7 @@ export default function App() {
       )}
 
       <div className="app-layout">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} />
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} onCalendarClick={goToToday} />
         <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div className="global-status">
             <div className="mobile-bell-only">

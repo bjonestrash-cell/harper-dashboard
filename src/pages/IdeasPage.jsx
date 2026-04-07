@@ -37,7 +37,8 @@ export default function IdeasPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const fetchIdeas = useCallback(async () => {
+  const fetchIdeas = useCallback(async (bustCache = false) => {
+    if (bustCache) localStorage.removeItem('harper-ideas-cache')
     setLoading(true)
     setError(null)
     try {
@@ -128,7 +129,7 @@ export default function IdeasPage() {
   return (
     <div className="ideas-page">
       <PageHeader title="Ideas">
-        <button onClick={fetchIdeas} disabled={loading}
+        <button onClick={() => fetchIdeas(true)} disabled={loading}
           style={{
             padding: '8px 24px', borderRadius: 9999, border: 'none',
             backgroundColor: loading ? 'var(--cream-mid)' : 'var(--ink)',
@@ -361,16 +362,28 @@ function IdeasLoadingState() {
   )
 }
 
+const ALL_TRENDING = [
+  { platform: 'INSTAGRAM', format: 'Carousel', hook: 'Ring stack styling guide — show 3 ways to stack Harper\'s signature bands from minimal to bold', score: 92, whyNow: 'Styling carousels up 34% engagement this month' },
+  { platform: 'TIKTOK', format: 'Reel', hook: 'GRWM for date night featuring a jewelry close-up transition reveal', score: 88, whyNow: 'GRWM format trending +28% on TikTok' },
+  { platform: 'BOTH', format: 'Reel', hook: '"Jewelry I\'d buy myself" trend — self-love angle with Harper\'s everyday pieces', score: 85, whyNow: 'Self-purchase content resonating with 25-35 demo' },
+  { platform: 'INSTAGRAM', format: 'Static', hook: 'Flat-lay editorial with spring florals and gold pieces — warm tones, natural light', score: 78, whyNow: 'Spring editorial flat-lays peak engagement season' },
+  { platform: 'TIKTOK', format: 'UGC', hook: 'Customer unboxing reactions — the velvet box moment', score: 82, whyNow: 'UGC unboxing content driving 3x saves vs branded' },
+  { platform: 'BOTH', format: 'Carousel', hook: 'Jewelry care 101 — how to clean and store fine jewelry (educational + brand trust)', score: 74, whyNow: 'Educational content builds authority in luxury space' },
+  { platform: 'INSTAGRAM', format: 'Reel', hook: '"Outfit to jewelry" reverse styling — start with the piece and build the look around it', score: 89, whyNow: 'Reverse styling format driving massive saves on IG' },
+  { platform: 'TIKTOK', format: 'Reel', hook: 'Price reveal trend — show the piece first, ask followers to guess the price, then reveal', score: 87, whyNow: 'Price reveal videos averaging 2M+ views in jewelry niche' },
+  { platform: 'INSTAGRAM', format: 'Carousel', hook: 'Dupe vs. real — position Harper\'s quality against fast fashion jewelry with side-by-side longevity comparison', score: 83, whyNow: 'Anti-dupe positioning resonating with quality-conscious buyers' },
+  { platform: 'BOTH', format: 'Static', hook: 'Golden hour jewelry shoot — catch light on chains and stones for organic looking editorial', score: 80, whyNow: 'Natural light jewelry photography saves up 41%' },
+  { platform: 'TIKTOK', format: 'Reel', hook: '"What my jewelry says about me" personality trend — style archetypes matched to Harper pieces', score: 86, whyNow: 'Personality-based content drives high comment engagement' },
+  { platform: 'INSTAGRAM', format: 'Story', hook: 'This or That polls — let followers vote between two Harper pieces to drive product discovery', score: 76, whyNow: 'Interactive stories see 3x swipe-up rate vs. static' },
+  { platform: 'BOTH', format: 'Reel', hook: 'Aesthetic morning routine — slow, luxurious ASMR of putting on jewelry before leaving the house', score: 84, whyNow: 'ASMR lifestyle reels up 55% watch time this quarter' },
+  { platform: 'TIKTOK', format: 'UGC', hook: 'Reaction to wearing fine jewelry for the first time — gifting moment captured on camera', score: 90, whyNow: 'Emotional gifting content driving highest share rates' },
+  { platform: 'INSTAGRAM', format: 'Carousel', hook: 'Jewelry for every budget — curate 3 tiers ($under $150 / $150–400 / $400+) using Harper\'s range', score: 77, whyNow: 'Budget breakdown posts drive saves across all income demos' },
+]
+
 function getMockData() {
+  const shuffled = shuffleArray(ALL_TRENDING)
   return {
-    trending: [
-      { platform: 'INSTAGRAM', format: 'Carousel', hook: 'Ring stack styling guide — show 3 ways to stack Harper\'s signature bands from minimal to bold', score: 92, whyNow: 'Styling carousels up 34% engagement this month' },
-      { platform: 'TIKTOK', format: 'Reel', hook: 'GRWM for date night featuring a jewelry close-up transition reveal', score: 88, whyNow: 'GRWM format trending +28% on TikTok' },
-      { platform: 'BOTH', format: 'Reel', hook: '"Jewelry I\'d buy myself" trend — self-love angle with Harper\'s everyday pieces', score: 85, whyNow: 'Self-purchase content resonating with 25-35 demo' },
-      { platform: 'INSTAGRAM', format: 'Static', hook: 'Flat-lay editorial with spring florals and gold pieces — warm tones, natural light', score: 78, whyNow: 'Spring editorial flat-lays peak engagement season' },
-      { platform: 'TIKTOK', format: 'UGC', hook: 'Customer unboxing reactions — the velvet box moment', score: 82, whyNow: 'UGC unboxing content driving 3x saves vs branded' },
-      { platform: 'BOTH', format: 'Carousel', hook: 'Jewelry care 101 — how to clean and store fine jewelry (educational + brand trust)', score: 74, whyNow: 'Educational content builds authority in luxury space' },
-    ],
+    trending: shuffled.slice(0, 6),
     moments: [
       { date: 'May 11', occasion: "Mother's Day", angle: 'Gift guide: "Pieces she\'ll never take off" — highlight sentimental everyday jewelry', timing: 'Start 14 days before', daysOut: 38, format: 'Carousel' },
       { date: 'May 25', occasion: 'Memorial Day Weekend', angle: 'Summer jewelry edit — waterproof pieces, vacation styling', timing: 'Start 7 days before', daysOut: 52, format: 'Reel' },
