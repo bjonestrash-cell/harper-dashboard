@@ -485,31 +485,36 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* ───── PAGE LOAD ANIMATION ───── */
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.page-container {
-  animation: pageIn 600ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
+/* Page animations — content is visible by default, animation is progressive enhancement */
+.page-container, .page-container > * {
+  opacity: 1;
 }
-.page-container > *:nth-child(1) { animation-delay: 0ms; }
-.page-container > *:nth-child(2) { animation-delay: 100ms; }
-.page-container > *:nth-child(3) { animation-delay: 200ms; }
-.page-container > *:nth-child(4) { animation-delay: 300ms; }
-.page-container > *:nth-child(5) { animation-delay: 400ms; }
-.page-container > *:nth-child(6) { animation-delay: 500ms; }
-.page-container > * {
-  animation: pageIn 600ms cubic-bezier(0.16, 1, 0.32, 1) both;
-}
-
-@media (max-width: 767px) {
-  .page-container > * {
-    animation-duration: 400ms;
+@media (prefers-reduced-motion: no-preference) {
+  .page-container {
+    animation: pageIn 500ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
   }
-  .page-container > *:nth-child(2) { animation-delay: 60ms; }
-  .page-container > *:nth-child(3) { animation-delay: 120ms; }
-  .page-container > *:nth-child(4) { animation-delay: 180ms; }
-  .page-container > *:nth-child(5) { animation-delay: 240ms; }
-  .page-container > *:nth-child(6) { animation-delay: 300ms; }
+  .page-container > * {
+    animation: pageIn 500ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
+  }
+  .page-container > *:nth-child(1) { animation-delay: 0ms; }
+  .page-container > *:nth-child(2) { animation-delay: 80ms; }
+  .page-container > *:nth-child(3) { animation-delay: 160ms; }
+  .page-container > *:nth-child(4) { animation-delay: 240ms; }
+  .page-container > *:nth-child(5) { animation-delay: 320ms; }
+  .page-container > *:nth-child(6) { animation-delay: 400ms; }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  .page-container, .page-container > * {
+    animation-duration: 350ms;
+  }
+  .page-container > *:nth-child(2) { animation-delay: 50ms; }
+  .page-container > *:nth-child(3) { animation-delay: 100ms; }
+  .page-container > *:nth-child(4) { animation-delay: 150ms; }
+  .page-container > *:nth-child(5) { animation-delay: 200ms; }
+  .page-container > *:nth-child(6) { animation-delay: 250ms; }
 }
 
 /* ───── MOBILE NATIVE FEEL ───── */
