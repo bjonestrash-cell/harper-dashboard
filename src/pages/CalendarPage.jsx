@@ -869,6 +869,7 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
     time: post?.time || '',
   })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
   const handleSave = async () => {
@@ -876,7 +877,8 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
     try {
       let payload
       if (eventType === 'post') {
-        payload = { ...form, date, updated_at: new Date().toISOString() }
+        const { time: _time, ...formWithoutTime } = form
+        payload = { ...formWithoutTime, date, updated_at: new Date().toISOString() }
       } else if (eventType === 'meeting') {
         payload = { date, platform: 'meeting', content_type: 'meeting', caption: form.caption, status: form.time ? `${form.time}|${form.status || ''}` : (form.status || 'scheduled'), assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
       } else if (eventType === 'holiday') {
@@ -884,17 +886,20 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
       } else {
         payload = { date, platform: 'other-event', content_type: 'other', caption: form.caption, status: form.status || 'draft', assigned_to: form.assigned_to, updated_at: new Date().toISOString() }
       }
+      setSaveError(null)
       if (post) {
         const { data, error } = await supabase.from('calendar_posts').update(payload).eq('id', post.id).select()
-        if (error) { console.error('Error updating:', error); return }
-        if (data?.[0]) setPosts(prev => prev.map(p => p.id === post.id ? data[0] : p))
+        if (error) { console.error('Error updating:', error); setSaveError(error.message || 'Failed to save'); return }
+        const updated = data?.[0] || { ...post, ...payload }
+        setPosts(prev => prev.map(p => p.id === post.id ? updated : p))
       } else {
         const { data, error } = await supabase.from('calendar_posts').insert([payload]).select()
-        if (error) { console.error('Error inserting:', error); return }
-        if (data?.[0]) setPosts(prev => { if (prev.find(p => p.id === data[0].id)) return prev; return [...prev, data[0]] })
+        if (error) { console.error('Error inserting:', error); setSaveError(error.message || 'Failed to save'); return }
+        const newPost = data?.[0] || { id: crypto.randomUUID(), ...payload }
+        setPosts(prev => prev.find(p => p.id === newPost.id) ? prev : [...prev, newPost])
       }
       onClose()
-    } catch (err) { console.error('Error saving:', err) }
+    } catch (err) { console.error('Error saving:', err); setSaveError(err.message || 'Failed to save') }
     finally { setSaving(false) }
   }
 
@@ -928,7 +933,7 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
         {/* Title — always at the very top */}
         <div style={{ marginBottom: 24 }}>
           <label className="form-label">Title</label>
-          <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={{ ...inputStyle, fontSize: 16, fontWeight: 500 }} />
+          <input autoFocus type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={{ ...inputStyle, fontSize: 16, fontWeight: 500 }} />
         </div>
 
         {date && <ModalDatePicker date={date} onChange={setModalDate} />}
@@ -1004,6 +1009,9 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
           </div>
         </>)}
 
+        {saveError && (
+          <p style={{ color: '#c0392b', fontSize: 12, marginBottom: 12, fontWeight: 400 }}>{saveError}</p>
+        )}
         <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {post && (
           <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}
