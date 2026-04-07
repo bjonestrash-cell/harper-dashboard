@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 
 export function useRealtime(table, fetchFn, deps = []) {
   const [data, setData] = useState([])
@@ -34,8 +34,7 @@ export function useRealtime(table, fetchFn, deps = []) {
       supabase.removeChannel(channelRef.current)
     }
 
-    const channel = supabase
-      .channel(`rt-${table}-${Date.now()}`)
+    const channel = createChannel(`rt-${table}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table,
       }, (payload) => {
@@ -82,8 +81,7 @@ export function useSupabaseConnection() {
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
-    const channel = supabase
-      .channel('connection-check')
+    const channel = createChannel('connection-check')
       .subscribe((status) => {
         setConnected(status === 'SUBSCRIBED')
       })

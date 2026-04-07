@@ -4,7 +4,7 @@ import {
   format, isSameMonth, isSameDay, isToday, isWeekend, parseISO,
   eachDayOfInterval,
 } from 'date-fns'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
 import PageHeader from '../components/PageHeader'
@@ -289,8 +289,7 @@ function DailyNoteColumn({ date, author, label, accentColor, currentUser }) {
   // Real-time subscription
   useEffect(() => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    const channel = supabase
-      .channel(`daily-notes-${dateStr}-${author}`)
+    const channel = createChannel(`daily-notes-${dateStr}-${author}`)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'daily_notes' },
         (payload) => {
@@ -1040,8 +1039,7 @@ function RecentMeetingNotes() {
     }
     load()
 
-    const channel = supabase
-      .channel('calendar-notes')
+    const channel = createChannel('calendar-notes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' },
         () => load()
       )

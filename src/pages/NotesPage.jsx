@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, parseISO, subDays } from 'date-fns'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import DatePicker from '../components/DatePicker'
 import SwipeToDelete from '../components/SwipeToDelete'
@@ -32,8 +32,7 @@ export default function NotesPage() {
 
   // Real-time subscription
   useEffect(() => {
-    const channel = supabase
-      .channel('notes_changes')
+    const channel = createChannel('notes_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notes' },
         (payload) => setMeetings(prev => {
           if (prev.find(m => m.id === payload.new.id)) return prev

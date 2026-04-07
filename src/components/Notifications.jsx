@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 import { format, parseISO } from 'date-fns'
 import SwipeToDelete from './SwipeToDelete'
 import './Notifications.css'
@@ -64,8 +64,7 @@ export function NotificationBell({ onClick }) {
       channelRef.current = null
     }
 
-    const channel = supabase
-      .channel(`notifications-bell-${currentUser}`)
+    const channel = createChannel(`notifications-bell-${currentUser}`)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
         (payload) => {
@@ -141,8 +140,7 @@ export function NotificationToastContainer() {
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
   useEffect(() => {
-    const channel = supabase
-      .channel('notifications-toast')
+    const channel = createChannel('notifications-toast')
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
@@ -185,8 +183,7 @@ export default function NotificationsPanel({ onClose, onNavigate }) {
     }
     load()
 
-    const channel = supabase
-      .channel('notifications-panel')
+    const channel = createChannel('notifications-panel')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
         () => load()

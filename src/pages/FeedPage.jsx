@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import './FeedPage.css'
 
@@ -295,8 +295,7 @@ export default function FeedPage() {
     load()
 
     // Real-time subscription for cross-device updates
-    const channel = supabase
-      .channel('feed-sync')
+    const channel = createChannel('feed-sync')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${FEED_SYNC_KEY}` },
         async (payload) => {

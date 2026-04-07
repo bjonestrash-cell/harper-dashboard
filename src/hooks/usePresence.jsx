@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, createChannel } from '../lib/supabase'
 
 export function usePresence(currentUser, currentPage) {
   const [onlineUsers, setOnlineUsers] = useState([])
@@ -7,7 +7,7 @@ export function usePresence(currentUser, currentPage) {
   useEffect(() => {
     if (!currentUser) return
 
-    const channel = supabase.channel('presence', {
+    const channel = createChannel('presence', {
       config: { presence: { key: currentUser } },
     })
 
