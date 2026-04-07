@@ -58,3 +58,12 @@
   border-color: rgba(212, 132, 154, 0.3);
   opacity: 0.6;
 }
+
+/* Dark background — flip H pink so it's visible */
+.custom-cursor.cursor-dark-bg .cursor-letter {
+  color: #D4849A;
+}
+
+.custom-cursor.cursor-dark-bg.cursor-hover .cursor-letter {
+  color: #f0a0b8;
+}

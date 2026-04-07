@@ -17,11 +17,37 @@ export default function CustomCursor() {
     let followerX = 0, followerY = 0
     let animId = null
 
+    const isDarkBackground = (el) => {
+      // Walk up the DOM to find if cursor is over a dark element
+      let node = el
+      for (let i = 0; i < 6; i++) {
+        if (!node || node === document.body) break
+        const bg = window.getComputedStyle(node).backgroundColor
+        const match = bg.match(/\d+/g)
+        if (match) {
+          const [r, g, b] = match.map(Number)
+          // Luminance check — treat as dark if luminance < 0.15
+          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+          if (luminance < 0.15 && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return true
+        }
+        node = node.parentElement
+      }
+      return false
+    }
+
     const onMouseMove = (e) => {
       mouseX = e.clientX
       mouseY = e.clientY
       cursor.style.transform =
         `translate(${mouseX - 12}px, ${mouseY - 12}px)`
+
+      // Flip cursor pink over dark backgrounds
+      const el = document.elementFromPoint(mouseX, mouseY)
+      if (el && isDarkBackground(el)) {
+        cursor.classList.add('cursor-dark-bg')
+      } else {
+        cursor.classList.remove('cursor-dark-bg')
+      }
     }
 
     // Smooth follower with lerp
