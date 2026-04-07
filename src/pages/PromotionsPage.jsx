@@ -93,11 +93,10 @@ export default function PromotionsPage() {
       <PageHeader title="Promotions">
         <button onClick={() => { setEditingPromo(null); setShowModal(true) }}
           style={{
-            backgroundColor: '#D4849A', color: '#fff', border: 'none',
+            backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
             borderRadius: 9999, padding: '12px 32px', fontSize: 11, fontWeight: 500,
             letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Inter, sans-serif',
             transition: 'all 0.25s ease', whiteSpace: 'nowrap',
-            boxShadow: '0 2px 12px rgba(212,132,154,0.25)',
           }}>
           + Add Promotion
         </button>
@@ -107,22 +106,23 @@ export default function PromotionsPage() {
         <MonthSelector />
 
         {/* Stats — chic clickable cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 48 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
           {[
-            { label: 'Active Now', value: stats.active, key: 'active', accent: '#D4849A', bg: '#FDE8EE' },
-            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#B8A9C4', bg: '#F0EBF5' },
-            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#A8B8A4', bg: '#EDF3EB' },
-            { label: 'Total', value: stats.total, key: 'total', accent: '#C4A882', bg: '#F5F0E8' },
+            { label: 'Active Now', value: stats.active, key: 'active', accent: '#C75B7A', bg: '#FDE8EE', bgHover: '#F9D0DC' },
+            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#D4849A', bg: '#FDF0F4', bgHover: '#FADCE5' },
+            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#E8A8B8', bg: '#FEF4F7', bgHover: '#FCE8EF' },
+            { label: 'Total', value: stats.total, key: 'total', accent: '#B85C78', bg: '#FBDEE8', bgHover: '#F5CCDA' },
           ].map((s) => (
             <div key={s.label} onClick={() => setStatFilter(statFilter === s.key ? null : s.key)}
               style={{
-                padding: '28px 20px', textAlign: 'center', cursor: 'pointer',
-                backgroundColor: statFilter === s.key ? s.bg : 'var(--white)',
+                padding: '32px 20px', textAlign: 'center', cursor: 'pointer',
+                backgroundColor: statFilter === s.key ? s.bgHover : s.bg,
                 borderBottom: `3px solid ${statFilter === s.key ? s.accent : 'transparent'}`,
+                borderTop: `1px solid ${s.accent}18`,
                 transition: 'all 0.25s cubic-bezier(0.16,1,0.32,1)',
-                boxShadow: statFilter === s.key ? `0 4px 20px ${s.accent}20` : '0 1px 4px rgba(26,20,18,0.04)',
+                boxShadow: statFilter === s.key ? `0 6px 24px ${s.accent}25` : 'none',
               }}>
-              <div style={{ fontSize: 42, fontWeight: 300, color: statFilter === s.key ? s.accent : 'var(--ink)', lineHeight: 1, marginBottom: 10, fontFamily: "'SloopScriptThree', 'Inter', sans-serif" }}>{s.value}</div>
+              <div style={{ fontSize: 36, fontWeight: 500, color: s.accent, lineHeight: 1, marginBottom: 12, fontFamily: "'Inter', system-ui, sans-serif" }}>{s.value}</div>
               <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? s.accent : 'var(--ink-light)' }}>{s.label}</div>
             </div>
           ))}

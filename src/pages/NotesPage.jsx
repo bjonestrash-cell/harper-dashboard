@@ -23,6 +23,7 @@ export default function NotesPage() {
       const { data } = await supabase
         .from('notes')
         .select('*')
+        .neq('month', '9999-01-01')
         .order('month', { ascending: false })
       setMeetings(data || [])
     }
