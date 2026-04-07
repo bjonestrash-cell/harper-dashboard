@@ -253,7 +253,7 @@ export default function FeedPage() {
     const local = loadFeedLocal()
     if (!local) return Array(MIN_GRID).fill(null)
     while (local.length < MIN_GRID) local.push(null)
-    return local
+    return ensureGridSize(local)
   })
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
@@ -281,6 +281,8 @@ export default function FeedPage() {
         if (endRow < MIN_GRID) endRow = MIN_GRID
         let compacted = remote.slice(0, endRow)
         while (compacted.length < MIN_GRID) compacted.push(null)
+        // Auto-grow if top row is filled
+        compacted = ensureGridSize(compacted)
         setSlots(compacted)
         saveFeedLocal(compacted)
         if (compacted.length !== remote.length) syncFeedToSupabase(compacted)
