@@ -93,10 +93,11 @@ export default function PromotionsPage() {
       <PageHeader title="Promotions">
         <button onClick={() => { setEditingPromo(null); setShowModal(true) }}
           style={{
-            backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
+            backgroundColor: '#D4849A', color: '#fff', border: 'none',
             borderRadius: 9999, padding: '12px 32px', fontSize: 11, fontWeight: 500,
             letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Inter, sans-serif',
-            transition: 'all 0.2s ease', whiteSpace: 'nowrap',
+            transition: 'all 0.25s ease', whiteSpace: 'nowrap',
+            boxShadow: '0 2px 12px rgba(212,132,154,0.25)',
           }}>
           + Add Promotion
         </button>
@@ -105,23 +106,24 @@ export default function PromotionsPage() {
       <div className="page-container">
         <MonthSelector />
 
-        {/* Stats — clickable inline */}
-        <div style={{ display: 'flex', gap: 0, borderTop: '1px solid var(--cream-deep)', borderBottom: '1px solid var(--cream-deep)', marginBottom: 48 }}>
+        {/* Stats — chic clickable cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 48 }}>
           {[
-            { label: 'Active Now', value: stats.active, key: 'active' },
-            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming' },
-            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth' },
-            { label: 'Total', value: stats.total, key: 'total' },
-          ].map((s, i) => (
+            { label: 'Active Now', value: stats.active, key: 'active', accent: '#D4849A', bg: '#FDE8EE' },
+            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming', accent: '#B8A9C4', bg: '#F0EBF5' },
+            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#A8B8A4', bg: '#EDF3EB' },
+            { label: 'Total', value: stats.total, key: 'total', accent: '#C4A882', bg: '#F5F0E8' },
+          ].map((s) => (
             <div key={s.label} onClick={() => setStatFilter(statFilter === s.key ? null : s.key)}
               style={{
-                flex: 1, padding: '32px 0', textAlign: 'center', cursor: 'pointer',
-                borderRight: i < 3 ? '1px solid var(--cream-deep)' : 'none',
-                backgroundColor: statFilter === s.key ? 'var(--cream-mid)' : 'transparent',
-                transition: 'all 0.2s ease',
+                padding: '28px 20px', textAlign: 'center', cursor: 'pointer',
+                backgroundColor: statFilter === s.key ? s.bg : 'var(--white)',
+                borderBottom: `3px solid ${statFilter === s.key ? s.accent : 'transparent'}`,
+                transition: 'all 0.25s cubic-bezier(0.16,1,0.32,1)',
+                boxShadow: statFilter === s.key ? `0 4px 20px ${s.accent}20` : '0 1px 4px rgba(26,20,18,0.04)',
               }}>
-              <div style={{ fontSize: 36, fontWeight: 500, color: 'var(--ink)', lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? 'var(--pink-deep)' : 'var(--ink-light)' }}>{s.label}</div>
+              <div style={{ fontSize: 42, fontWeight: 300, color: statFilter === s.key ? s.accent : 'var(--ink)', lineHeight: 1, marginBottom: 10, fontFamily: "'SloopScriptThree', 'Inter', sans-serif" }}>{s.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? s.accent : 'var(--ink-light)' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -159,9 +161,9 @@ export default function PromotionsPage() {
                   <span style={{
                     fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
                     padding: '3px 12px', borderRadius: 20,
-                    ...(getPromoStatus(p) === 'active' ? { backgroundColor: 'var(--pink-light)', color: 'var(--pink-deep)' }
-                      : getPromoStatus(p) === 'upcoming' ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
-                      : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' })
+                    ...(getPromoStatus(p) === 'active' ? { backgroundColor: '#FDE8EE', color: '#D4849A' }
+                      : getPromoStatus(p) === 'upcoming' ? { backgroundColor: '#F0EBF5', color: '#9B8AAE' }
+                      : { backgroundColor: '#F0EDE8', color: '#A89888' })
                   }}>{getPromoStatus(p)}</span>
                 </div>
               ))}
@@ -180,26 +182,27 @@ export default function PromotionsPage() {
           {monthPromos.map(promo => {
             const computedStatus = getPromoStatus(promo)
             const statusStyle = computedStatus === 'active'
-              ? { backgroundColor: 'var(--pink-light)', color: 'var(--pink-deep)' }
+              ? { backgroundColor: '#FDE8EE', color: '#D4849A', borderColor: '#F4C4D4' }
               : computedStatus === 'upcoming'
-              ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
-              : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' }
+              ? { backgroundColor: '#F0EBF5', color: '#9B8AAE', borderColor: '#D8CEE4' }
+              : { backgroundColor: '#F0EDE8', color: '#A89888', borderColor: '#DDD5CB' }
             return (
               <SwipeToDelete key={promo.id} onDelete={() => deletePromotion(promo.id)}>
                 <div style={{
-                paddingTop: 24, paddingBottom: 24,
+                paddingTop: 24, paddingBottom: 24, paddingRight: 20,
                 borderBottom: '1px solid var(--cream-deep)',
-                borderLeft: `2px solid ${promo.color || '#F4A7B9'}`,
-                backgroundColor: 'var(--cream)',
-                paddingLeft: 20,
+                borderLeft: `3px solid ${promo.color || '#D4849A'}`,
+                backgroundColor: 'var(--white)',
+                paddingLeft: 24,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                transition: 'all 0.2s ease',
               }}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--ink)' }}>{promo.name}</div>
                   <div style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginTop: 4 }}>
                     {promo.start_date && format(new Date(promo.start_date + 'T00:00:00'), 'MMM d')}
                     {promo.end_date && ` \u2013 ${format(new Date(promo.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
-                    {promo.discount && <span style={{ marginLeft: 12, color: 'var(--pink-deep)' }}>{promo.discount}</span>}
+                    {promo.discount && <span style={{ marginLeft: 12, color: '#D4849A', backgroundColor: '#FDE8EE', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{promo.discount}</span>}
                   </div>
                   {promo.notes && <div style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-mid)', marginTop: 8 }}>{promo.notes}</div>}
                   <div style={{ marginTop: 12, display: 'flex', gap: 4, fontSize: 11, fontWeight: 400, color: 'var(--ink-light)' }}>
