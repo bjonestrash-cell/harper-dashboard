@@ -192,7 +192,6 @@ export default function PromotionsPage() {
                   padding: '14px 0', paddingLeft: 16, paddingRight: 16,
                   borderBottom: '1px solid var(--cream-deep)',
                   borderLeft: `2px solid ${promo.color || '#F4A7B9'}`,
-                  backgroundColor: 'var(--white)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   transition: 'all 0.2s ease',
                 }}>

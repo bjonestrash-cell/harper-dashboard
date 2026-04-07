@@ -80,27 +80,29 @@ export default function SwipeToDelete({ children, onDelete, threshold = 120 }) {
 
   return (
     <div ref={containerRef} style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Delete background */}
-      <div style={{
-        position: 'absolute',
-        top: 0, right: 0, bottom: 0,
-        width: Math.max(Math.abs(offsetX) + 20, 0),
-        backgroundColor: `rgba(180, 84, 80, ${0.15 + progress * 0.7})`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        paddingRight: 24,
-        transition: swiping ? 'none' : 'all 0.25s ease',
-      }}>
-        {showingDelete && (
-          <span style={{
-            fontSize: 10, fontWeight: 500, letterSpacing: 2,
-            textTransform: 'uppercase', color: '#B85450',
-            fontFamily: 'Inter, sans-serif',
-            opacity: progress,
-          }}>Delete</span>
-        )}
-      </div>
+      {/* Delete background — only rendered while swiping */}
+      {offsetX < 0 && (
+        <div style={{
+          position: 'absolute',
+          top: 0, right: 0, bottom: 0,
+          width: Math.abs(offsetX),
+          backgroundColor: `rgba(180, 84, 80, ${0.15 + progress * 0.7})`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          paddingRight: 24,
+          transition: swiping ? 'none' : 'all 0.25s ease',
+        }}>
+          {showingDelete && (
+            <span style={{
+              fontSize: 10, fontWeight: 500, letterSpacing: 2,
+              textTransform: 'uppercase', color: '#B85450',
+              fontFamily: 'Inter, sans-serif',
+              opacity: progress,
+            }}>Delete</span>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       <div
