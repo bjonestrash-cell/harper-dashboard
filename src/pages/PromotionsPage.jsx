@@ -120,8 +120,8 @@ export default function PromotionsPage() {
                 backgroundColor: statFilter === s.key ? 'var(--cream-mid)' : 'transparent',
                 transition: 'all 0.2s ease',
               }}>
-              <div style={{ fontSize: 36, fontWeight: 300, color: 'var(--ink)', lineHeight: 1, marginBottom: 8 }}>{s.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? 'var(--ink)' : 'var(--ink-light)' }}>{s.label}</div>
+              <div style={{ fontSize: 36, fontWeight: 500, color: 'var(--ink)', lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? 'var(--pink-deep)' : 'var(--ink-light)' }}>{s.label}</div>
             </div>
           ))}
         </div>

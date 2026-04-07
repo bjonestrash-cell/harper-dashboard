@@ -38,6 +38,7 @@ export default function CalendarPage() {
   const [mobileDay, setMobileDay] = useState(null)
   const [selectedDay, setSelectedDay] = useState(null)
   const [isMobile] = useState(() => window.innerWidth < 768)
+  const [legendFilter, setLegendFilter] = useState('all')
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
@@ -67,8 +68,12 @@ export default function CalendarPage() {
   const { data: promotions } = useRealtime('promotions', fetchPromos, [format(currentMonth, 'yyyy-MM')])
 
   const filteredPosts = posts.filter(p => {
-    if (calendarView === 'mine') return p.assigned_to === currentUser
-    if (calendarView === 'theirs') return p.assigned_to === otherUser
+    if (calendarView === 'mine' && p.assigned_to !== currentUser) return false
+    if (calendarView === 'theirs' && p.assigned_to !== otherUser) return false
+    if (legendFilter !== 'all') {
+      const pType = p.platform === 'meeting' ? 'meeting' : p.platform === 'holiday' ? 'holiday' : p.platform === 'other-event' ? 'other' : 'post'
+      if (pType !== legendFilter) return false
+    }
     return true
   })
 
@@ -151,13 +156,25 @@ export default function CalendarPage() {
       <div className="page-container">
         <MonthSelector mode={viewMode} />
 
-        {/* Color legend */}
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 20 }}>
-          {[{l:'Post',c:'#F2A7B0'},{l:'Meeting',c:'#A8C4D4'},{l:'Holiday',c:'#D4B896'},{l:'Other',c:'#B5C4B1'}].map(i => (
-            <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        {/* Color legend — clickable filters */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
+          <button onClick={() => setLegendFilter('all')} style={{
+            display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none',
+            cursor: 'pointer', padding: '4px 8px', borderRadius: 12, transition: 'all 0.2s ease',
+            backgroundColor: legendFilter === 'all' ? 'var(--ink)' : 'transparent',
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: legendFilter === 'all' ? 'var(--cream)' : 'var(--ink-light)' }}>All</span>
+          </button>
+          {[{l:'Post',c:'#F2A7B0',k:'post'},{l:'Meeting',c:'#A8C4D4',k:'meeting'},{l:'Holiday',c:'#D4B896',k:'holiday'},{l:'Other',c:'#B5C4B1',k:'other'}].map(i => (
+            <button key={i.l} onClick={() => setLegendFilter(legendFilter === i.k ? 'all' : i.k)} style={{
+              display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none',
+              cursor: 'pointer', padding: '4px 8px', borderRadius: 12, transition: 'all 0.2s ease',
+              backgroundColor: legendFilter === i.k ? 'var(--cream-mid)' : 'transparent',
+              opacity: legendFilter !== 'all' && legendFilter !== i.k ? 0.4 : 1,
+            }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: i.c, flexShrink: 0 }} />
               <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--ink-light)' }}>{i.l}</span>
-            </div>
+            </button>
           ))}
         </div>
 
