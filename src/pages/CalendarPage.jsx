@@ -941,16 +941,16 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
         {/* POST fields */}
         {eventType === 'post' && (<>
           <div style={{ marginBottom: 24 }}>
+            <label className="form-label">Title</label>
+            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={{ ...inputStyle, fontSize: 16, fontWeight: 500 }} />
+          </div>
+          <div style={{ marginBottom: 24 }}>
             <label className="form-label">Platform</label>
             <PillSelect options={PLATFORMS} value={form.platform} onChange={(v) => { update('platform', v); update('content_type', CONTENT_TYPES[v]?.[0] || 'Post') }} />
           </div>
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Content Type</label>
             <PillSelect options={contentTypes} value={form.content_type} onChange={(v) => update('content_type', v)} />
-          </div>
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">Title</label>
-            <input type="text" value={form.caption} onChange={(e) => update('caption', e.target.value)} placeholder="Event title" style={inputStyle} />
           </div>
           <div style={{ marginBottom: 32 }}>
             <label className="form-label">Assigned to</label>
