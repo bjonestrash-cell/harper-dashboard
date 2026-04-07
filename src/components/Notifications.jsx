@@ -60,7 +60,12 @@ export function NotificationBell({ onClick }) {
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
           if (payload.new.to_user === currentUser) {
-            setCount(prev => prev + 1)
+            setCount(prev => {
+              const n = prev + 1
+              try { if ('setAppBadge' in navigator) navigator.setAppBadge(n) } catch(e) {}
+              document.title = `(${n}) Harper`
+              return n
+            })
             setPulse(true)
             setTimeout(() => setPulse(false), 2000)
           }

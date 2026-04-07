@@ -3,6 +3,7 @@ import { format, parseISO, subDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import DatePicker from '../components/DatePicker'
+import SwipeToDelete from '../components/SwipeToDelete'
 import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
 import './NotesPage.css'
@@ -113,25 +114,26 @@ export default function NotesPage() {
 
           <div className="meeting-list">
             {meetings.map(m => (
-              <div
-                key={m.id}
-                className={`meeting-item ${selectedMeeting?.id === m.id ? 'active' : ''}`}
-                onClick={() => setSelectedMeeting(m)}
-              >
-                <button
-                  className="meeting-delete-btn"
-                  onClick={(e) => { e.stopPropagation(); deleteMeeting(m.id) }}
-                >&times;</button>
-                <span className="meeting-item-date">{formatMeetingDate(m)}</span>
-                <div className="meeting-item-row">
-                  <span className={`meeting-author-chip ${m.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
-                    {capitalize(m.updated_by || 'unknown')}
-                  </span>
-                  <span className="meeting-item-preview">
-                    {m.content ? m.content.substring(0, 40) + (m.content.length > 40 ? '...' : '') : 'Empty'}
-                  </span>
+              <SwipeToDelete key={m.id} onDelete={() => deleteMeeting(m.id)}>
+                <div
+                  className={`meeting-item ${selectedMeeting?.id === m.id ? 'active' : ''}`}
+                  onClick={() => setSelectedMeeting(m)}
+                >
+                  <button
+                    className="meeting-delete-btn"
+                    onClick={(e) => { e.stopPropagation(); deleteMeeting(m.id) }}
+                  >&times;</button>
+                  <span className="meeting-item-date">{formatMeetingDate(m)}</span>
+                  <div className="meeting-item-row">
+                    <span className={`meeting-author-chip ${m.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
+                      {capitalize(m.updated_by || 'unknown')}
+                    </span>
+                    <span className="meeting-item-preview">
+                      {m.content ? m.content.substring(0, 40) + (m.content.length > 40 ? '...' : '') : 'Empty'}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </SwipeToDelete>
             ))}
             {meetings.length === 0 && (
               <p style={{ padding: 16, fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>No meetings yet</p>

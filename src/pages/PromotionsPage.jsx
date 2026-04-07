@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { sendNotification } from '../components/Notifications'
+import SwipeToDelete from '../components/SwipeToDelete'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
 import PageHeader from '../components/PageHeader'
@@ -133,10 +135,12 @@ export default function PromotionsPage() {
               ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
               : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' }
             return (
-              <div key={promo.id} style={{
+              <SwipeToDelete key={promo.id} onDelete={() => deletePromotion(promo.id)}>
+                <div style={{
                 paddingTop: 24, paddingBottom: 24,
                 borderBottom: '1px solid var(--cream-deep)',
                 borderLeft: `2px solid ${promo.color || '#F4A7B9'}`,
+                backgroundColor: 'var(--cream)',
                 paddingLeft: 20,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
               }}>
@@ -162,7 +166,8 @@ export default function PromotionsPage() {
                 <span style={{ ...statusStyle, borderRadius: 20, padding: '4px 14px', fontSize: 10, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>
                   {computedStatus}
                 </span>
-              </div>
+                </div>
+              </SwipeToDelete>
             )
           })}
         </div>
@@ -255,7 +260,20 @@ function PromoModal({ promo, setPromotions, onClose }) {
         if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
       } else {
         const { data, error } = await supabase.from('promotions').insert(form).select()
-        if (!error && data?.[0]) setPromotions(prev => [...prev, data[0]])
+        if (!error && data?.[0]) {
+          setPromotions(prev => [...prev, data[0]])
+          // Notify the other user about new promotion
+          const currentUser = localStorage.getItem('harper-user') || 'natalie'
+          const otherUser = currentUser === 'natalie' ? 'grace' : 'natalie'
+          sendNotification({
+            to: otherUser,
+            from: currentUser,
+            type: 'promotion',
+            title: `created a new promotion: "${form.name}"`,
+            body: form.discount ? `${form.discount} — ${form.start_date || ''} to ${form.end_date || ''}` : '',
+            link: '/promotions',
+          })
+        }
       }
       onClose()
     } catch (err) { console.error('Error saving promotion:', err) }

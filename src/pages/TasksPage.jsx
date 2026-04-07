@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
-import { sendNotification, checkForMention } from '../components/Notifications'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
 import PageHeader from '../components/PageHeader'
 import MonthSelector from '../components/MonthSelector'
 import TaskCard from '../components/TaskCard'
+import SwipeToDelete from '../components/SwipeToDelete'
 import TodoItem from '../components/TodoItem'
 import Modal from '../components/Modal'
 import DatePicker from '../components/DatePicker'
@@ -124,7 +124,7 @@ export default function TasksPage() {
       </div>
       <div className="kanban-tasks">
         {activeTasks(taskList).map(task => (
-          <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} />
+          <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}><TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} /></SwipeToDelete>
         ))}
       </div>
     </div>
@@ -166,7 +166,7 @@ export default function TasksPage() {
             {showDone && (
               <div className="done-tasks">
                 {[...doneNatalie, ...doneGrace].map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} />
+                  <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}><TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} /></SwipeToDelete>
                 ))}
               </div>
             )}
@@ -291,30 +291,6 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
         if (!error && data?.[0]) {
           setTasks(prev => [...prev, data[0]])
-          // Check if task mentions the other user
-          const currentUser = localStorage.getItem('harper-user') || 'natalie'
-          const mentioned = checkForMention(form.title + ' ' + (form.description || ''), currentUser)
-          if (mentioned) {
-            sendNotification({
-              to: mentioned,
-              from: currentUser,
-              type: 'mention',
-              title: `mentioned you in a to do: "${form.title}"`,
-              body: form.description || '',
-              link: '/tasks',
-            })
-          }
-          // Also notify if assigned to other user
-          if (form.assigned_to && form.assigned_to !== currentUser) {
-            sendNotification({
-              to: form.assigned_to,
-              from: currentUser,
-              type: 'assignment',
-              title: `assigned you a to do: "${form.title}"`,
-              body: form.description || '',
-              link: '/tasks',
-            })
-          }
         } else {
           // Fallback: save locally
           setTasks(prev => [...prev, newTask])
