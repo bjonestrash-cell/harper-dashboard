@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { NotificationBell } from './Notifications'
 import './Sidebar.css'
 
 const navItems = [
@@ -35,7 +36,7 @@ const navItems = [
   )},
 ]
 
-export default function Sidebar({ collapsed, onToggle, currentUser }) {
+export default function Sidebar({ collapsed, onToggle, currentUser, onNotifClick }) {
   const location = useLocation()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
@@ -96,16 +97,19 @@ export default function Sidebar({ collapsed, onToggle, currentUser }) {
         ))}
       </nav>
 
-      {/* User indicator at bottom */}
-      <div className="sidebar-user">
-        <span className={`avatar ${currentUser === 'natalie' ? 'natalie' : 'grace'}`}>
-          {currentUser ? currentUser[0].toUpperCase() : '?'}
-        </span>
-        {!collapsed && (
-          <span className="sidebar-user-name">
-            {currentUser ? currentUser.charAt(0).toUpperCase() + currentUser.slice(1) : ''}
+      {/* Notifications + User at bottom */}
+      <div className="sidebar-bottom">
+        <NotificationBell onClick={onNotifClick} />
+        <div className="sidebar-user">
+          <span className={`avatar ${currentUser === 'natalie' ? 'natalie' : 'grace'}`}>
+            {currentUser ? currentUser[0].toUpperCase() : '?'}
           </span>
-        )}
+          {!collapsed && (
+            <span className="sidebar-user-name">
+              {currentUser ? currentUser.charAt(0).toUpperCase() + currentUser.slice(1) : ''}
+            </span>
+          )}
+        </div>
       </div>
     </aside>
   )

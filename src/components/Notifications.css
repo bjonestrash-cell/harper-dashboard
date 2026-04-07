@@ -1,0 +1,274 @@
+/* ─── Bell ─── */
+.notif-bell {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: rgba(255,255,255,0.5);
+  transition: color 0.2s;
+}
+.notif-bell:hover { color: rgba(255,255,255,0.9); }
+.notif-bell.pulse { animation: bellPulse 0.6s ease; }
+@keyframes bellPulse {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(12deg); }
+  50% { transform: rotate(-12deg); }
+  75% { transform: rotate(6deg); }
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px; right: 2px;
+  min-width: 16px; height: 16px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* ─── Toast (bottom left popup) ─── */
+.notif-toast-container {
+  position: fixed;
+  bottom: 80px; left: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+@media (max-width: 768px) {
+  .notif-toast-container {
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
+    left: 16px; right: 16px;
+  }
+}
+
+.notif-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  min-width: 280px;
+  max-width: 380px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.32, 1);
+}
+.notif-toast.enter {
+  animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.32, 1) forwards;
+}
+.notif-toast.exit {
+  animation: toastOut 0.35s ease forwards;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-60px); }
+}
+
+.notif-toast-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+}
+.notif-toast-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.notif-toast-from {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.notif-toast-body {
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notif-toast-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.notif-toast-dismiss:hover { color: rgba(255,255,255,0.8); }
+
+/* ─── Panel ─── */
+.notif-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 380px; height: 100vh;
+  background: var(--cream);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.1);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  animation: panelSlideIn 0.35s cubic-bezier(0.16, 1, 0.32, 1);
+}
+@keyframes panelSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@media (max-width: 768px) {
+  .notif-panel { width: 100%; }
+}
+
+.notif-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--cream-deep);
+}
+.notif-panel-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+}
+.notif-mark-all {
+  background: none;
+  border: none;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--pink-deep);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+.notif-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--ink-light);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.notif-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.notif-empty {
+  text-align: center;
+  padding: 48px 24px;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink-light);
+  font-family: 'Inter', sans-serif;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--cream-deep);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+.notif-item:hover { background: rgba(244,167,185,0.06); }
+.notif-item.unread { background: rgba(244,167,185,0.04); }
+
+.notif-item-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.notif-item-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+}
+.notif-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+}
+.notif-item.read .notif-item-title { color: var(--ink-light); }
+
+.notif-item-body {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', sans-serif;
+}
+.notif-item-time {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink-light);
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+  opacity: 0.7;
+}
+.notif-item-delete {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--ink-light);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 4px;
+  line-height: 1;
+}
+.notif-item:hover .notif-item-delete { opacity: 1; }

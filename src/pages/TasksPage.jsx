@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { sendNotification, checkForMention } from '../components/Notifications'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
 import PageHeader from '../components/PageHeader'
@@ -271,6 +272,8 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
       if (task) {
         // Try Supabase first — strip fields that may not exist in DB
         const { priority: _p, ...dbUpdateForm } = form
+        if (!dbUpdateForm.due_date) dbUpdateForm.due_date = null
+        if (!dbUpdateForm.description) dbUpdateForm.description = null
         const { data, error } = await supabase.from('tasks').update(dbUpdateForm).eq('id', task.id).select()
         if (!error && data?.[0]) {
           setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
@@ -282,9 +285,36 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
         // Try Supabase first — strip fields that may not exist in DB
         const { priority, ...dbForm } = form
+        // Convert empty strings to null for date fields
+        if (!dbForm.due_date) dbForm.due_date = null
+        if (!dbForm.description) dbForm.description = null
         const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
         if (!error && data?.[0]) {
           setTasks(prev => [...prev, data[0]])
+          // Check if task mentions the other user
+          const currentUser = localStorage.getItem('harper-user') || 'natalie'
+          const mentioned = checkForMention(form.title + ' ' + (form.description || ''), currentUser)
+          if (mentioned) {
+            sendNotification({
+              to: mentioned,
+              from: currentUser,
+              type: 'mention',
+              title: `mentioned you in a to do: "${form.title}"`,
+              body: form.description || '',
+              link: '/tasks',
+            })
+          }
+          // Also notify if assigned to other user
+          if (form.assigned_to && form.assigned_to !== currentUser) {
+            sendNotification({
+              to: form.assigned_to,
+              from: currentUser,
+              type: 'assignment',
+              title: `assigned you a to do: "${form.title}"`,
+              body: form.description || '',
+              link: '/tasks',
+            })
+          }
         } else {
           // Fallback: save locally
           setTasks(prev => [...prev, newTask])

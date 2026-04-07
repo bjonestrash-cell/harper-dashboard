@@ -12,6 +12,7 @@ import NotesPage from './pages/NotesPage'
 import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
 import CustomCursor from './components/CustomCursor'
+import NotificationsPanel, { NotificationToastContainer } from './components/Notifications'
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -35,6 +36,7 @@ export default function App() {
   })
 
   const [showUserPrompt, setShowUserPrompt] = useState(!currentUser)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('harper-sidebar-collapsed') === 'true'
   })
@@ -134,7 +136,7 @@ export default function App() {
       )}
 
       <div className="app-layout">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} />
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} />
         <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div className="global-status">
             <PresenceAvatars users={onlineUsers} currentUser={currentUser} />
@@ -154,6 +156,21 @@ export default function App() {
           <div className="forme-footer">powered by forme</div>
         </div>
       </div>
+
+      {/* Notification toast popups */}
+      <NotificationToastContainer />
+
+      {/* Notification panel (slide-in from right) */}
+      {showNotifications && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 499, backgroundColor: 'rgba(26,20,18,0.2)' }}
+            onClick={() => setShowNotifications(false)} />
+          <NotificationsPanel
+            onClose={() => setShowNotifications(false)}
+            onNavigate={(path) => { window.location.href = path }}
+          />
+        </>
+      )}
     </>
   )
 }
