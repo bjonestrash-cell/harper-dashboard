@@ -921,7 +921,7 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: 32, position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-light)', lineHeight: 1, padding: 4 }}>&times;</button>
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-light)', lineHeight: 1, padding: 4, cursor: 'pointer' }}>&times;</button>
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 20 }}>
           {titles[eventType]}
         </h2>
@@ -1016,7 +1016,7 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
 
         <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
         {post && (
-          <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none' }}
+          <button style={{ marginTop: 16, color: 'var(--ink-light)', display: 'block', textAlign: 'center', width: '100%', fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}
             onClick={handleDelete}>Delete</button>
         )}
       </div>

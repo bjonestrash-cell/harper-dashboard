@@ -102,7 +102,7 @@ export default function PromotionsPage() {
         </button>
       </PageHeader>
 
-      <div className="page-container">
+      <div className="page-container" onClick={() => statFilter && setStatFilter(null)}>
         <MonthSelector />
 
         {/* Stats — chic clickable cards */}
@@ -113,7 +113,7 @@ export default function PromotionsPage() {
             { label: 'This Month', value: stats.thisMonth, key: 'thisMonth', accent: '#D4849A', bg: '#FCE8EF', bgHover: '#F9D6E1' },
             { label: 'Total', value: stats.total, key: 'total', accent: '#B85C78', bg: '#FADCE5', bgHover: '#F5C8D6' },
           ].map((s) => (
-            <div key={s.label} onClick={() => setStatFilter(statFilter === s.key ? null : s.key)}
+            <div key={s.label} onClick={(e) => { e.stopPropagation(); setStatFilter(statFilter === s.key ? null : s.key) }}
               style={{
                 padding: '32px 20px', textAlign: 'center', cursor: 'pointer',
                 backgroundColor: statFilter === s.key ? s.bgHover : s.bg,
@@ -128,7 +128,7 @@ export default function PromotionsPage() {
           ))}
         </div>
 
-        {/* Stat filter slide-up panel */}
+        {/* Stat filter slide-up panel — clicking outside (on page-container) closes it */}
         {statFilter && (() => {
           const filtered = statFilter === 'active' ? promotions.filter(p => getPromoStatus(p) === 'active')
             : statFilter === 'upcoming' ? promotions.filter(p => getPromoStatus(p) === 'upcoming')
@@ -136,7 +136,7 @@ export default function PromotionsPage() {
             : promotions
           const title = statFilter === 'active' ? 'Active Now' : statFilter === 'upcoming' ? 'Upcoming' : statFilter === 'thisMonth' ? 'This Month' : 'All Promotions'
           return (
-            <div style={{
+            <div onClick={e => e.stopPropagation()} style={{
               marginBottom: 32, padding: '24px 0', borderBottom: '1px solid var(--cream-deep)',
               animation: 'fadeSlideUp 300ms cubic-bezier(0.16,1,0.32,1)',
             }}>
@@ -335,7 +335,7 @@ function PromoModal({ promo, setPromotions, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div style={{ padding: 32, position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
+        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s', cursor: 'pointer' }}
           onMouseEnter={e => e.target.style.color = 'var(--ink)'} onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}>&times;</button>
 
         <h2 style={{ fontSize: 11, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: 24 }}>

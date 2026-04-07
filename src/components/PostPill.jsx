@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import './PostPill.css'
 
 const EVENT_COLORS = { post: '#ED95A0', meeting: '#96B8CC', holiday: '#CCAA82', other: '#A4B89E' }
@@ -11,6 +12,7 @@ function getEventType(post) {
 }
 
 export default function PostPill({ post, onClick, showAssignee, draggable, onDragStart }) {
+  const didDrag = useRef(false)
   const evType = getEventType(post)
   const bgColor = EVENT_COLORS[evType]
   const textColor = EVENT_TEXT_COLORS[evType]
@@ -18,9 +20,10 @@ export default function PostPill({ post, onClick, showAssignee, draggable, onDra
   return (
     <button
       className="post-pill"
-      onClick={onClick}
+      onClick={draggable ? (e) => { if (didDrag.current) { didDrag.current = false; return } onClick && onClick(e) } : onClick}
       draggable={draggable}
-      onDragStart={draggable ? (e) => { e.stopPropagation(); onDragStart && onDragStart(e) } : undefined}
+      onDragStart={draggable ? (e) => { e.stopPropagation(); didDrag.current = true; onDragStart && onDragStart(e) } : undefined}
+      onDragEnd={draggable ? () => { setTimeout(() => { didDrag.current = false }, 0) } : undefined}
       style={{
         '--event-color': bgColor,
         backgroundColor: bgColor,

@@ -216,7 +216,7 @@ export default function NotesPage() {
                   <button
                     onClick={() => setSelectedMeeting(null)}
                     style={{
-                      background: 'none', border: 'none', fontSize: 11,
+                      background: 'none', border: 'none', fontSize: 11, cursor: 'pointer',
                       fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
                       color: 'var(--ink-light)', fontFamily: 'Inter, sans-serif',
                       padding: '8px 0', transition: 'color 0.2s',
@@ -232,7 +232,7 @@ export default function NotesPage() {
                       }
                     }}
                     style={{
-                      background: 'none', border: 'none', fontSize: 11,
+                      background: 'none', border: 'none', fontSize: 11, cursor: 'pointer',
                       fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase',
                       color: 'var(--ink-light)', fontFamily: 'Inter, sans-serif',
                       padding: '8px 0', transition: 'color 0.2s',
@@ -320,7 +320,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
     <Modal onClose={onClose}>
       <div style={{ padding: 40, position: 'relative', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
         <button onClick={onClose}
-          style={{ position: 'absolute', top: 24, right: 24, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s' }}
+          style={{ position: 'absolute', top: 24, right: 24, background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-light)', lineHeight: 1, padding: 4, transition: 'color 0.2s', cursor: 'pointer' }}
           onMouseEnter={e => e.target.style.color = 'var(--ink)'}
           onMouseLeave={e => e.target.style.color = 'var(--ink-light)'}
         >&times;</button>
@@ -366,7 +366,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--ink-light)' }}>Cancel</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--ink-light)', cursor: 'pointer' }}>Cancel</button>
           <button onClick={handleDone} disabled={saving}
             style={{
               backgroundColor: 'var(--ink)', color: 'var(--cream)',
