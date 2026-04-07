@@ -6,6 +6,7 @@ import DatePicker from '../components/DatePicker'
 import SwipeToDelete from '../components/SwipeToDelete'
 import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
+import TodoPanel from '../components/TodoPanel'
 import './NotesPage.css'
 
 export default function NotesPage() {
@@ -15,6 +16,8 @@ export default function NotesPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editContent, setEditContent] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const [editingDate, setEditingDate] = useState(false)
+  const [todoOpen, setTodoOpen] = useState(false)
   const saveTimer = useRef(null)
 
   // Load all meetings
@@ -60,6 +63,7 @@ export default function NotesPage() {
     if (selectedMeeting) {
       setEditContent(selectedMeeting.content || '')
       setSaveStatus('saved')
+      setEditingDate(false)
     }
   }, [selectedMeeting?.id])
 
@@ -88,6 +92,18 @@ export default function NotesPage() {
     }, 2000)
   }
 
+  const handleDateChange = async (newDate) => {
+    if (!newDate || newDate === selectedMeeting.month) { setEditingDate(false); return }
+    const updated = { ...selectedMeeting, month: newDate }
+    setSelectedMeeting(updated)
+    setMeetings(prev => prev.map(m => m.id === updated.id ? updated : m))
+    setEditingDate(false)
+    await supabase.from('notes').update({
+      month: newDate,
+      updated_at: new Date().toISOString(),
+    }).eq('id', selectedMeeting.id)
+  }
+
   const formatMeetingDate = (m) => {
     try { return format(parseISO(m.month), 'EEE, MMM d') } catch { return m.month }
   }
@@ -98,6 +114,25 @@ export default function NotesPage() {
 
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
 
+  const createNewMeeting = async () => {
+    const newMeeting = {
+      id: crypto.randomUUID(),
+      month: format(new Date(), 'yyyy-MM-dd'),
+      content: '',
+      updated_by: currentUser,
+      updated_at: new Date().toISOString(),
+    }
+    setMeetings(prev => [newMeeting, ...prev])
+    setSelectedMeeting(newMeeting)
+    const { data } = await supabase.from('notes').insert([{
+      month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
+    }]).select().single()
+    if (data) {
+      setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
+      setSelectedMeeting(data)
+    }
+  }
+
   return (
     <div className="notes-page">
       <PageHeader title="Meeting Notes" />
@@ -106,27 +141,7 @@ export default function NotesPage() {
         <div className="meeting-sidebar">
           <div className="meeting-sidebar-header" />
 
-          <button className="new-meeting-btn" onClick={() => {
-            const newMeeting = {
-              id: crypto.randomUUID(),
-              month: format(new Date(), 'yyyy-MM-dd'),
-              content: '',
-              updated_by: currentUser,
-              updated_at: new Date().toISOString(),
-            }
-            setMeetings(prev => [newMeeting, ...prev])
-            setSelectedMeeting(newMeeting)
-            supabase.from('notes').insert([{
-              month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
-            }]).select().single().then(({ data }) => {
-              if (data) {
-                setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
-                setSelectedMeeting(data)
-              }
-            })
-          }}
-            style={{
-            }}>
+          <button className="new-meeting-btn" onClick={createNewMeeting}>
             + New Meeting
           </button>
 
@@ -159,38 +174,20 @@ export default function NotesPage() {
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
+        {/* CENTER: NOTE DETAIL */}
         <div className="meeting-detail">
           {!selectedMeeting ? (
-            <div className="meeting-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-              <p style={{ fontSize: 14, fontWeight: 300, color: 'var(--ink-light)' }}>
+            <div className="meeting-empty">
+              <p style={{ fontSize: 14, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 16 }}>
                 Start a new meeting note
               </p>
               <button
-                onClick={() => {
-                  const newMeeting = {
-                    id: crypto.randomUUID(),
-                    month: format(new Date(), 'yyyy-MM-dd'),
-                    content: '',
-                    updated_by: currentUser,
-                    updated_at: new Date().toISOString(),
-                  }
-                  setMeetings(prev => [newMeeting, ...prev])
-                  setSelectedMeeting(newMeeting)
-                  // Also try Supabase
-                  supabase.from('notes').insert([{
-                    month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
-                  }]).select().single().then(({ data }) => {
-                    if (data) {
-                      setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
-                      setSelectedMeeting(data)
-                    }
-                  })
-                }}
+                onClick={createNewMeeting}
                 style={{
                   backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
                   borderRadius: 9999, padding: '10px 28px', fontSize: 11, fontWeight: 500,
                   letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Inter, sans-serif',
+                  cursor: 'pointer',
                 }}
               >Start Writing</button>
             </div>
@@ -198,14 +195,31 @@ export default function NotesPage() {
             <>
               <div className="meeting-detail-header">
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 300, letterSpacing: 0.5, color: 'var(--ink)', marginBottom: 8 }}>
-                    {formatMeetingDateFull(selectedMeeting)}
-                  </h2>
+                  {/* Editable date */}
+                  {editingDate ? (
+                    <input
+                      type="date"
+                      className="meeting-date-input"
+                      defaultValue={selectedMeeting.month}
+                      autoFocus
+                      onBlur={(e) => handleDateChange(e.target.value)}
+                      onChange={(e) => handleDateChange(e.target.value)}
+                    />
+                  ) : (
+                    <h2
+                      className="meeting-date-display"
+                      onClick={() => setEditingDate(true)}
+                      title="Click to edit date"
+                    >
+                      {formatMeetingDateFull(selectedMeeting)}
+                      <span className="meeting-date-edit-hint">✎</span>
+                    </h2>
+                  )}
                   <span className={`meeting-author-chip ${selectedMeeting.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
                     by {capitalize(selectedMeeting.updated_by || 'unknown')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   <span style={{
                     fontSize: 10, fontWeight: 400, letterSpacing: 1,
                     color: saveStatus === 'saved' ? 'var(--ink-light)' : 'var(--pink-deep)',
@@ -213,6 +227,13 @@ export default function NotesPage() {
                   }}>
                     {saveStatus === 'saved' ? 'Saved \u2713' : 'Saving...'}
                   </span>
+                  <button
+                    onClick={() => setTodoOpen(o => !o)}
+                    className={`todo-toggle-btn ${todoOpen ? 'active' : ''}`}
+                    title="Toggle To-Dos"
+                  >
+                    To-Dos
+                  </button>
                   <button
                     onClick={() => setSelectedMeeting(null)}
                     style={{
@@ -255,7 +276,27 @@ export default function NotesPage() {
             </>
           )}
         </div>
+
+        {/* RIGHT: TO-DO PANEL */}
+        <TodoPanel
+          noteId={selectedMeeting?.id}
+          isOpen={todoOpen}
+        />
       </div>
+
+      {/* Floating To-Dos button (visible when no note selected or panel closed) */}
+      {!todoOpen && (
+        <button
+          className="todo-float-btn"
+          onClick={() => setTodoOpen(true)}
+          title="Open To-Dos"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginRight: 6 }}>
+            <path d="M1 3h12M1 7h8M1 11h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+          To-Dos
+        </button>
+      )}
 
       {/* Add Meeting Modal */}
       {showAddModal && (
@@ -306,8 +347,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
       })
       setSelectedMeeting(saved)
       onClose()
-    } catch (err) {
-      // Save locally even if Supabase fails
+    } catch {
       const fallback = { id: crypto.randomUUID(), month: date, content: notes, updated_by: currentUser, updated_at: new Date().toISOString() }
       setMeetings(prev => [fallback, ...prev])
       setSelectedMeeting(fallback)
@@ -337,7 +377,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
                   backgroundColor: date === qd.value ? 'var(--ink)' : 'var(--cream-mid)',
                   color: date === qd.value ? 'var(--cream)' : 'var(--ink-mid)',
                   fontSize: 11, fontWeight: 500, letterSpacing: 0.5, transition: 'all 0.2s ease',
-                  fontFamily: 'Inter, sans-serif',
+                  fontFamily: 'Inter, sans-serif', cursor: 'pointer',
                 }}>{qd.label}</button>
             ))}
           </div>
@@ -372,7 +412,7 @@ function AddMeetingModal({ currentUser, setMeetings, setSelectedMeeting, onClose
               backgroundColor: 'var(--ink)', color: 'var(--cream)',
               border: 'none', padding: '12px 32px', fontSize: 11,
               fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase',
-              transition: 'background 0.2s ease',
+              transition: 'background 0.2s ease', cursor: 'pointer',
             }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--pink-deep)'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--ink)'}

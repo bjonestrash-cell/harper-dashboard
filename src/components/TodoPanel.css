@@ -1,0 +1,223 @@
+.todo-panel {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--cream-deep);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: todoPanelIn 0.2s ease;
+}
+
+@keyframes todoPanelIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.todo-panel-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--cream-deep);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.todo-panel-title {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+.todo-scope-toggle {
+  display: flex;
+  background: var(--cream-mid);
+  border-radius: 9999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.todo-scope-btn {
+  background: none;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.todo-scope-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.todo-scope-btn.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.todo-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.todo-empty {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink-light);
+  padding: 20px 18px;
+  text-align: center;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  transition: background 0.12s ease;
+  border-radius: 6px;
+  margin: 0 6px;
+}
+
+.todo-item:hover {
+  background: var(--cream-mid);
+}
+
+.todo-item:hover .todo-delete {
+  opacity: 1;
+}
+
+.todo-item.completed .todo-text {
+  text-decoration: line-through;
+  color: var(--ink-light);
+}
+
+.todo-check {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-light);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.todo-check:hover {
+  color: var(--ink);
+}
+
+.todo-completed .todo-check {
+  color: var(--pink-deep);
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.todo-star {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--cream-deep);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.todo-star:hover {
+  color: var(--pink);
+}
+
+.todo-star.starred {
+  color: var(--pink);
+}
+
+.todo-delete {
+  background: none;
+  border: none;
+  font-size: 15px;
+  color: var(--ink-light);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.todo-delete:hover {
+  color: #B85450;
+}
+
+.todo-add-row {
+  padding: 6px 14px;
+  margin: 0 6px;
+}
+
+.todo-add-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--cream-deep);
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink);
+  padding: 4px 0;
+  outline: none;
+}
+
+.todo-add-input::placeholder {
+  color: var(--ink-light);
+}
+
+.todo-add-btn {
+  margin: 10px 14px 16px;
+  background: none;
+  border: 1px dashed var(--cream-deep);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  padding: 9px 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.todo-add-btn:hover {
+  border-color: var(--pink);
+  color: var(--pink-deep);
+  background: var(--pink-light);
+}
+
+/* Mobile: panel goes below editor */
+@media (max-width: 767px) {
+  .todo-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--cream-deep);
+    max-height: 320px;
+  }
+}
