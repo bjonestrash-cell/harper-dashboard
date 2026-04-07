@@ -21,6 +21,7 @@ export default function PromotionsPage() {
   const [editingPromo, setEditingPromo] = useState(null)
   const [orderForm, setOrderForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), orders: '', notes: '' })
   const [orderLog, setOrderLog] = useState([])
+  const [statFilter, setStatFilter] = useState(null)
 
   const fetchPromos = useCallback(() =>
     supabase.from('promotions').select('*').order('start_date'),
@@ -104,20 +105,69 @@ export default function PromotionsPage() {
       <div className="page-container">
         <MonthSelector />
 
-        {/* Stats — borderless inline */}
+        {/* Stats — clickable inline */}
         <div style={{ display: 'flex', gap: 0, borderTop: '1px solid var(--cream-deep)', borderBottom: '1px solid var(--cream-deep)', marginBottom: 48 }}>
           {[
-            { label: 'Active Now', value: stats.active },
-            { label: 'Upcoming', value: stats.upcoming },
-            { label: 'This Month', value: stats.thisMonth },
-            { label: 'Total', value: stats.total },
+            { label: 'Active Now', value: stats.active, key: 'active' },
+            { label: 'Upcoming', value: stats.upcoming, key: 'upcoming' },
+            { label: 'This Month', value: stats.thisMonth, key: 'thisMonth' },
+            { label: 'Total', value: stats.total, key: 'total' },
           ].map((s, i) => (
-            <div key={s.label} style={{ flex: 1, padding: '32px 0', textAlign: 'center', borderRight: i < 3 ? '1px solid var(--cream-deep)' : 'none' }}>
+            <div key={s.label} onClick={() => setStatFilter(statFilter === s.key ? null : s.key)}
+              style={{
+                flex: 1, padding: '32px 0', textAlign: 'center', cursor: 'pointer',
+                borderRight: i < 3 ? '1px solid var(--cream-deep)' : 'none',
+                backgroundColor: statFilter === s.key ? 'var(--cream-mid)' : 'transparent',
+                transition: 'all 0.2s ease',
+              }}>
               <div style={{ fontSize: 36, fontWeight: 300, color: 'var(--ink)', lineHeight: 1, marginBottom: 8 }}>{s.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>{s.label}</div>
+              <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: statFilter === s.key ? 'var(--ink)' : 'var(--ink-light)' }}>{s.label}</div>
             </div>
           ))}
         </div>
+
+        {/* Stat filter slide-up panel */}
+        {statFilter && (() => {
+          const filtered = statFilter === 'active' ? promotions.filter(p => getPromoStatus(p) === 'active')
+            : statFilter === 'upcoming' ? promotions.filter(p => getPromoStatus(p) === 'upcoming')
+            : statFilter === 'thisMonth' ? monthPromos
+            : promotions
+          const title = statFilter === 'active' ? 'Active Now' : statFilter === 'upcoming' ? 'Upcoming' : statFilter === 'thisMonth' ? 'This Month' : 'All Promotions'
+          return (
+            <div style={{
+              marginBottom: 32, padding: '24px 0', borderBottom: '1px solid var(--cream-deep)',
+              animation: 'fadeSlideUp 300ms cubic-bezier(0.16,1,0.32,1)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--ink-light)' }}>{title} ({filtered.length})</span>
+                <button onClick={() => setStatFilter(null)} style={{ background: 'none', border: 'none', fontSize: 18, color: 'var(--ink-light)', cursor: 'pointer', lineHeight: 1 }}>×</button>
+              </div>
+              {filtered.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)' }}>None found</p>}
+              {filtered.map(p => (
+                <div key={p.id} style={{
+                  padding: '14px 0', borderBottom: '1px solid var(--cream-deep)',
+                  borderLeft: `2px solid ${p.color || '#F4A7B9'}`, paddingLeft: 16,
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{p.name}</div>
+                    <div style={{ fontSize: 11, fontWeight: 300, color: 'var(--ink-light)', marginTop: 2 }}>
+                      {p.start_date && format(new Date(p.start_date + 'T00:00:00'), 'MMM d')}
+                      {p.end_date && ` – ${format(new Date(p.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: 9, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
+                    padding: '3px 12px', borderRadius: 20,
+                    ...(getPromoStatus(p) === 'active' ? { backgroundColor: 'var(--pink-light)', color: 'var(--pink-deep)' }
+                      : getPromoStatus(p) === 'upcoming' ? { backgroundColor: 'var(--cream-mid)', color: 'var(--ink-mid)' }
+                      : { backgroundColor: 'var(--cream-deep)', color: 'var(--ink-light)' })
+                  }}>{getPromoStatus(p)}</span>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Timeline — thin editorial line */}
         <div style={{ marginBottom: 48 }}>

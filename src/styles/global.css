@@ -28,14 +28,15 @@
 }
 
 html {
-  min-height: 100%;
   scroll-behavior: smooth;
+}
+
+body {
   overflow-x: hidden;
 }
 
-body, #root {
-  min-height: 100%;
-  overflow-x: hidden;
+#root {
+  min-height: 100vh;
 }
 
 body {
