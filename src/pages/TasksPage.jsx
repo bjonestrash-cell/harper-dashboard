@@ -10,6 +10,20 @@ import SwipeToDelete from '../components/SwipeToDelete'
 import TodoItem from '../components/TodoItem'
 import Modal from '../components/Modal'
 import DatePicker from '../components/DatePicker'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import './TasksPage.css'
 
 export default function TasksPage() {

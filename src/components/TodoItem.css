@@ -4,18 +4,48 @@
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid var(--cream-mid);
-  transition: opacity 200ms ease;
+  transition: opacity 200ms ease, background 150ms ease;
 }
 
 .todo-item.completed {
   opacity: 0.5;
-  order: 1;
+}
+
+.todo-item.starred {
+  background: var(--pink-light);
+  margin: 0 -12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-bottom-color: transparent;
+}
+
+.todo-drag {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: grab;
+  color: var(--cream-deep);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 150ms ease;
+  touch-action: none;
+}
+.todo-drag:hover {
+  color: var(--ink-light);
+}
+.todo-drag:active {
+  cursor: grabbing;
 }
 
 .todo-text {
   flex: 1;
   font-size: 14px;
   color: var(--ink);
+}
+.todo-text.completed-text {
+  text-decoration: line-through;
+  color: var(--ink-light);
 }
 
 .todo-assignee {
@@ -24,11 +54,15 @@
   letter-spacing: 1px;
   padding: 2px 8px;
   border-radius: 9999px;
+  flex-shrink: 0;
 }
 
 .assignee-natalie {
   background: var(--pink-light);
   color: var(--pink-deep);
+}
+.todo-item.starred .assignee-natalie {
+  background: var(--white);
 }
 
 .assignee-grace {
@@ -52,6 +86,25 @@
   background: var(--pink-deep);
 }
 
+.todo-star-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--cream-deep);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 150ms ease, transform 150ms ease;
+}
+.todo-star-btn:hover {
+  color: var(--pink);
+  transform: scale(1.15);
+}
+.todo-star-btn.active {
+  color: var(--pink);
+}
+
 .todo-delete {
   font-size: 16px;
   color: var(--cream-deep);
@@ -61,6 +114,7 @@
   padding: 0 4px;
   opacity: 0;
   transition: all 200ms ease;
+  flex-shrink: 0;
 }
 
 .todo-item:hover .todo-delete {

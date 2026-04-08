@@ -209,10 +209,7 @@ export default function NotesPage() {
         {/* CENTER: NOTE DETAIL */}
         <div className="meeting-detail">
           {!selectedMeeting ? (
-            <div className="meeting-empty">
-              <p style={{ fontSize: 14, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 16 }}>
-                Start a new meeting note
-              </p>
+            <div className="meeting-empty" style={{ flexDirection: 'column', gap: 0 }}>
               <button
                 onClick={() => setShowNewChoice(true)}
                 style={{
@@ -316,12 +313,12 @@ export default function NotesPage() {
       {/* New Meeting Choice Modal */}
       {showNewChoice && (
         <Modal onClose={() => setShowNewChoice(false)}>
-          <div style={{ padding: 48, textAlign: 'center', maxWidth: 420 }}>
+          <div className="new-choice-modal">
             <h2 style={{ fontSize: 14, fontWeight: 500, letterSpacing: 1, marginBottom: 8, color: 'var(--ink)' }}>New Meeting</h2>
-            <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 36 }}>
+            <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 28 }}>
               How would you like to start?
             </p>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: 16 }}>
               <button
                 className="new-choice-btn"
                 onClick={() => createNewMeeting('template')}

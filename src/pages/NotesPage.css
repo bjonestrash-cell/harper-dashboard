@@ -268,6 +268,18 @@
 }
 
 /* New Meeting Choice Modal */
+.new-choice-modal {
+  padding: 40px 32px;
+  text-align: center;
+}
+/* Force this modal to be compact on all viewports */
+.modal-content:has(.new-choice-modal) {
+  height: auto !important;
+  max-height: none !important;
+  max-width: 460px;
+  border-radius: 16px;
+}
+
 .new-choice-btn {
   display: flex;
   flex-direction: column;
@@ -279,7 +291,8 @@
   background: var(--white);
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 140px;
+  flex: 1;
+  min-width: 0;
 }
 .new-choice-btn:hover {
   border-color: var(--pink);
