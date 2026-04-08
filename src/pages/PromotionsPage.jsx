@@ -28,7 +28,7 @@ export default function PromotionsPage() {
     []
   )
 
-  const { data: promotions, setData: setPromotions } = useRealtime('promotions', fetchPromos)
+  const { data: promotions, setData: setPromotions, loading: promosLoading } = useRealtime('promotions', fetchPromos)
 
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
@@ -178,7 +178,8 @@ export default function PromotionsPage() {
 
         {/* Promotions — flat rows */}
         {!statFilter && <div style={{ marginBottom: 48 }}>
-          {monthPromos.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', padding: '24px 0' }}>No promotions this month</p>}
+          {promosLoading && <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)', padding: '24px 0', textAlign: 'center' }}>Loading...</p>}
+          {!promosLoading && monthPromos.length === 0 && <p style={{ fontSize: 13, fontWeight: 300, color: 'var(--ink-light)', padding: '24px 0' }}>No promotions this month</p>}
           {monthPromos.map(promo => {
             const computedStatus = getPromoStatus(promo)
             const statusStyle = computedStatus === 'active'

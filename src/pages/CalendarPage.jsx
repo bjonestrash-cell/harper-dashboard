@@ -198,6 +198,12 @@ export default function CalendarPage() {
           ))}
         </div>
 
+        {(postsLoading || promosLoading) && (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--ink-light)' }}>Loading...</span>
+          </div>
+        )}
+
         {viewMode === 'month' ? (
           <MonthGrid
             days={days}
