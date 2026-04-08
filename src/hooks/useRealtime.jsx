@@ -8,7 +8,7 @@ export function useRealtime(table, fetchFn, deps = []) {
   const fetchFnRef = useRef(fetchFn)
 
   // Serialize deps to a stable string key
-  const depsKey = JSON.stringify(deps)
+  const depsKey = deps.join(',')
 
   // Keep fetchFn ref current
   fetchFnRef.current = fetchFn

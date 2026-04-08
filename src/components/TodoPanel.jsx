@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, createChannel } from '../lib/supabase'
 import {
   DndContext,
@@ -101,7 +101,7 @@ export default function TodoPanel({ noteId, isOpen }) {
 
   const effectiveScope = scope === 'note' && noteId ? 'note' : 'global'
 
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     let query = supabase.from('todos').select('*')
     if (effectiveScope === 'note' && noteId) {
       query = query.eq('note_id', noteId)
@@ -110,7 +110,7 @@ export default function TodoPanel({ noteId, isOpen }) {
     }
     const { data } = await query.order('sort_order', { ascending: true }).order('created_at', { ascending: true })
     setTodos(data || [])
-  }
+  }, [effectiveScope, noteId])
 
   useEffect(() => {
     if (!isOpen) return

@@ -64,8 +64,8 @@ export default function CalendarPage() {
     [format(calendarStart, 'yyyy-MM-dd'), format(calendarEnd, 'yyyy-MM-dd')]
   )
 
-  const { data: posts, setData: setPosts } = useRealtime('calendar_posts', fetchPosts, [format(currentMonth, 'yyyy-MM')])
-  const { data: promotions } = useRealtime('promotions', fetchPromos, [format(currentMonth, 'yyyy-MM')])
+  const { data: posts, setData: setPosts, loading: postsLoading } = useRealtime('calendar_posts', fetchPosts, [format(currentMonth, 'yyyy-MM')])
+  const { data: promotions, loading: promosLoading } = useRealtime('promotions', fetchPromos, [format(currentMonth, 'yyyy-MM')])
 
   const filteredPosts = posts.filter(p => {
     if (calendarView === 'mine' && p.assigned_to !== currentUser) return false

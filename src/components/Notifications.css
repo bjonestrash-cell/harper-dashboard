@@ -144,6 +144,9 @@
 @media (max-width: 768px) {
   .notif-panel { width: 100%; }
 }
+@media (min-width: 769px) and (max-width: 1023px) {
+  .notif-panel { width: min(380px, 50vw); }
+}
 
 .notif-panel-header {
   display: flex;
