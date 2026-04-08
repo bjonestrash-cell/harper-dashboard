@@ -501,17 +501,27 @@ function TemplateToolbar() {
         <button className="re-toolbar-btn" title="Checklist" onMouseDown={e => {
           e.preventDefault()
           const sel = window.getSelection()
-          const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
-          const ul = li?.closest('ul')
-          if (ul) {
-            ul.classList.toggle('re-checklist')
+          let anchor = sel?.anchorNode
+          if (anchor?.nodeType === 3) anchor = anchor.parentElement
+          const li = anchor?.closest?.('li')
+          const ul = li?.closest('ul, ol')
+          if (ul?.classList.contains('re-checklist')) {
+            ul.classList.remove('re-checklist')
           } else {
-            document.execCommand('insertUnorderedList', false, null)
-            // Find the last UL without checklist class in the active field
-            const field = document.activeElement?.closest?.('.template-editable') || document.activeElement
-            if (field) {
-              const allUls = field.querySelectorAll('ul:not(.re-checklist)')
-              if (allUls.length > 0) allUls[allUls.length - 1].classList.add('re-checklist')
+            const checklistHtml = '<ul class="re-checklist"><li>&#8203;</li></ul>'
+            if (li) {
+              const tmp = document.createElement('div')
+              tmp.innerHTML = checklistHtml
+              const clNode = tmp.firstChild
+              ul.parentNode.insertBefore(clNode, ul.nextSibling)
+              const newLi = clNode.querySelector('li')
+              const range = document.createRange()
+              range.setStart(newLi, 0)
+              range.collapse(true)
+              sel.removeAllRanges()
+              sel.addRange(range)
+            } else {
+              document.execCommand('insertHTML', false, checklistHtml)
             }
           }
         }} style={{ fontSize: 13, lineHeight: 1 }}>&#9745;</button>

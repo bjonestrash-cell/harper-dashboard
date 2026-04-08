@@ -206,9 +206,7 @@ export default function TasksPage() {
               strategy={verticalListSortingStrategy}
             >
               {sorted.map(task => (
-                <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}>
-                  <TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
-                </SwipeToDelete>
+                <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
               ))}
             </SortableContext>
           </DndContext>
@@ -244,65 +242,65 @@ export default function TasksPage() {
           )}
         </div>
 
-        {/* Done section */}
+        {/* Completed To Do's — two columns like active section */}
         {totalDone > 0 && (
           <div className="done-section">
             <button className="done-toggle" onClick={() => setShowDone(!showDone)}>
-              {showDone ? '\u25BE' : '\u25B8'} {totalDone} completed task{totalDone !== 1 ? 's' : ''}
+              {showDone ? '\u25BE' : '\u25B8'} {totalDone} Completed To Do{totalDone !== 1 ? "'s" : ''}
             </button>
             {showDone && (
-              <div className="done-tasks">
-                {[...doneNatalie, ...doneGrace].map(task => (
-                  <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}><TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} /></SwipeToDelete>
-                ))}
+              <div className="done-columns">
+                <div className="done-column">
+                  <span className="done-column-label natalie">
+                    <span className="avatar natalie" style={{ width: 20, height: 20, fontSize: 9 }}>N</span>
+                    Natalie
+                  </span>
+                  <div className="done-column-tasks">
+                    {doneNatalie.length === 0 && <p className="done-empty">All clear</p>}
+                    {doneNatalie.map(task => (
+                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
+                    ))}
+                  </div>
+                </div>
+                <div className="done-column">
+                  <span className="done-column-label grace">
+                    <span className="avatar grace" style={{ width: 20, height: 20, fontSize: 9 }}>G</span>
+                    Grace
+                  </span>
+                  <div className="done-column-tasks">
+                    {doneGrace.length === 0 && <p className="done-empty">All clear</p>}
+                    {doneGrace.map(task => (
+                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Monthly Checklist */}
-        <div className="monthly-todos">
-          <h2 className="checklist-title">This Month's Checklist</h2>
-
-          {/* Filter pills */}
-          <div className="checklist-filters">
-            <div className="checklist-filter-group">
-              {['both', 'natalie', 'grace'].map(v => (
-                <button key={v} onClick={() => setTodoAssignee(v)}
-                  className={`checklist-pill ${todoAssignee === v ? 'active' : ''}`}>
-                  {v === 'both' ? 'Both' : v.charAt(0).toUpperCase() + v.slice(1)}
-                </button>
-              ))}
+        {/* Monthly Progress */}
+        <div className="monthly-progress">
+          <h2 className="checklist-title">Monthly Progress</h2>
+          <div className="progress-stats">
+            <div className="progress-card">
+              <span className="progress-number">{activeTasks(natalieTasks).length + activeTasks(graceTasks).length}</span>
+              <span className="progress-label">Open</span>
             </div>
-            <div className="checklist-filter-group">
-              {['normal', 'high', 'low'].map(v => (
-                <button key={v} onClick={() => setTodoPriority(v)}
-                  className={`checklist-pill ${todoPriority === v ? 'active' : ''}`}>
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
-                </button>
-              ))}
+            <div className="progress-card">
+              <span className="progress-number">{totalDone}</span>
+              <span className="progress-label">Done</span>
             </div>
-          </div>
-
-          {/* Checklist items */}
-          <div className="checklist-items">
-            {sortedTodos.length === 0 && (
-              <p className="checklist-empty">Nothing here yet.</p>
-            )}
-            <DndContext
-              sensors={dndSensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleTodoDragEnd}
-            >
-              <SortableContext
-                items={sortedTodos.map(t => t.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {sortedTodos.map(todo => (
-                  <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} onStar={handleStarTodo} />
-                ))}
-              </SortableContext>
-            </DndContext>
+            <div className="progress-card">
+              <span className="progress-number">{tasks.length}</span>
+              <span className="progress-label">Total</span>
+            </div>
+            <div className="progress-card">
+              <div className="progress-bar-wrap">
+                <div className="progress-bar-fill" style={{ width: `${tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0}%` }} />
+              </div>
+              <span className="progress-label">{tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0}% Complete</span>
+            </div>
           </div>
         </div>
       </div>

@@ -232,17 +232,33 @@ export default function RichEditor({ content, onChange, placeholder }) {
               if (!editor) return
               editor.focus()
               const sel = window.getSelection()
-              const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
-              const ul = li?.closest('ul')
-              if (ul) {
-                ul.classList.toggle('re-checklist')
+              let anchor = sel?.anchorNode
+              if (anchor?.nodeType === 3) anchor = anchor.parentElement
+              const li = anchor?.closest?.('li')
+              const ul = li?.closest('ul, ol')
+              if (ul?.classList.contains('re-checklist')) {
+                // Already a checklist — toggle it off back to normal bullets
+                ul.classList.remove('re-checklist')
               } else {
-                // Create a new list, then mark it as checklist
-                document.execCommand('insertUnorderedList', false, null)
-                // Find any UL without re-checklist class and add it
-                const allUls = editor.querySelectorAll('ul:not(.re-checklist)')
-                if (allUls.length > 0) {
-                  allUls[allUls.length - 1].classList.add('re-checklist')
+                // Insert a new checklist after current position (or at cursor)
+                // Use direct DOM insertion to avoid execCommand issues
+                const checklistHtml = '<ul class="re-checklist"><li>&#8203;</li></ul>'
+                if (li) {
+                  // Inside a list — insert the checklist after the current list
+                  const newChecklist = document.createElement('div')
+                  newChecklist.innerHTML = checklistHtml
+                  const clNode = newChecklist.firstChild
+                  ul.parentNode.insertBefore(clNode, ul.nextSibling)
+                  // Move cursor into the new checklist item
+                  const newLi = clNode.querySelector('li')
+                  const range = document.createRange()
+                  range.setStart(newLi, 0)
+                  range.collapse(true)
+                  sel.removeAllRanges()
+                  sel.addRange(range)
+                } else {
+                  // Not in a list — insert at cursor
+                  document.execCommand('insertHTML', false, checklistHtml)
                 }
               }
               handleInput()
