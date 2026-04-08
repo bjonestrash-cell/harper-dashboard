@@ -538,6 +538,13 @@
   overflow: hidden;
 }
 
+.template-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 .template-col-label {
   font-size: 10px;
   font-weight: 500;
@@ -546,7 +553,6 @@
   display: inline-block;
   padding: 4px 12px;
   border-radius: 9999px;
-  margin-bottom: 12px;
 }
 .natalie-label {
   background: var(--pink-light);

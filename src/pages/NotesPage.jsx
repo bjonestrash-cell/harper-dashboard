@@ -133,6 +133,9 @@ export default function NotesPage() {
   // Inline auto-save
   const handleContentChange = (val) => {
     setEditContent(val)
+    // Keep local state in sync so colors / template data persist across meeting switches
+    setSelectedMeeting(prev => prev ? { ...prev, content: val } : prev)
+    setMeetings(prev => prev.map(m => m.id === selectedMeetingRef.current?.id ? { ...m, content: val } : m))
     setSaveStatus('saving')
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
@@ -678,6 +681,7 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
     try {
       const parsed = JSON.parse(content)
       return {
+        ...parsed,
         _mode: 'template',
         goOver: parsed.goOver || '',
         natalieActions: parsed.natalieActions || '',
@@ -820,19 +824,24 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
         <TemplateField field="goOver" html={data.goOver} onChange={updateField} placeholder="Topics, questions, updates..." bgColor={getSectionColor('goOver').bg} />
       </div>
 
-      <div className="template-section" style={{ borderColor: getSectionColor('actions').dot + '40' }}>
+      <div className="template-section" style={{ borderColor: 'transparent' }}>
         <div className="template-section-header">
           <h3 className="template-section-title">Action Items</h3>
-          {renderColorPicker('actions')}
         </div>
         <div className="template-columns">
           <div className="template-col">
-            <span className="template-col-label natalie-label">Natalie</span>
-            <TemplateField field="natalieActions" html={data.natalieActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('actions').bg} />
+            <div className="template-col-header">
+              <span className="template-col-label natalie-label">Natalie</span>
+              {renderColorPicker('natalieActions')}
+            </div>
+            <TemplateField field="natalieActions" html={data.natalieActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('natalieActions').bg} />
           </div>
           <div className="template-col">
-            <span className="template-col-label grace-label">Grace</span>
-            <TemplateField field="graceActions" html={data.graceActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('actions').bg} />
+            <div className="template-col-header">
+              <span className="template-col-label grace-label">Grace</span>
+              {renderColorPicker('graceActions')}
+            </div>
+            <TemplateField field="graceActions" html={data.graceActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('graceActions').bg} />
           </div>
         </div>
       </div>
