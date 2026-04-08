@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
@@ -26,6 +26,70 @@ import {
 } from '@dnd-kit/sortable'
 import './TasksPage.css'
 
+const BULLET_MAP = {
+  star: '\u2726', heart: '\u2665', diamond: '\u2666', flower: '\u273F', sparkle: '\u2736'
+}
+
+function QuickNoteColumn({ user, html, activeBullet, onChange }) {
+  const ref = useRef(null)
+  const isInternal = useRef(false)
+  const label = user.charAt(0).toUpperCase() + user.slice(1)
+
+  useEffect(() => {
+    if (ref.current && !isInternal.current && ref.current.innerHTML !== html) {
+      ref.current.innerHTML = html || ''
+    }
+    isInternal.current = false
+  }, [html])
+
+  const handleInput = () => {
+    isInternal.current = true
+    onChange(ref.current?.innerHTML || '')
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const bullet = BULLET_MAP[activeBullet] || '\u2726'
+      document.execCommand('insertHTML', false, `<br><span class="qn-bullet">${bullet}</span>&nbsp;`)
+      handleInput()
+    }
+  }
+
+  const insertBullet = () => {
+    ref.current?.focus()
+    const bullet = BULLET_MAP[activeBullet] || '\u2726'
+    document.execCommand('insertHTML', false, `<span class="qn-bullet">${bullet}</span>&nbsp;`)
+    handleInput()
+  }
+
+  const isEmpty = !html || html === '' || html === '<br>'
+
+  return (
+    <div className="qn-column">
+      <div className="qn-col-header">
+        <span className={`avatar ${user}`} style={{ width: 22, height: 22, fontSize: 9 }}>{label[0]}</span>
+        <span className="qn-col-name">{label}</span>
+        <button className="qn-add-bullet" onClick={insertBullet} title="Add bullet">
+          {BULLET_MAP[activeBullet]}
+        </button>
+      </div>
+      <div className="qn-editor-wrap">
+        <div
+          ref={ref}
+          className="qn-editor"
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          spellCheck="true"
+        />
+        {isEmpty && <div className="qn-placeholder">What's on your mind...</div>}
+      </div>
+    </div>
+  )
+}
+
 export default function TasksPage() {
   const { currentMonth } = useMonth()
   const monthStr = format(currentMonth, 'yyyy-MM-01')
@@ -47,6 +111,36 @@ export default function TasksPage() {
   const [todoAssignee, setTodoAssignee] = useState('both')
   const [todoPriority, setTodoPriority] = useState('normal')
   const [mobileColumn, setMobileColumn] = useState('natalie')
+  const [quickNotes, setQuickNotes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('harper-quick-notes') || '{}') } catch { return {} }
+  })
+  const [activeBullet, setActiveBullet] = useState('star')
+  const quickNoteTimers = useRef({})
+
+  const saveQuickNote = (user, html) => {
+    const updated = { ...quickNotes, [user]: html }
+    setQuickNotes(updated)
+    localStorage.setItem('harper-quick-notes', JSON.stringify(updated))
+    // Also try Supabase
+    if (quickNoteTimers.current[user]) clearTimeout(quickNoteTimers.current[user])
+    quickNoteTimers.current[user] = setTimeout(async () => {
+      await supabase.from('quick_notes').upsert({ user, month: monthStr, content: html }, { onConflict: 'user,month' }).catch(() => {})
+    }, 1500)
+  }
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from('quick_notes').select('*').eq('month', monthStr).catch(() => ({ data: null }))
+      if (data?.length) {
+        const fromDb = {}
+        data.forEach(r => { fromDb[r.user] = r.content })
+        setQuickNotes(prev => ({ ...prev, ...fromDb }))
+        localStorage.setItem('harper-quick-notes', JSON.stringify({ ...quickNotes, ...fromDb }))
+      }
+    }
+    load().catch(() => {})
+  }, [monthStr])
 
   const fetchTasks = useCallback(() =>
     supabase.from('tasks').select('*').eq('month', monthStr).order('created_at'),
@@ -279,43 +373,37 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Monthly Progress — two columns */}
-        <div className="monthly-progress">
-          <h2 className="checklist-title">Monthly Progress</h2>
-          <div className="progress-columns">
-            {[
-              { user: 'natalie', label: 'Natalie', tasks: natalieTasks },
-              { user: 'grace', label: 'Grace', tasks: graceTasks },
-            ].map(({ user, label, tasks: userTasks }) => {
-              const open = activeTasks(userTasks).length
-              const done = doneTasks(userTasks).length
-              const total = userTasks.length
-              const pct = total > 0 ? Math.round((done / total) * 100) : 0
-              return (
-                <div key={user} className="progress-col">
-                  <div className="progress-col-header">
-                    <span className={`avatar ${user}`} style={{ width: 22, height: 22, fontSize: 9 }}>{label[0]}</span>
-                    <span className="progress-col-name">{label}</span>
-                  </div>
-                  <div className="progress-stats">
-                    <div className="progress-card">
-                      <span className="progress-number">{open}</span>
-                      <span className="progress-label">Open</span>
-                    </div>
-                    <div className="progress-card">
-                      <span className="progress-number">{done}</span>
-                      <span className="progress-label">Done</span>
-                    </div>
-                  </div>
-                  <div className="progress-bar-section">
-                    <div className="progress-bar-wrap">
-                      <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="progress-pct">{pct}%</span>
-                  </div>
-                </div>
-              )
-            })}
+        {/* Quick Notes — free-form brain dump */}
+        <div className="quick-notes-section">
+          <div className="quick-notes-header">
+            <h2 className="checklist-title">Notes</h2>
+            <div className="bullet-picker">
+              {[
+                { id: 'star', icon: '\u2726' },
+                { id: 'heart', icon: '\u2665' },
+                { id: 'diamond', icon: '\u2666' },
+                { id: 'flower', icon: '\u273F' },
+                { id: 'sparkle', icon: '\u2736' },
+              ].map(b => (
+                <button
+                  key={b.id}
+                  className={`bullet-choice ${activeBullet === b.id ? 'active' : ''}`}
+                  onClick={() => setActiveBullet(b.id)}
+                  title={b.id}
+                >{b.icon}</button>
+              ))}
+            </div>
+          </div>
+          <div className="quick-notes-columns">
+            {['natalie', 'grace'].map(user => (
+              <QuickNoteColumn
+                key={user}
+                user={user}
+                html={quickNotes[user] || ''}
+                activeBullet={activeBullet}
+                onChange={(html) => saveQuickNote(user, html)}
+              />
+            ))}
           </div>
         </div>
       </div>

@@ -105,9 +105,13 @@ export default function NotesPage() {
     return () => supabase.removeChannel(channel)
   }, [selectedMeeting?.id])
 
-  // When selecting a meeting, load its content into the editor
+  // Keep ref always in sync
   useEffect(() => {
     selectedMeetingRef.current = selectedMeeting
+  }, [selectedMeeting])
+
+  // When selecting a different meeting, load its content
+  useEffect(() => {
     if (selectedMeeting) {
       setEditContent(selectedMeeting.content || '')
       setSaveStatus('saved')
@@ -137,9 +141,13 @@ export default function NotesPage() {
         updated_at: new Date().toISOString(),
         updated_by: currentUser,
       }).eq('id', meeting.id)
-      if (error) console.error('Failed to save:', error.message)
-      setSaveStatus('saved')
-    }, 2000)
+      if (error) {
+        console.error('Failed to save:', error.message)
+        setSaveStatus('error')
+      } else {
+        setSaveStatus('saved')
+      }
+    }, 1000)
   }
 
   const handleDateChange = async (newDate) => {
@@ -290,7 +298,7 @@ export default function NotesPage() {
                     color: saveStatus === 'saved' ? 'var(--ink-light)' : 'var(--pink-deep)',
                     fontFamily: 'Inter, sans-serif',
                   }}>
-                    {saveStatus === 'saved' ? 'Saved \u2713' : 'Saving...'}
+                    {saveStatus === 'saved' ? 'Saved \u2713' : saveStatus === 'error' ? 'Save failed' : 'Saving...'}
                   </span>
                   <button
                     onClick={() => setSelectedMeeting(null)}
