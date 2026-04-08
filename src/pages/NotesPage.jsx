@@ -39,11 +39,17 @@ function stripHtml(html) {
 function generateSummary(text) {
   const plain = stripHtml(text).trim()
   if (!plain) return ''
-  // Extract up to 5 meaningful words, skip tiny filler words
-  const filler = new Set(['the','a','an','and','or','to','in','on','at','of','for','is','it','be','as','by','we','i'])
-  const words = plain.split(/\s+/).filter(w => w.length > 1 && !filler.has(w.toLowerCase()))
+  const filler = new Set(['the','a','an','and','or','to','in','on','at','of','for','is','it','be','as','by','we','i','was','were','that','this','with','from','have','has','had','not','but','are','do','does','did','will','would','can','could','should','just','also','so','if','then','our','my','your','their','its','all','each','both','been','being','get','got','us','me','he','she','they','who','what','when','where','how','which','than','very','too','more','most','here','there'])
+  const months = new Set(['january','february','march','april','may','june','july','august','september','october','november','december','jan','feb','mar','apr','jun','jul','aug','sep','oct','nov','dec'])
+  const datePattern = /^\d{1,4}(st|nd|rd|th)?[:\-\/]?$/i
+  const words = plain.split(/\s+/).filter(w => {
+    if (w.length <= 1) return false
+    if (filler.has(w.toLowerCase())) return false
+    if (months.has(w.toLowerCase().replace(/[^a-z]/g, ''))) return false
+    if (datePattern.test(w)) return false
+    return true
+  })
   if (words.length === 0) return ''
-  // Capitalize first word, take up to 5 words
   const summary = words.slice(0, 5)
   summary[0] = summary[0].charAt(0).toUpperCase() + summary[0].slice(1)
   return summary.join(' ')
