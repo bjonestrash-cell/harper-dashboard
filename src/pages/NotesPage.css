@@ -184,6 +184,21 @@
   overflow-wrap: break-word;
 }
 
+/* Mobile back button — hidden on desktop */
+.meeting-back-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--pink-deep);
+  padding: 0;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
 /* Editable title */
 .meeting-title-input {
   width: 100%;
@@ -402,21 +417,20 @@
   gap: 6px;
 }
 .section-color-dot {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
   padding: 0;
-  background: none;
 }
 .section-color-dot:hover {
-  transform: scale(1.2);
+  transform: scale(1.15);
+  border-color: var(--cream-deep);
 }
 .section-color-dot.active {
-  border-color: var(--ink);
-  transform: scale(1.15);
+  border-color: var(--ink-light);
 }
 
 .template-field-wrap {
@@ -643,14 +657,23 @@
 
 /* Mobile */
 @media (max-width: 767px) {
-  .meeting-layout { flex-direction: column; }
-  .meeting-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--cream-deep); max-height: 40vh; }
-  .meeting-detail-header { padding: 20px 16px 12px; }
+  .meeting-layout { flex-direction: column; position: relative; }
+  /* When a note is selected, hide sidebar and show detail full-screen */
+  .meeting-layout:has(.meeting-detail > :not(.meeting-empty)) .meeting-sidebar {
+    display: none;
+  }
+  .meeting-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--cream-deep); }
+  .meeting-detail {
+    min-height: calc(100vh - 120px);
+  }
+  .meeting-detail-header { padding: 16px 16px 10px; }
+  .meeting-detail-header-actions { gap: 12px; }
   .meeting-divider { margin: 0 16px; }
   .meeting-content { padding: 16px; font-size: 14px; }
-  .meeting-content-area { padding: 0 16px; }
+  .meeting-content-area { padding: 0 16px; padding-bottom: 80px; }
   .meeting-content-edit { padding: 16px; }
   .template-columns { flex-direction: column; gap: 20px; }
   .meeting-title-input { font-size: 18px; }
   .meeting-date-display { font-size: 16px; }
+  .meeting-back-btn { display: block; }
 }

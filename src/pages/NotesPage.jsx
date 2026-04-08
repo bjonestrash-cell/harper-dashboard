@@ -290,6 +290,11 @@ export default function NotesPage() {
           ) : (
             <>
               <div className="meeting-detail-header">
+                {/* Mobile back button */}
+                <button
+                  className="meeting-back-btn"
+                  onClick={() => setSelectedMeeting(null)}
+                >&larr; All Notes</button>
                 {/* Title */}
                 <input
                   className="meeting-title-input"
