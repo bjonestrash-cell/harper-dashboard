@@ -47,6 +47,7 @@
 .meeting-list {
   flex: 1;
   overflow-y: auto;
+  outline: none;
 }
 
 .meeting-item {
@@ -142,9 +143,15 @@
 
 .meeting-detail-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
   padding: 32px 40px 20px;
+  gap: 8px;
+}
+.meeting-detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  align-self: flex-end;
 }
 
 .meeting-edit-btn {

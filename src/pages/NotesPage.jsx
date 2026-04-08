@@ -220,12 +220,36 @@ export default function NotesPage() {
             + New Meeting
           </button>
 
-          <div className="meeting-list">
+          <div
+            className="meeting-list"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+              e.preventDefault()
+              const sorted = [...meetings].sort((a, b) => (b.month || '').localeCompare(a.month || ''))
+              const currentIdx = sorted.findIndex(m => m.id === selectedMeeting?.id)
+              let nextIdx
+              if (e.key === 'ArrowDown') nextIdx = Math.min(currentIdx + 1, sorted.length - 1)
+              else nextIdx = Math.max(currentIdx - 1, 0)
+              if (nextIdx !== currentIdx && sorted[nextIdx]) {
+                setSelectedMeeting(sorted[nextIdx])
+                // Scroll detail to top
+                document.querySelector('.meeting-detail')?.scrollTo(0, 0)
+                // Scroll the active item into view in sidebar
+                setTimeout(() => {
+                  document.querySelector('.meeting-item.active')?.scrollIntoView({ block: 'nearest' })
+                }, 50)
+              }
+            }}
+          >
             {[...meetings].sort((a, b) => (b.month || '').localeCompare(a.month || '')).map(m => (
               <SwipeToDelete key={m.id} onDelete={() => deleteMeeting(m.id)}>
                 <div
                   className={`meeting-item ${selectedMeeting?.id === m.id ? 'active' : ''}`}
-                  onClick={() => setSelectedMeeting(m)}
+                  onClick={() => {
+                    setSelectedMeeting(m)
+                    document.querySelector('.meeting-detail')?.scrollTo(0, 0)
+                  }}
                 >
                   <button
                     className="meeting-delete-btn"
@@ -266,50 +290,49 @@ export default function NotesPage() {
           ) : (
             <>
               <div className="meeting-detail-header">
-                <div>
-                  {/* Editable title */}
-                  <input
-                    className="meeting-title-input"
-                    value={selectedMeeting.title || ''}
-                    onChange={(e) => {
-                      const title = e.target.value
-                      setSelectedMeeting(prev => ({ ...prev, title }))
-                      setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, title } : m))
-                      // Auto-save title with debounce
-                      if (titleTimer.current) clearTimeout(titleTimer.current)
-                      titleTimer.current = setTimeout(async () => {
-                        const id = selectedMeetingRef.current?.id
-                        if (!id) return
-                        await supabase.from('notes').update({ title }).eq('id', id)
-                      }, 800)
-                    }}
-                    placeholder="Name this meeting..."
-                  />
-                  {/* Editable date — click to open calendar picker */}
-                  <div style={{ position: 'relative' }}>
-                    <h2
-                      className="meeting-date-display"
-                      onClick={() => setEditingDate(!editingDate)}
-                      title="Click to edit date"
-                    >
-                      {formatMeetingDateFull(selectedMeeting)}
-                      <span className="meeting-date-edit-hint">&#9998;</span>
-                    </h2>
-                    {editingDate && (
-                      <DatePicker
-                        value={selectedMeeting.month}
-                        onChange={(val) => handleDateChange(val)}
-                        isOpen={true}
-                        onClose={() => setEditingDate(false)}
-                        persistOpen
-                      />
-                    )}
-                  </div>
+                {/* Title */}
+                <input
+                  className="meeting-title-input"
+                  value={selectedMeeting.title || ''}
+                  onChange={(e) => {
+                    const title = e.target.value
+                    setSelectedMeeting(prev => ({ ...prev, title }))
+                    setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, title } : m))
+                    if (titleTimer.current) clearTimeout(titleTimer.current)
+                    titleTimer.current = setTimeout(async () => {
+                      const id = selectedMeetingRef.current?.id
+                      if (!id) return
+                      await supabase.from('notes').update({ title }).eq('id', id)
+                    }, 800)
+                  }}
+                  placeholder="Name this meeting..."
+                />
+                {/* Date */}
+                <div style={{ position: 'relative' }}>
+                  <h2
+                    className="meeting-date-display"
+                    onClick={() => setEditingDate(!editingDate)}
+                    title="Click to edit date"
+                  >
+                    {formatMeetingDateFull(selectedMeeting)}
+                    <span className="meeting-date-edit-hint">&#9998;</span>
+                  </h2>
+                  {editingDate && (
+                    <DatePicker
+                      value={selectedMeeting.month}
+                      onChange={(val) => handleDateChange(val)}
+                      isOpen={true}
+                      onClose={() => setEditingDate(false)}
+                      persistOpen
+                    />
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className={`meeting-author-chip ${selectedMeeting.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
                     by {capitalize(selectedMeeting.updated_by || 'unknown')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div className="meeting-detail-header-actions">
                   <span style={{
                     fontSize: 10, fontWeight: 400, letterSpacing: 1,
                     color: saveStatus === 'saved' ? 'var(--ink-light)' : 'var(--pink-deep)',
