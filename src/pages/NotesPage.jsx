@@ -67,12 +67,13 @@ export default function NotesPage() {
   const saveTimer = useRef(null)
   const selectedMeetingRef = useRef(null)
 
-  // Load all meetings
+  // Load meetings for current user only
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
         .from('notes')
         .select('*')
+        .eq('updated_by', currentUser)
         .neq('month', '9999-01-01')
         .order('month', { ascending: false })
       setMeetings(data || [])
@@ -80,11 +81,12 @@ export default function NotesPage() {
     load()
   }, [])
 
-  // Real-time subscription
+  // Real-time subscription — only show current user's notes
   useEffect(() => {
     const channel = createChannel('notes_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notes' },
         (payload) => setMeetings(prev => {
+          if (payload.new.updated_by !== currentUser) return prev
           if (prev.find(m => m.id === payload.new.id)) return prev
           return [payload.new, ...prev]
         })
