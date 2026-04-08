@@ -23,9 +23,10 @@ function stripHtml(html) {
   try {
     const parsed = JSON.parse(html)
     if (parsed.goOver !== undefined) {
-      const parts = [parsed.goOver]
-      if (parsed.natalieActions) parts.push(parsed.natalieActions)
-      if (parsed.graceActions) parts.push(parsed.graceActions)
+      const strip = (s) => s ? new DOMParser().parseFromString(s, 'text/html').body.textContent || '' : ''
+      const parts = [strip(parsed.goOver)]
+      if (parsed.natalieActions) parts.push(strip(parsed.natalieActions))
+      if (parsed.graceActions) parts.push(strip(parsed.graceActions))
       if (parsed.natalieTodos?.length) parts.push(parsed.natalieTodos.map(t => t.text).join(', '))
       if (parsed.graceTodos?.length) parts.push(parsed.graceTodos.map(t => t.text).join(', '))
       const combined = parts.filter(Boolean).join(' ').trim()
@@ -54,6 +55,7 @@ export default function NotesPage() {
   const [editingDate, setEditingDate] = useState(false)
   const [showNewChoice, setShowNewChoice] = useState(false)
   const saveTimer = useRef(null)
+  const selectedMeetingRef = useRef(null)
 
   // Load all meetings
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function NotesPage() {
 
   // When selecting a meeting, load its content into the editor
   useEffect(() => {
+    selectedMeetingRef.current = selectedMeeting
     if (selectedMeeting) {
       setEditContent(selectedMeeting.content || '')
       setSaveStatus('saved')
@@ -117,12 +120,13 @@ export default function NotesPage() {
     setSaveStatus('saving')
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
-      if (!selectedMeeting) return
+      const meeting = selectedMeetingRef.current
+      if (!meeting?.id) return
       const { error } = await supabase.from('notes').update({
         content: val,
         updated_at: new Date().toISOString(),
         updated_by: currentUser,
-      }).eq('id', selectedMeeting.id)
+      }).eq('id', meeting.id)
       if (error) console.error('Failed to save:', error.message)
       setSaveStatus('saved')
     }, 2000)
@@ -156,21 +160,19 @@ export default function NotesPage() {
     const initialContent = mode === 'template'
       ? JSON.stringify({ _mode: 'template', goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] })
       : ''
-    const newMeeting = {
-      id: crypto.randomUUID(),
+    // Insert to Supabase first, then set local state with the real ID
+    const { data, error } = await supabase.from('notes').insert([{
       month: format(new Date(), 'yyyy-MM-dd'),
       content: initialContent,
       updated_by: currentUser,
       updated_at: new Date().toISOString(),
-    }
-    setMeetings(prev => [newMeeting, ...prev])
-    setSelectedMeeting(newMeeting)
-    const { data, error } = await supabase.from('notes').insert([{
-      month: newMeeting.month, content: initialContent, updated_by: currentUser, updated_at: newMeeting.updated_at
     }]).select().single()
-    if (error) console.error('Failed to save meeting:', error.message)
+    if (error) {
+      console.error('Failed to save meeting:', error.message)
+      return
+    }
     if (data) {
-      setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
+      setMeetings(prev => [data, ...prev])
       setSelectedMeeting(data)
     }
   }
@@ -374,11 +376,100 @@ export default function NotesPage() {
   )
 }
 
+function TemplateField({ field, html, onChange, placeholder }) {
+  const ref = useRef(null)
+  const isInternal = useRef(false)
+
+  useEffect(() => {
+    if (ref.current && !isInternal.current) {
+      if (ref.current.innerHTML !== html) {
+        ref.current.innerHTML = html || ''
+      }
+    }
+    isInternal.current = false
+  }, [html])
+
+  const handleInput = () => {
+    isInternal.current = true
+    onChange(field, ref.current?.innerHTML || '')
+  }
+
+  const isEmpty = !html || html === '' || html === '<br>'
+
+  return (
+    <div className="template-field-wrap">
+      <div
+        ref={ref}
+        className="template-editable"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        spellCheck="true"
+      />
+      {isEmpty && <div className="template-editable-placeholder">{placeholder}</div>}
+    </div>
+  )
+}
+
+function TemplateToolbar() {
+  const execCmd = (e, cmd, arg) => {
+    e.preventDefault()
+    document.execCommand(cmd, false, arg || null)
+  }
+
+  return (
+    <div className="re-toolbar" style={{ marginBottom: 8 }}>
+      <div className="re-toolbar-group">
+        <button className="re-toolbar-btn" title="Bold (⌘B)" onMouseDown={e => execCmd(e, 'bold')} style={{ fontWeight: 700 }}>B</button>
+        <button className="re-toolbar-btn" title="Italic (⌘I)" onMouseDown={e => execCmd(e, 'italic')} style={{ fontStyle: 'italic' }}>I</button>
+        <button className="re-toolbar-btn" title="Underline (⌘U)" onMouseDown={e => execCmd(e, 'underline')} style={{ textDecoration: 'underline' }}>U</button>
+        <button className="re-toolbar-btn" title="Strikethrough" onMouseDown={e => execCmd(e, 'strikeThrough')} style={{ textDecoration: 'line-through' }}>S</button>
+      </div>
+      <div className="re-toolbar-divider" />
+      <div className="re-toolbar-group">
+        <button className="re-toolbar-btn" title="Bullet list" onMouseDown={e => execCmd(e, 'insertUnorderedList')} style={{ fontSize: 18, lineHeight: 1 }}>&bull;</button>
+        <button className="re-toolbar-btn" title="Numbered list" onMouseDown={e => execCmd(e, 'insertOrderedList')} style={{ fontSize: 11 }}>1.</button>
+        <button className="re-toolbar-btn" title="Checklist" onMouseDown={e => {
+          e.preventDefault()
+          const sel = window.getSelection()
+          const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
+          const ul = li?.closest('ul')
+          if (ul) {
+            // Toggle checklist class on existing list
+            ul.classList.toggle('re-checklist')
+          } else {
+            // Not in a list — create a new checklist
+            document.execCommand('insertUnorderedList', false, null)
+            setTimeout(() => {
+              const s = window.getSelection()
+              const newLi = s?.anchorNode?.closest?.('li') || s?.anchorNode?.parentElement?.closest?.('li')
+              if (newLi?.parentElement?.tagName === 'UL') {
+                newLi.parentElement.classList.add('re-checklist')
+              }
+            }, 0)
+          }
+        }} style={{ fontSize: 13, lineHeight: 1 }}>&#9745;</button>
+      </div>
+      <div className="re-toolbar-divider" />
+      <div className="re-toolbar-group">
+        <button className="re-toolbar-btn" title="Heading" onMouseDown={e => execCmd(e, 'formatBlock', '<h3>')} style={{ fontWeight: 600, fontSize: 11 }}>H</button>
+        <button className="re-toolbar-btn" title="Normal text" onMouseDown={e => execCmd(e, 'formatBlock', '<p>')} style={{ fontSize: 10 }}>&para;</button>
+      </div>
+      <div className="re-toolbar-divider" />
+      <div className="re-toolbar-group">
+        <button className="re-toolbar-btn" title="Horizontal rule" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<hr style="border:none;border-top:1px solid #E8E0D5;margin:16px 0" />') }} style={{ fontSize: 10, letterSpacing: 2 }}>&mdash;</button>
+        <button className="re-toolbar-btn" title="Clear formatting" onMouseDown={e => execCmd(e, 'removeFormat')} style={{ fontSize: 10 }}>&times;</button>
+      </div>
+    </div>
+  )
+}
+
 function MeetingTemplate({ meeting, currentUser, onContentChange }) {
   const parseTemplate = (content) => {
     try {
       const parsed = JSON.parse(content)
       return {
+        _mode: 'template',
         goOver: parsed.goOver || '',
         natalieActions: parsed.natalieActions || '',
         graceActions: parsed.graceActions || '',
@@ -386,20 +477,24 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
         graceTodos: parsed.graceTodos || [],
       }
     } catch {
-      return { goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] }
+      return { _mode: 'template', goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] }
     }
   }
 
-  const [data, setData] = useState(() => parseTemplate(meeting.content))
+  const dataRef = useRef(parseTemplate(meeting.content))
+  const [data, setData] = useState(() => dataRef.current)
   const [natalieTodo, setNatalieTodo] = useState('')
   const [graceTodo, setGraceTodo] = useState('')
 
   useEffect(() => {
-    setData(parseTemplate(meeting.content))
+    const parsed = parseTemplate(meeting.content)
+    dataRef.current = parsed
+    setData(parsed)
   }, [meeting.id])
 
   const updateField = (field, value) => {
-    const updated = { ...data, [field]: value }
+    const updated = { ...dataRef.current, [field]: value }
+    dataRef.current = updated
     setData(updated)
     onContentChange(JSON.stringify(updated))
   }
@@ -409,34 +504,29 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
     const month = format(new Date(), 'yyyy-MM-01')
     const todoText = text.trim()
 
-    // Clear input immediately for responsiveness
     if (assignedTo === 'natalie') setNatalieTodo('')
     else setGraceTodo('')
 
-    // Add to template's visible list right away
     const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
-    const tempId = crypto.randomUUID()
-    const newItem = { text: todoText, id: tempId }
-    const updatedList = [...(data[listKey] || []), newItem]
-    const updated = { ...data, [listKey]: updatedList }
+    const newItem = { text: todoText, id: crypto.randomUUID() }
+    const updatedList = [...(dataRef.current[listKey] || []), newItem]
+    const updated = { ...dataRef.current, [listKey]: updatedList }
+    dataRef.current = updated
     setData(updated)
     onContentChange(JSON.stringify(updated))
 
-    // Save to Supabase TASKS table (the kanban task cards, not the checklist)
     const { error } = await supabase
       .from('tasks')
       .insert({ title: todoText, assigned_to: assignedTo, month, status: 'todo' })
-
-    if (error) {
-      console.error('Failed to save task:', error.message)
-    }
+    if (error) console.error('Failed to save task:', error.message)
   }
 
   const removeTodoFromList = (assignedTo, index) => {
     const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
-    const updatedList = [...(data[listKey] || [])]
+    const updatedList = [...(dataRef.current[listKey] || [])]
     updatedList.splice(index, 1)
-    const updated = { ...data, [listKey]: updatedList }
+    const updated = { ...dataRef.current, [listKey]: updatedList }
+    dataRef.current = updated
     setData(updated)
     onContentChange(JSON.stringify(updated))
   }
@@ -481,14 +571,11 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
 
   return (
     <div className="meeting-template">
+      <TemplateToolbar />
+
       <div className="template-section">
         <h3 className="template-section-title">Things to Go Over</h3>
-        <textarea
-          className="template-textarea full-width"
-          value={data.goOver || ''}
-          onChange={e => updateField('goOver', e.target.value)}
-          placeholder="Topics, questions, updates..."
-        />
+        <TemplateField field="goOver" html={data.goOver} onChange={updateField} placeholder="Topics, questions, updates..." />
       </div>
 
       <div className="template-section">
@@ -496,21 +583,11 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
         <div className="template-columns">
           <div className="template-col">
             <span className="template-col-label natalie-label">Natalie</span>
-            <textarea
-              className="template-textarea"
-              value={data.natalieActions || ''}
-              onChange={e => updateField('natalieActions', e.target.value)}
-              placeholder="Action items..."
-            />
+            <TemplateField field="natalieActions" html={data.natalieActions} onChange={updateField} placeholder="Action items..." />
           </div>
           <div className="template-col">
             <span className="template-col-label grace-label">Grace</span>
-            <textarea
-              className="template-textarea"
-              value={data.graceActions || ''}
-              onChange={e => updateField('graceActions', e.target.value)}
-              placeholder="Action items..."
-            />
+            <TemplateField field="graceActions" html={data.graceActions} onChange={updateField} placeholder="Action items..." />
           </div>
         </div>
       </div>

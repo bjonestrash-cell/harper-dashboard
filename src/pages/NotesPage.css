@@ -336,12 +336,16 @@
   margin-bottom: 14px;
 }
 
-.template-textarea {
-  width: 100%;
-  min-height: 100px;
-  border: none;
+.template-field-wrap {
+  position: relative;
+  min-height: 80px;
   border-bottom: 1px solid var(--cream-deep);
-  background: transparent;
+  transition: border-color 0.15s ease;
+}
+.template-field-wrap:focus-within {
+  border-bottom-color: var(--pink);
+}
+.template-editable {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 300;
@@ -349,16 +353,66 @@
   color: var(--ink);
   padding: 10px 0;
   outline: none;
-  resize: none;
+  min-height: 60px;
 }
-.template-textarea.full-width {
-  min-height: 120px;
+.template-editable:empty + .template-editable-placeholder {
+  display: block;
 }
-.template-textarea:focus {
-  border-bottom-color: var(--pink);
-}
-.template-textarea::placeholder {
+.template-editable-placeholder {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
   color: var(--cream-deep);
+  pointer-events: none;
+  display: none;
+}
+/* Rich text styles inside template fields */
+.template-editable ul,
+.template-editable ol {
+  padding-left: 28px;
+  margin: 4px 0;
+}
+.template-editable ul { list-style-type: disc; }
+.template-editable ol { list-style-type: decimal; }
+.template-editable li { margin: 2px 0; }
+.template-editable b, .template-editable strong { font-weight: 600; }
+.template-editable h3 { font-size: 16px; font-weight: 500; margin: 12px 0 4px; }
+.template-editable .re-checklist { list-style: none; padding-left: 28px; }
+.template-editable .re-checklist li {
+  position: relative;
+  padding-left: 4px;
+}
+.template-editable .re-checklist li::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 5px;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--cream-deep);
+  border-radius: 3px;
+  background: var(--white);
+}
+.template-editable .re-checklist li.re-checked::before {
+  background: var(--pink-deep);
+  border-color: var(--pink-deep);
+}
+.template-editable .re-checklist li.re-checked::after {
+  content: '\2713';
+  position: absolute;
+  left: -22px;
+  top: 3px;
+  font-size: 11px;
+  color: white;
+  font-weight: 600;
+  pointer-events: none;
+}
+.template-editable .re-checklist li.re-checked {
+  color: var(--ink-light);
+  text-decoration: line-through;
 }
 
 .template-columns {

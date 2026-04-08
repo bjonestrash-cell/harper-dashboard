@@ -221,28 +221,22 @@ export default function RichEditor({ content, onChange, placeholder }) {
               const editor = editorRef.current
               if (!editor) return
               editor.focus()
-              // Check if already in a checklist
               const sel = window.getSelection()
-              const existingLi = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
-              if (existingLi?.parentElement?.classList.contains('re-checklist')) {
-                // Toggle off: convert to normal paragraph
-                const text = existingLi.textContent
-                const p = document.createElement('p')
-                p.textContent = text
-                const ul = existingLi.parentElement
-                ul.parentNode.insertBefore(p, ul)
-                existingLi.remove()
-                if (ul.children.length === 0) ul.remove()
-                const range = document.createRange()
-                range.selectNodeContents(p)
-                range.collapse(false)
-                sel.removeAllRanges()
-                sel.addRange(range)
+              const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
+              const ul = li?.closest('ul')
+              if (ul) {
+                // Toggle checklist class on existing list
+                ul.classList.toggle('re-checklist')
               } else {
-                // Insert checklist HTML directly
-                document.execCommand('insertHTML', false,
-                  '<ul class="re-checklist"><li>&#8203;</li></ul>'
-                )
+                // Not in a list — create bullet list then add checklist class
+                document.execCommand('insertUnorderedList', false, null)
+                setTimeout(() => {
+                  const s = window.getSelection()
+                  const newLi = s?.anchorNode?.closest?.('li') || s?.anchorNode?.parentElement?.closest?.('li')
+                  if (newLi?.parentElement?.tagName === 'UL') {
+                    newLi.parentElement.classList.add('re-checklist')
+                  }
+                }, 0)
               }
               handleInput()
             }}
