@@ -541,6 +541,12 @@ function TemplateToolbar() {
       </div>
       <div className="re-toolbar-divider" />
       <div className="re-toolbar-group">
+        <button className="re-toolbar-btn" title="Align left" onMouseDown={e => execCmd(e, 'justifyLeft')} style={{ fontSize: 14 }}>&#8676;</button>
+        <button className="re-toolbar-btn" title="Align center" onMouseDown={e => execCmd(e, 'justifyCenter')} style={{ fontSize: 14 }}>&#8801;</button>
+        <button className="re-toolbar-btn" title="Align right" onMouseDown={e => execCmd(e, 'justifyRight')} style={{ fontSize: 14 }}>&#8677;</button>
+      </div>
+      <div className="re-toolbar-divider" />
+      <div className="re-toolbar-group">
         <button className="re-toolbar-btn" title="Horizontal rule" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<hr style="border:none;border-top:1px solid #E8E0D5;margin:16px 0" />') }} style={{ fontSize: 10, letterSpacing: 2 }}>&mdash;</button>
         <button className="re-toolbar-btn" title="Clear formatting" onMouseDown={e => execCmd(e, 'removeFormat')} style={{ fontSize: 10 }}>&times;</button>
       </div>

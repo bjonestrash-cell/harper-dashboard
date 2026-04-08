@@ -26,14 +26,20 @@ import {
 } from '@dnd-kit/sortable'
 import './TasksPage.css'
 
-const BULLET_MAP = {
-  star: '\u2726', heart: '\u2665', diamond: '\u2666', flower: '\u273F', sparkle: '\u2736'
-}
+const BULLETS = [
+  { id: 'star', icon: '\u2726', label: 'Star' },
+  { id: 'heart', icon: '\u2665', label: 'Heart' },
+  { id: 'diamond', icon: '\u2666', label: 'Diamond' },
+  { id: 'flower', icon: '\u273F', label: 'Flower' },
+  { id: 'sparkle', icon: '\u2736', label: 'Sparkle' },
+]
 
-function QuickNoteColumn({ user, html, activeBullet, onChange }) {
+function QuickNoteColumn({ user, html, onChange }) {
   const ref = useRef(null)
   const isInternal = useRef(false)
+  const [bulletStyle, setBulletStyle] = useState('star')
   const label = user.charAt(0).toUpperCase() + user.slice(1)
+  const bullet = BULLETS.find(b => b.id === bulletStyle)?.icon || '\u2726'
 
   useEffect(() => {
     if (ref.current && !isInternal.current && ref.current.innerHTML !== html) {
@@ -47,32 +53,85 @@ function QuickNoteColumn({ user, html, activeBullet, onChange }) {
     onChange(ref.current?.innerHTML || '')
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      const bullet = BULLET_MAP[activeBullet] || '\u2726'
-      document.execCommand('insertHTML', false, `<br><span class="qn-bullet">${bullet}</span>&nbsp;`)
+  // When editor gets focus and is empty, auto-insert first bullet
+  const handleFocus = () => {
+    const editor = ref.current
+    if (!editor) return
+    const text = editor.textContent.replace(/\u200B/g, '').trim()
+    if (text === '') {
+      editor.innerHTML = `<div><span class="qn-bullet">${bullet}</span>&nbsp;</div>`
+      // Place cursor after the bullet
+      const sel = window.getSelection()
+      const range = document.createRange()
+      const lastChild = editor.lastChild
+      range.setStartAfter(lastChild.lastChild)
+      range.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(range)
       handleInput()
     }
   }
 
-  const insertBullet = () => {
-    ref.current?.focus()
-    const bullet = BULLET_MAP[activeBullet] || '\u2726'
-    document.execCommand('insertHTML', false, `<span class="qn-bullet">${bullet}</span>&nbsp;`)
-    handleInput()
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // New line with bullet
+      e.preventDefault()
+      document.execCommand('insertHTML', false, `<div><span class="qn-bullet">${bullet}</span>&nbsp;</div>`)
+      handleInput()
+    }
+
+    if (e.key === 'Backspace') {
+      const sel = window.getSelection()
+      if (!sel?.rangeCount) return
+      const node = sel.anchorNode
+      // Find the current line div
+      const line = node?.closest?.('div') || node?.parentElement?.closest?.('div')
+      if (!line || line === ref.current) return
+      // If line only has bullet + whitespace, remove the whole line
+      const lineText = line.textContent.replace(/[\u2726\u2665\u2666\u273F\u2736\u200B\u00A0 ]/g, '').trim()
+      if (lineText === '') {
+        e.preventDefault()
+        const prevLine = line.previousElementSibling
+        line.remove()
+        if (prevLine) {
+          const range = document.createRange()
+          range.selectNodeContents(prevLine)
+          range.collapse(false)
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
+        handleInput()
+      }
+    }
   }
 
-  const isEmpty = !html || html === '' || html === '<br>'
+  // When bullet style changes, update all existing bullets in the editor
+  const changeBullet = (newStyle) => {
+    setBulletStyle(newStyle)
+    const editor = ref.current
+    if (!editor) return
+    const newIcon = BULLETS.find(b => b.id === newStyle)?.icon || '\u2726'
+    editor.querySelectorAll('.qn-bullet').forEach(span => {
+      span.textContent = newIcon
+    })
+    handleInput()
+  }
 
   return (
     <div className="qn-column">
       <div className="qn-col-header">
         <span className={`avatar ${user}`} style={{ width: 22, height: 22, fontSize: 9 }}>{label[0]}</span>
         <span className="qn-col-name">{label}</span>
-        <button className="qn-add-bullet" onClick={insertBullet} title="Add bullet">
-          {BULLET_MAP[activeBullet]}
-        </button>
+      </div>
+      <div className="qn-bullet-bar">
+        {BULLETS.map(b => (
+          <button
+            key={b.id}
+            className={`qn-bullet-pick ${bulletStyle === b.id ? 'active' : ''}`}
+            onClick={() => changeBullet(b.id)}
+            title={b.label}
+          >{b.icon}</button>
+        ))}
       </div>
       <div className="qn-editor-wrap">
         <div
@@ -82,9 +141,12 @@ function QuickNoteColumn({ user, html, activeBullet, onChange }) {
           suppressContentEditableWarning
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           spellCheck="true"
         />
-        {isEmpty && <div className="qn-placeholder">What's on your mind...</div>}
+        {(!html || html === '' || html === '<br>') && (
+          <div className="qn-placeholder">Start typing...</div>
+        )}
       </div>
     </div>
   )
@@ -107,28 +169,22 @@ export default function TasksPage() {
   const [taskColumn, setTaskColumn] = useState('natalie')
   const [quickAdd, setQuickAdd] = useState({ natalie: '', grace: '' })
   const [showDone, setShowDone] = useState(false)
-  const [todoInput, setTodoInput] = useState('')
-  const [todoAssignee, setTodoAssignee] = useState('both')
-  const [todoPriority, setTodoPriority] = useState('normal')
   const [mobileColumn, setMobileColumn] = useState('natalie')
   const [quickNotes, setQuickNotes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('harper-quick-notes') || '{}') } catch { return {} }
   })
-  const [activeBullet, setActiveBullet] = useState('star')
   const quickNoteTimers = useRef({})
 
   const saveQuickNote = (user, html) => {
     const updated = { ...quickNotes, [user]: html }
     setQuickNotes(updated)
     localStorage.setItem('harper-quick-notes', JSON.stringify(updated))
-    // Also try Supabase
     if (quickNoteTimers.current[user]) clearTimeout(quickNoteTimers.current[user])
     quickNoteTimers.current[user] = setTimeout(async () => {
       await supabase.from('quick_notes').upsert({ user, month: monthStr, content: html }, { onConflict: 'user,month' }).catch(() => {})
     }, 1500)
   }
 
-  // Load from Supabase on mount
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from('quick_notes').select('*').eq('month', monthStr).catch(() => ({ data: null }))
@@ -146,13 +202,8 @@ export default function TasksPage() {
     supabase.from('tasks').select('*').eq('month', monthStr).order('created_at'),
     [monthStr]
   )
-  const fetchTodos = useCallback(() =>
-    supabase.from('todos').select('*').eq('month', monthStr).order('completed').order('created_at'),
-    [monthStr]
-  )
 
   const { data: tasks, setData: setTasks } = useRealtime('tasks', fetchTasks, [monthStr])
-  const { data: todos, setData: setTodos } = useRealtime('todos', fetchTodos, [monthStr])
 
   const natalieTasks = tasks.filter(t => t.assigned_to === 'natalie')
   const graceTasks = tasks.filter(t => t.assigned_to === 'grace')
@@ -210,7 +261,6 @@ export default function TasksPage() {
       const oldIndex = prev.findIndex(t => t.id === active.id)
       const newIndex = prev.findIndex(t => t.id === over.id)
       if (oldIndex === -1 || newIndex === -1) return prev
-      // Prevent starred from going below unstarred and vice versa
       const activeTask = prev[oldIndex]
       const overTask = prev[newIndex]
       if (activeTask.starred && !overTask.starred) return prev
@@ -219,58 +269,11 @@ export default function TasksPage() {
     })
   }
 
-  // Sort tasks: starred first within each user column
   const sortTaskList = (list) => [...list].sort((a, b) => {
     if (a.starred && !b.starred) return -1
     if (!a.starred && b.starred) return 1
     return 0
   })
-
-  const handleToggleTodo = async (todo) => {
-    const { data, error } = await supabase.from('todos').update({ completed: !todo.completed }).eq('id', todo.id).select()
-    if (!error && data?.[0]) setTodos(prev => prev.map(t => t.id === todo.id ? data[0] : t))
-  }
-
-  const handleDeleteTodo = async (todo) => {
-    const { error } = await supabase.from('todos').delete().eq('id', todo.id)
-    if (!error) setTodos(prev => prev.filter(t => t.id !== todo.id))
-  }
-
-  const handleStarTodo = async (todo) => {
-    const starred = !todo.starred
-    setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, starred } : t))
-    await supabase.from('todos').update({ starred }).eq('id', todo.id)
-  }
-
-  const handleTodoDragEnd = (event) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    setTodos(prev => {
-      const oldIndex = prev.findIndex(t => t.id === active.id)
-      const newIndex = prev.findIndex(t => t.id === over.id)
-      return arrayMove(prev, oldIndex, newIndex)
-    })
-  }
-
-  // Sort: starred first, then rest in original order
-  const sortedTodos = [...todos].sort((a, b) => {
-    if (a.starred && !b.starred) return -1
-    if (!a.starred && b.starred) return 1
-    return 0
-  })
-
-  const handleAddTodo = async () => {
-    const text = todoInput.trim()
-    if (!text) return
-    const newTodo = { id: crypto.randomUUID(), text, month: monthStr, assigned_to: todoAssignee, priority: todoPriority, completed: false, created_at: new Date().toISOString() }
-    const { data, error } = await supabase.from('todos').insert({ text, month: monthStr, assigned_to: todoAssignee, priority: todoPriority }).select()
-    if (!error && data?.[0]) {
-      setTodos(prev => [...prev, data[0]])
-    } else {
-      setTodos(prev => [...prev, newTodo])
-    }
-    setTodoInput('')
-  }
 
   const doneNatalie = doneTasks(natalieTasks)
   const doneGrace = doneTasks(graceTasks)
@@ -316,7 +319,6 @@ export default function TasksPage() {
       <div className="page-container">
         <MonthSelector />
 
-        {/* Mobile column toggle */}
         {isMobile && (
           <div className="view-toggle" style={{ marginBottom: 16, justifyContent: 'center', display: 'flex' }}>
             <button className={mobileColumn === 'natalie' ? 'active' : ''} onClick={() => setMobileColumn('natalie')}>Natalie</button>
@@ -336,7 +338,7 @@ export default function TasksPage() {
           )}
         </div>
 
-        {/* Completed To Do's — two columns like active section */}
+        {/* Completed To Do's */}
         {totalDone > 0 && (
           <div className="done-section">
             <button className="done-toggle" onClick={() => setShowDone(!showDone)}>
@@ -373,34 +375,15 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Quick Notes — free-form brain dump */}
+        {/* Notes */}
         <div className="quick-notes-section">
-          <div className="quick-notes-header">
-            <h2 className="checklist-title">Notes</h2>
-            <div className="bullet-picker">
-              {[
-                { id: 'star', icon: '\u2726' },
-                { id: 'heart', icon: '\u2665' },
-                { id: 'diamond', icon: '\u2666' },
-                { id: 'flower', icon: '\u273F' },
-                { id: 'sparkle', icon: '\u2736' },
-              ].map(b => (
-                <button
-                  key={b.id}
-                  className={`bullet-choice ${activeBullet === b.id ? 'active' : ''}`}
-                  onClick={() => setActiveBullet(b.id)}
-                  title={b.id}
-                >{b.icon}</button>
-              ))}
-            </div>
-          </div>
+          <h2 className="checklist-title">Notes</h2>
           <div className="quick-notes-columns">
             {['natalie', 'grace'].map(user => (
               <QuickNoteColumn
                 key={user}
                 user={user}
                 html={quickNotes[user] || ''}
-                activeBullet={activeBullet}
                 onChange={(html) => saveQuickNote(user, html)}
               />
             ))}
@@ -408,7 +391,6 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Floating + button */}
       <button className="fab-add" onClick={() => handleAddTaskModal(currentUser)}>+</button>
 
       {showTaskModal && (
@@ -434,6 +416,7 @@ function PillSelect({ options, value, onChange }) {
               color: isActive ? 'var(--cream)' : 'var(--ink-mid)',
               fontSize: 11, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase',
               fontFamily: 'Inter, sans-serif', transition: 'all 0.2s ease',
+              cursor: 'pointer',
             }}>{label}</button>
         )
       })}
@@ -469,7 +452,6 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     setSaving(true)
     try {
       if (task) {
-        // Try Supabase first — strip fields that may not exist in DB
         const { priority: _p, ...dbUpdateForm } = form
         if (!dbUpdateForm.due_date) dbUpdateForm.due_date = null
         if (!dbUpdateForm.description) dbUpdateForm.description = null
@@ -477,27 +459,22 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         if (!error && data?.[0]) {
           setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
         } else {
-          // Fallback: update locally
           setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...form } : t))
         }
       } else {
-        const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
-        // Try Supabase first — strip fields that may not exist in DB
         const { priority, ...dbForm } = form
-        // Convert empty strings to null for date fields
         if (!dbForm.due_date) dbForm.due_date = null
         if (!dbForm.description) dbForm.description = null
         const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
         if (!error && data?.[0]) {
           setTasks(prev => [...prev, data[0]])
         } else {
-          // Fallback: save locally
+          const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
           setTasks(prev => [...prev, newTask])
         }
       }
       onClose()
-    } catch (err) {
-      // Even on network error, save locally
+    } catch {
       if (!task) {
         const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }
         setTasks(prev => [...prev, newTask])

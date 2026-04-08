@@ -294,6 +294,14 @@ export default function RichEditor({ content, onChange, placeholder }) {
 
         <div className="re-toolbar-divider" />
 
+        <div className="re-toolbar-group">
+          <ToolbarBtn label="&#8676;" title="Align left" command="justifyLeft" editorRef={editorRef} style={{ fontSize: 14 }} />
+          <ToolbarBtn label="&#8801;" title="Align center" command="justifyCenter" editorRef={editorRef} style={{ fontSize: 14 }} />
+          <ToolbarBtn label="&#8677;" title="Align right" command="justifyRight" editorRef={editorRef} style={{ fontSize: 14 }} />
+        </div>
+
+        <div className="re-toolbar-divider" />
+
         <div className="re-toolbar-group" ref={emojiRef} style={{ position: 'relative' }}>
           <button
             className={`re-toolbar-btn re-emoji-trigger ${showEmoji ? 're-btn-active' : ''}`}
