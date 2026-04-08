@@ -422,14 +422,13 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
     setData(updated)
     onContentChange(JSON.stringify(updated))
 
-    // Save to Supabase todos table (exact same shape as TasksPage handleAddTodo)
+    // Save to Supabase TASKS table (the kanban task cards, not the checklist)
     const { error } = await supabase
-      .from('todos')
-      .insert({ text: todoText, month, assigned_to: assignedTo, priority: 'normal' })
+      .from('tasks')
+      .insert({ title: todoText, assigned_to: assignedTo, month, status: 'todo' })
 
     if (error) {
-      console.error('Failed to save todo to To-Do list:', error.message)
-      alert('Could not save to-do: ' + error.message)
+      console.error('Failed to save task:', error.message)
     }
   }
 

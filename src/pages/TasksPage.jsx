@@ -103,6 +103,35 @@ export default function TasksPage() {
   const handleTaskClick = (task) => { setEditingTask(task); setShowTaskModal(true) }
   const handleAddTaskModal = (user) => { setTaskColumn(user); setEditingTask(null); setShowTaskModal(true) }
 
+  const handleStarTask = async (task) => {
+    const starred = !task.starred
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, starred } : t))
+    await supabase.from('tasks').update({ starred }).eq('id', task.id)
+  }
+
+  const handleTaskDragEnd = (event) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setTasks(prev => {
+      const oldIndex = prev.findIndex(t => t.id === active.id)
+      const newIndex = prev.findIndex(t => t.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return prev
+      // Prevent starred from going below unstarred and vice versa
+      const activeTask = prev[oldIndex]
+      const overTask = prev[newIndex]
+      if (activeTask.starred && !overTask.starred) return prev
+      if (!activeTask.starred && overTask.starred) return prev
+      return arrayMove(prev, oldIndex, newIndex)
+    })
+  }
+
+  // Sort tasks: starred first within each user column
+  const sortTaskList = (list) => [...list].sort((a, b) => {
+    if (a.starred && !b.starred) return -1
+    if (!a.starred && b.starred) return 1
+    return 0
+  })
+
   const handleToggleTodo = async (todo) => {
     const { data, error } = await supabase.from('todos').update({ completed: !todo.completed }).eq('id', todo.id).select()
     if (!error && data?.[0]) setTodos(prev => prev.map(t => t.id === todo.id ? data[0] : t))
@@ -153,24 +182,40 @@ export default function TasksPage() {
   const doneGrace = doneTasks(graceTasks)
   const totalDone = doneNatalie.length + doneGrace.length
 
-  const renderColumn = (user, label, taskList) => (
-    <div className="kanban-column"
-      onDragOver={handleDragOver}
-      onDrop={(e) => handleDrop(e, user)}>
-      <div className="kanban-header">
-        <div className="kanban-user">
-          <span className={`avatar ${user}`}>{user[0].toUpperCase()}</span>
-          <span className="section-header">{label}</span>
+  const renderColumn = (user, label, taskList) => {
+    const sorted = sortTaskList(activeTasks(taskList))
+    return (
+      <div className="kanban-column"
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, user)}>
+        <div className="kanban-header">
+          <div className="kanban-user">
+            <span className={`avatar ${user}`}>{user[0].toUpperCase()}</span>
+            <span className="section-header">{label}</span>
+          </div>
+          <button className="kanban-add" onClick={() => handleAddTaskModal(user)}>+</button>
         </div>
-        <button className="kanban-add" onClick={() => handleAddTaskModal(user)}>+</button>
+        <div className="kanban-tasks">
+          <DndContext
+            sensors={dndSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleTaskDragEnd}
+          >
+            <SortableContext
+              items={sorted.map(t => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {sorted.map(task => (
+                <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}>
+                  <TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
+                </SwipeToDelete>
+              ))}
+            </SortableContext>
+          </DndContext>
+        </div>
       </div>
-      <div className="kanban-tasks">
-        {activeTasks(taskList).map(task => (
-          <SwipeToDelete key={task.id} onDelete={() => deleteTask(task.id)}><TaskCard task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDragStart={handleDragStart} onDelete={deleteTask} /></SwipeToDelete>
-        ))}
-      </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="tasks-page">

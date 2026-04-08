@@ -8,6 +8,7 @@
   cursor: pointer;
   transition: all 150ms ease;
   position: relative;
+  align-items: center;
 }
 
 .task-card:hover {
@@ -17,6 +18,12 @@
 
 .task-card.done {
   opacity: 0.6;
+}
+
+/* Starred task highlight */
+.task-card.task-starred {
+  background: var(--pink-light);
+  border-color: var(--pink);
 }
 
 .task-delete-btn {
@@ -48,6 +55,7 @@
   font-size: 14px;
   user-select: none;
   line-height: 1;
+  touch-action: none;
 }
 
 .drag-handle:active {
@@ -57,20 +65,6 @@
 .task-card-body {
   flex: 1;
   min-width: 0;
-  border-left: 3px solid transparent;
-  padding-left: 12px;
-}
-
-.priority-high {
-  border-left-color: var(--pink-deep) !important;
-}
-
-.priority-normal {
-  border-left-color: var(--cream-deep) !important;
-}
-
-.priority-low {
-  border-left-color: transparent !important;
 }
 
 .task-title {
@@ -79,6 +73,25 @@
   color: var(--ink);
   display: block;
   margin-bottom: 4px;
+  position: relative;
+}
+
+/* Pink strikethrough animation on completion */
+.task-title-done {
+  color: var(--ink-light);
+}
+.task-title-done::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1.5px;
+  background: var(--pink-deep);
+  animation: strikeThrough 0.3s ease forwards;
+}
+@keyframes strikeThrough {
+  from { width: 0; }
+  to { width: 100%; }
 }
 
 .task-desc {
@@ -109,4 +122,29 @@
 
 .task-due.today {
   color: var(--pink-deep);
+}
+
+/* Star button */
+.task-star {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--cream-deep);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease, transform 0.15s ease;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.task-star:hover {
+  color: var(--pink);
+  transform: scale(1.2);
+}
+.task-star.active {
+  color: var(--pink);
+}
+.task-star svg {
+  pointer-events: none;
 }
