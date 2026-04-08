@@ -8,6 +8,15 @@ import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
 import './NotesPage.css'
 
+function isTemplateMode(meeting) {
+  if (!meeting?.content) return false
+  try {
+    const parsed = JSON.parse(meeting.content)
+    // Detect template by _mode flag or by presence of template fields
+    return parsed._mode === 'template' || parsed.goOver !== undefined
+  } catch { return false }
+}
+
 function stripHtml(html) {
   if (!html) return ''
   // If template JSON, extract readable text from it
@@ -109,15 +118,12 @@ export default function NotesPage() {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       if (!selectedMeeting) return
-      const summary = await generateSummary(val)
-      await supabase.from('notes').update({
+      const { error } = await supabase.from('notes').update({
         content: val,
-        summary,
         updated_at: new Date().toISOString(),
         updated_by: currentUser,
       }).eq('id', selectedMeeting.id)
-      // Update local state with summary
-      setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, summary } : m))
+      if (error) console.error('Failed to save:', error.message)
       setSaveStatus('saved')
     }, 2000)
   }
@@ -146,19 +152,23 @@ export default function NotesPage() {
 
   const createNewMeeting = async (mode = 'blank') => {
     setShowNewChoice(false)
+    // Store mode in content: template gets JSON wrapper, blank gets empty string
+    const initialContent = mode === 'template'
+      ? JSON.stringify({ _mode: 'template', goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] })
+      : ''
     const newMeeting = {
       id: crypto.randomUUID(),
       month: format(new Date(), 'yyyy-MM-dd'),
-      content: '',
-      meeting_mode: mode,
+      content: initialContent,
       updated_by: currentUser,
       updated_at: new Date().toISOString(),
     }
     setMeetings(prev => [newMeeting, ...prev])
     setSelectedMeeting(newMeeting)
-    const { data } = await supabase.from('notes').insert([{
-      month: newMeeting.month, content: '', meeting_mode: mode, updated_by: currentUser, updated_at: newMeeting.updated_at
+    const { data, error } = await supabase.from('notes').insert([{
+      month: newMeeting.month, content: initialContent, updated_by: currentUser, updated_at: newMeeting.updated_at
     }]).select().single()
+    if (error) console.error('Failed to save meeting:', error.message)
     if (data) {
       setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
       setSelectedMeeting(data)
@@ -289,7 +299,7 @@ export default function NotesPage() {
               <div className="meeting-divider" />
 
               <div className="meeting-content-area">
-                {selectedMeeting.meeting_mode === 'template' ? (
+                {isTemplateMode(selectedMeeting) ? (
                   <MeetingTemplate
                     meeting={selectedMeeting}
                     currentUser={currentUser}
@@ -399,27 +409,28 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
     const month = format(new Date(), 'yyyy-MM-01')
     const todoText = text.trim()
 
-    // Save to Supabase todos table (same shape as TasksPage)
-    const { data: saved, error } = await supabase
-      .from('todos')
-      .insert({ text: todoText, month, assigned_to: assignedTo, priority: 'normal' })
-      .select()
-      .single()
+    // Clear input immediately for responsiveness
+    if (assignedTo === 'natalie') setNatalieTodo('')
+    else setGraceTodo('')
 
-    if (error) {
-      console.error('Failed to save todo:', error.message)
-    }
-
-    // Add to template's visible list and persist in note content
+    // Add to template's visible list right away
     const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
-    const newItem = { text: todoText, id: saved?.id || crypto.randomUUID(), added: true }
+    const tempId = crypto.randomUUID()
+    const newItem = { text: todoText, id: tempId }
     const updatedList = [...(data[listKey] || []), newItem]
     const updated = { ...data, [listKey]: updatedList }
     setData(updated)
     onContentChange(JSON.stringify(updated))
 
-    if (assignedTo === 'natalie') setNatalieTodo('')
-    else setGraceTodo('')
+    // Save to Supabase todos table (exact same shape as TasksPage handleAddTodo)
+    const { error } = await supabase
+      .from('todos')
+      .insert({ text: todoText, month, assigned_to: assignedTo, priority: 'normal' })
+
+    if (error) {
+      console.error('Failed to save todo to To-Do list:', error.message)
+      alert('Could not save to-do: ' + error.message)
+    }
   }
 
   const removeTodoFromList = (assignedTo, index) => {

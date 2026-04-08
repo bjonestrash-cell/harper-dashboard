@@ -69,6 +69,19 @@ export default function RichEditor({ content, onChange, placeholder }) {
   const handleKeyUp = () => updateActiveFormats()
   const handleMouseUp = () => updateActiveFormats()
 
+  // Click on checklist bullet to toggle checked
+  const handleEditorClick = (e) => {
+    const li = e.target.closest?.('li')
+    if (li && li.parentElement?.classList.contains('re-checklist')) {
+      // Only toggle if clicking the bullet area (left edge)
+      const rect = li.getBoundingClientRect()
+      if (e.clientX < rect.left + 28) {
+        li.classList.toggle('re-checked')
+        handleInput()
+      }
+    }
+  }
+
   // Keyboard shortcuts
   const handleKeyDown = (e) => {
     if (e.metaKey || e.ctrlKey) {
@@ -94,39 +107,26 @@ export default function RichEditor({ content, onChange, placeholder }) {
       }
     }
 
-    // Enter in list/checklist items
+    // Enter in empty list item — exit list
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
         const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
         if (li && li.textContent.trim() === '') {
-          // Empty list item — exit the list
           e.preventDefault()
-          const inChecklist = li.closest('.re-checklist')
-          if (inChecklist) {
-            // Exit checklist
-            const p = document.createElement('p')
-            p.innerHTML = '<br>'
-            inChecklist.parentNode.insertBefore(p, inChecklist.nextSibling)
-            li.remove()
-            if (inChecklist.children.length === 0) inChecklist.remove()
-            const range = document.createRange()
-            range.setStart(p, 0)
-            sel.removeAllRanges()
-            sel.addRange(range)
-          } else {
-            document.execCommand('insertUnorderedList', false, null)
-            if (document.queryCommandState('insertOrderedList')) {
+          const ul = li.closest('ul, ol')
+          const wasChecklist = ul?.classList.contains('re-checklist')
+          // Remove empty li and exit list
+          li.remove()
+          if (ul && ul.children.length === 0) ul.remove()
+          document.execCommand('insertParagraph')
+          // If we were in a regular list, just toggle it off
+          if (!wasChecklist) {
+            if (document.queryCommandState('insertUnorderedList'))
+              document.execCommand('insertUnorderedList', false, null)
+            if (document.queryCommandState('insertOrderedList'))
               document.execCommand('insertOrderedList', false, null)
-            }
-            document.execCommand('formatBlock', false, '<p>')
           }
-        } else if (li && li.classList.contains('re-check-item')) {
-          // New checklist item
-          e.preventDefault()
-          document.execCommand('insertHTML', false,
-            '</li><li class="re-check-item"><input type="checkbox" class="re-check-box" onclick="this.toggleAttribute(\'checked\')"/> '
-          )
         }
       }
     }
@@ -214,22 +214,37 @@ export default function RichEditor({ content, onChange, placeholder }) {
             active={activeFormats.insertOrderedList} editorRef={editorRef}
             style={{ fontSize: 11 }} />
           <button
-            className={`re-toolbar-btn ${activeFormats.checklist ? 're-btn-active' : ''}`}
+            className="re-toolbar-btn"
             title="Checklist"
             onMouseDown={e => {
               e.preventDefault()
-              editorRef.current?.focus()
+              const editor = editorRef.current
+              if (!editor) return
+              editor.focus()
+              // Check if already in a checklist
               const sel = window.getSelection()
-              const inChecklist = sel?.anchorNode?.parentElement?.closest?.('.re-checklist') ||
-                sel?.anchorNode?.closest?.('.re-checklist')
-              if (inChecklist) {
-                document.execCommand('formatBlock', false, '<p>')
+              const existingLi = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
+              if (existingLi?.parentElement?.classList.contains('re-checklist')) {
+                // Toggle off: convert to normal paragraph
+                const text = existingLi.textContent
+                const p = document.createElement('p')
+                p.textContent = text
+                const ul = existingLi.parentElement
+                ul.parentNode.insertBefore(p, ul)
+                existingLi.remove()
+                if (ul.children.length === 0) ul.remove()
+                const range = document.createRange()
+                range.selectNodeContents(p)
+                range.collapse(false)
+                sel.removeAllRanges()
+                sel.addRange(range)
               } else {
+                // Insert checklist HTML directly
                 document.execCommand('insertHTML', false,
-                  '<ul class="re-checklist"><li class="re-check-item"><input type="checkbox" class="re-check-box" onclick="this.toggleAttribute(\'checked\')"/> </li></ul>'
+                  '<ul class="re-checklist"><li>&#8203;</li></ul>'
                 )
               }
-              updateActiveFormats()
+              handleInput()
             }}
             style={{ fontSize: 13, lineHeight: 1 }}
           >&#9745;</button>
@@ -321,6 +336,7 @@ export default function RichEditor({ content, onChange, placeholder }) {
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           onMouseUp={handleMouseUp}
+          onClick={handleEditorClick}
           onPaste={handlePaste}
           spellCheck="true"
           data-placeholder={placeholder}
