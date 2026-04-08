@@ -101,6 +101,25 @@
   color: var(--ink-light);
 }
 
+.todo-drag-handle {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: grab;
+  color: var(--cream-deep);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+  touch-action: none;
+}
+.todo-drag-handle:hover {
+  color: var(--ink-light);
+}
+.todo-drag-handle:active {
+  cursor: grabbing;
+}
+
 .todo-check {
   background: none;
   border: none;

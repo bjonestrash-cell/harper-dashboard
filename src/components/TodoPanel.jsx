@@ -1,13 +1,103 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase, createChannel } from '../lib/supabase'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import './TodoPanel.css'
+
+function SortableTodoItem({ todo, onToggleComplete, onToggleStar, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: todo.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`todo-item ${todo.completed ? 'completed' : ''}`}
+    >
+      <button
+        className="todo-drag-handle"
+        {...attributes}
+        {...listeners}
+        title="Drag to reorder"
+      >
+        <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
+          <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>
+          <circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/>
+          <circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/>
+        </svg>
+      </button>
+
+      <button
+        className="todo-check"
+        onClick={() => onToggleComplete(todo)}
+        title={todo.completed ? 'Mark incomplete' : 'Mark complete'}
+      >
+        {todo.completed ? (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" strokeWidth="1"/>
+            <path d="M4 7l2.5 2.5L10 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" strokeWidth="1"/>
+          </svg>
+        )}
+      </button>
+
+      <span className="todo-text">{todo.text}</span>
+
+      <button
+        className={`todo-star ${todo.starred ? 'starred' : ''}`}
+        onClick={() => onToggleStar(todo)}
+        title={todo.starred ? 'Unstar' : 'Star'}
+      >
+        <svg width="13" height="13" viewBox="0 0 13 13" fill={todo.starred ? 'currentColor' : 'none'}>
+          <path d="M6.5 1l1.4 3.1 3.4.5-2.5 2.4.6 3.4L6.5 9 3.1 10.4l.6-3.4L1.2 4.6l3.4-.5z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      <button className="todo-delete" onClick={() => onDelete(todo.id)} title="Delete">&times;</button>
+    </div>
+  )
+}
 
 export default function TodoPanel({ noteId, isOpen }) {
   const [todos, setTodos] = useState([])
-  const [scope, setScope] = useState('note') // 'note' | 'global'
+  const [scope, setScope] = useState('note')
   const [newText, setNewText] = useState('')
   const [adding, setAdding] = useState(false)
   const inputRef = useRef(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const effectiveScope = scope === 'note' && noteId ? 'note' : 'global'
 
@@ -18,7 +108,7 @@ export default function TodoPanel({ noteId, isOpen }) {
     } else {
       query = query.is('note_id', null)
     }
-    const { data } = await query.order('created_at', { ascending: true })
+    const { data } = await query.order('sort_order', { ascending: true }).order('created_at', { ascending: true })
     setTodos(data || [])
   }
 
@@ -41,20 +131,23 @@ export default function TodoPanel({ noteId, isOpen }) {
     if (adding && inputRef.current) inputRef.current.focus()
   }, [adding])
 
+  // Sort: starred first (by created_at among themselves), then unstarred by sort_order/created_at
   const sortedTodos = [...todos].sort((a, b) => {
     if (a.starred && !b.starred) return -1
     if (!a.starred && b.starred) return 1
-    return new Date(a.created_at) - new Date(b.created_at)
+    return 0 // preserve DB order (sort_order, created_at)
   })
 
   const addTodo = async () => {
     const text = newText.trim()
     if (!text) { setAdding(false); return }
+    const maxOrder = todos.reduce((max, t) => Math.max(max, t.sort_order || 0), 0)
     const record = {
       note_id: effectiveScope === 'note' ? noteId : null,
       text,
       starred: false,
       completed: false,
+      sort_order: maxOrder + 1,
     }
     const { data } = await supabase.from('todos').insert([record]).select().single()
     if (data) setTodos(prev => [...prev, data])
@@ -77,6 +170,24 @@ export default function TodoPanel({ noteId, isOpen }) {
   const deleteTodo = async (id) => {
     setTodos(prev => prev.filter(t => t.id !== id))
     await supabase.from('todos').delete().eq('id', id)
+  }
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = sortedTodos.findIndex(t => t.id === active.id)
+    const newIndex = sortedTodos.findIndex(t => t.id === over.id)
+    const reordered = arrayMove(sortedTodos, oldIndex, newIndex)
+
+    // Update sort_order for all items
+    const updates = reordered.map((t, i) => ({ ...t, sort_order: i }))
+    setTodos(updates)
+
+    // Persist to Supabase
+    for (const item of updates) {
+      await supabase.from('todos').update({ sort_order: item.sort_order }).eq('id', item.id)
+    }
   }
 
   if (!isOpen) return null
@@ -104,40 +215,26 @@ export default function TodoPanel({ noteId, isOpen }) {
           <p className="todo-empty">No to-dos yet</p>
         )}
 
-        {sortedTodos.map(todo => (
-          <div key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
-            <button
-              className="todo-check"
-              onClick={() => toggleComplete(todo)}
-              title={todo.completed ? 'Mark incomplete' : 'Mark complete'}
-            >
-              {todo.completed ? (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="6.5" stroke="currentColor" strokeWidth="1"/>
-                  <path d="M4 7l2.5 2.5L10 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="6.5" stroke="currentColor" strokeWidth="1"/>
-                </svg>
-              )}
-            </button>
-
-            <span className="todo-text">{todo.text}</span>
-
-            <button
-              className={`todo-star ${todo.starred ? 'starred' : ''}`}
-              onClick={() => toggleStar(todo)}
-              title={todo.starred ? 'Unstar' : 'Star'}
-            >
-              <svg width="13" height="13" viewBox="0 0 13 13" fill={todo.starred ? 'currentColor' : 'none'}>
-                <path d="M6.5 1l1.4 3.1 3.4.5-2.5 2.4.6 3.4L6.5 9 3.1 10.4l.6-3.4L1.2 4.6l3.4-.5z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
-              </svg>
-            </button>
-
-            <button className="todo-delete" onClick={() => deleteTodo(todo.id)} title="Delete">&times;</button>
-          </div>
-        ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedTodos.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {sortedTodos.map(todo => (
+              <SortableTodoItem
+                key={todo.id}
+                todo={todo}
+                onToggleComplete={toggleComplete}
+                onToggleStar={toggleStar}
+                onDelete={deleteTodo}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         {adding && (
           <div className="todo-add-row">

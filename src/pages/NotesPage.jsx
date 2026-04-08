@@ -6,8 +6,21 @@ import DatePicker from '../components/DatePicker'
 import SwipeToDelete from '../components/SwipeToDelete'
 import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
-import TodoPanel from '../components/TodoPanel'
 import './NotesPage.css'
+
+function stripHtml(html) {
+  if (!html) return ''
+  return new DOMParser().parseFromString(html, 'text/html').body.textContent || ''
+}
+
+async function generateSummary(text) {
+  const plain = stripHtml(text).trim()
+  if (!plain) return ''
+  // Extract first two meaningful words as a quick summary
+  const words = plain.split(/\s+/).filter(w => w.length > 1)
+  if (words.length === 0) return ''
+  return words.slice(0, 2).join(' ')
+}
 
 export default function NotesPage() {
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
@@ -17,7 +30,7 @@ export default function NotesPage() {
   const [editContent, setEditContent] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
   const [editingDate, setEditingDate] = useState(false)
-  const [todoOpen, setTodoOpen] = useState(false)
+  const [showNewChoice, setShowNewChoice] = useState(false)
   const saveTimer = useRef(null)
 
   // Load all meetings
@@ -83,21 +96,25 @@ export default function NotesPage() {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       if (!selectedMeeting) return
+      const summary = await generateSummary(val)
       await supabase.from('notes').update({
         content: val,
+        summary,
         updated_at: new Date().toISOString(),
         updated_by: currentUser,
       }).eq('id', selectedMeeting.id)
+      // Update local state with summary
+      setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, summary } : m))
       setSaveStatus('saved')
     }, 2000)
   }
 
   const handleDateChange = async (newDate) => {
-    if (!newDate || newDate === selectedMeeting.month) { setEditingDate(false); return }
+    if (!newDate || !selectedMeeting) return
+    if (newDate === selectedMeeting.month) return
     const updated = { ...selectedMeeting, month: newDate }
     setSelectedMeeting(updated)
     setMeetings(prev => prev.map(m => m.id === updated.id ? updated : m))
-    setEditingDate(false)
     await supabase.from('notes').update({
       month: newDate,
       updated_at: new Date().toISOString(),
@@ -114,18 +131,20 @@ export default function NotesPage() {
 
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
 
-  const createNewMeeting = async () => {
+  const createNewMeeting = async (mode = 'blank') => {
+    setShowNewChoice(false)
     const newMeeting = {
       id: crypto.randomUUID(),
       month: format(new Date(), 'yyyy-MM-dd'),
       content: '',
+      meeting_mode: mode,
       updated_by: currentUser,
       updated_at: new Date().toISOString(),
     }
     setMeetings(prev => [newMeeting, ...prev])
     setSelectedMeeting(newMeeting)
     const { data } = await supabase.from('notes').insert([{
-      month: newMeeting.month, content: '', updated_by: currentUser, updated_at: newMeeting.updated_at
+      month: newMeeting.month, content: '', meeting_mode: mode, updated_by: currentUser, updated_at: newMeeting.updated_at
     }]).select().single()
     if (data) {
       setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
@@ -141,7 +160,7 @@ export default function NotesPage() {
         <div className="meeting-sidebar">
           <div className="meeting-sidebar-header" />
 
-          <button className="new-meeting-btn" onClick={createNewMeeting}>
+          <button className="new-meeting-btn" onClick={() => setShowNewChoice(true)}>
             + New Meeting
           </button>
 
@@ -162,7 +181,7 @@ export default function NotesPage() {
                       {capitalize(m.updated_by || 'unknown')}
                     </span>
                     <span className="meeting-item-preview">
-                      {m.content ? m.content.substring(0, 40) + (m.content.length > 40 ? '...' : '') : 'Empty'}
+                      {m.summary || stripHtml(m.content) || 'Empty'}
                     </span>
                   </div>
                 </div>
@@ -182,7 +201,7 @@ export default function NotesPage() {
                 Start a new meeting note
               </p>
               <button
-                onClick={createNewMeeting}
+                onClick={() => setShowNewChoice(true)}
                 style={{
                   backgroundColor: 'var(--ink)', color: 'var(--cream)', border: 'none',
                   borderRadius: 9999, padding: '10px 28px', fontSize: 11, fontWeight: 500,
@@ -195,26 +214,26 @@ export default function NotesPage() {
             <>
               <div className="meeting-detail-header">
                 <div>
-                  {/* Editable date */}
-                  {editingDate ? (
-                    <input
-                      type="date"
-                      className="meeting-date-input"
-                      defaultValue={selectedMeeting.month}
-                      autoFocus
-                      onBlur={(e) => handleDateChange(e.target.value)}
-                      onChange={(e) => handleDateChange(e.target.value)}
-                    />
-                  ) : (
+                  {/* Editable date — click to open calendar picker */}
+                  <div style={{ position: 'relative' }}>
                     <h2
                       className="meeting-date-display"
-                      onClick={() => setEditingDate(true)}
+                      onClick={() => setEditingDate(!editingDate)}
                       title="Click to edit date"
                     >
                       {formatMeetingDateFull(selectedMeeting)}
-                      <span className="meeting-date-edit-hint">✎</span>
+                      <span className="meeting-date-edit-hint">&#9998;</span>
                     </h2>
-                  )}
+                    {editingDate && (
+                      <DatePicker
+                        value={selectedMeeting.month}
+                        onChange={(val) => handleDateChange(val)}
+                        isOpen={true}
+                        onClose={() => setEditingDate(false)}
+                        persistOpen
+                      />
+                    )}
+                  </div>
                   <span className={`meeting-author-chip ${selectedMeeting.updated_by === 'natalie' ? 'natalie' : 'grace'}`}>
                     by {capitalize(selectedMeeting.updated_by || 'unknown')}
                   </span>
@@ -227,13 +246,6 @@ export default function NotesPage() {
                   }}>
                     {saveStatus === 'saved' ? 'Saved \u2713' : 'Saving...'}
                   </span>
-                  <button
-                    onClick={() => setTodoOpen(o => !o)}
-                    className={`todo-toggle-btn ${todoOpen ? 'active' : ''}`}
-                    title="Toggle To-Dos"
-                  >
-                    To-Dos
-                  </button>
                   <button
                     onClick={() => setSelectedMeeting(null)}
                     style={{
@@ -267,35 +279,66 @@ export default function NotesPage() {
               <div className="meeting-divider" />
 
               <div className="meeting-content-area">
-                <RichEditor
-                  content={editContent}
-                  onChange={handleContentChange}
-                  placeholder="Start typing your meeting notes..."
-                />
+                {selectedMeeting.meeting_mode === 'template' ? (
+                  <MeetingTemplate
+                    meeting={selectedMeeting}
+                    currentUser={currentUser}
+                    onContentChange={handleContentChange}
+                    saveStatus={saveStatus}
+                  />
+                ) : (
+                  <RichEditor
+                    content={editContent}
+                    onChange={handleContentChange}
+                    placeholder="Start typing your meeting notes..."
+                  />
+                )}
               </div>
             </>
           )}
         </div>
 
-        {/* RIGHT: TO-DO PANEL */}
-        <TodoPanel
-          noteId={selectedMeeting?.id}
-          isOpen={todoOpen}
-        />
       </div>
 
-      {/* Floating To-Dos button (visible when no note selected or panel closed) */}
-      {!todoOpen && (
-        <button
-          className="todo-float-btn"
-          onClick={() => setTodoOpen(true)}
-          title="Open To-Dos"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginRight: 6 }}>
-            <path d="M1 3h12M1 7h8M1 11h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-          </svg>
-          To-Dos
-        </button>
+      {/* New Meeting Choice Modal */}
+      {showNewChoice && (
+        <Modal onClose={() => setShowNewChoice(false)}>
+          <div style={{ padding: 48, textAlign: 'center', maxWidth: 420 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 500, letterSpacing: 1, marginBottom: 8, color: 'var(--ink)' }}>New Meeting</h2>
+            <p style={{ fontSize: 12, fontWeight: 300, color: 'var(--ink-light)', marginBottom: 36 }}>
+              How would you like to start?
+            </p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+              <button
+                className="new-choice-btn"
+                onClick={() => createNewMeeting('template')}
+              >
+                <span className="new-choice-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 3v18"/>
+                  </svg>
+                </span>
+                <span className="new-choice-label">Template</span>
+                <span className="new-choice-desc">Structured meeting sheet</span>
+              </button>
+              <button
+                className="new-choice-btn"
+                onClick={() => createNewMeeting('blank')}
+              >
+                <span className="new-choice-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
+                    <path d="M14 3v4h4"/>
+                    <path d="M8 13h8M8 17h5"/>
+                  </svg>
+                </span>
+                <span className="new-choice-label">Blank</span>
+                <span className="new-choice-desc">Free-form rich text</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Add Meeting Modal */}
@@ -307,6 +350,126 @@ export default function NotesPage() {
           onClose={() => setShowAddModal(false)}
         />
       )}
+    </div>
+  )
+}
+
+function MeetingTemplate({ meeting, currentUser, onContentChange }) {
+  const parseTemplate = (content) => {
+    try {
+      return JSON.parse(content)
+    } catch {
+      return { goOver: '', natalieActions: '', graceActions: '' }
+    }
+  }
+
+  const [data, setData] = useState(() => parseTemplate(meeting.content))
+  const [natalieTodo, setNatalieTodo] = useState('')
+  const [graceTodo, setGraceTodo] = useState('')
+
+  useEffect(() => {
+    setData(parseTemplate(meeting.content))
+  }, [meeting.id])
+
+  const updateField = (field, value) => {
+    const updated = { ...data, [field]: value }
+    setData(updated)
+    onContentChange(JSON.stringify(updated))
+  }
+
+  const addTodoItem = async (assignedTo, text) => {
+    if (!text.trim()) return
+    const month = format(new Date(), 'yyyy-MM-01')
+    await supabase.from('todos').insert([{
+      text: text.trim(),
+      month,
+      assigned_to: assignedTo,
+      completed: false,
+      starred: false,
+    }])
+    if (assignedTo === 'natalie') setNatalieTodo('')
+    else setGraceTodo('')
+  }
+
+  return (
+    <div className="meeting-template">
+      <div className="template-section">
+        <h3 className="template-section-title">Things to Go Over</h3>
+        <textarea
+          className="template-textarea full-width"
+          value={data.goOver || ''}
+          onChange={e => updateField('goOver', e.target.value)}
+          placeholder="Topics, questions, updates..."
+        />
+      </div>
+
+      <div className="template-section">
+        <h3 className="template-section-title">Action Items</h3>
+        <div className="template-columns">
+          <div className="template-col">
+            <span className="template-col-label natalie-label">Natalie</span>
+            <textarea
+              className="template-textarea"
+              value={data.natalieActions || ''}
+              onChange={e => updateField('natalieActions', e.target.value)}
+              placeholder="Action items..."
+            />
+          </div>
+          <div className="template-col">
+            <span className="template-col-label grace-label">Grace</span>
+            <textarea
+              className="template-textarea"
+              value={data.graceActions || ''}
+              onChange={e => updateField('graceActions', e.target.value)}
+              placeholder="Action items..."
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="template-section">
+        <h3 className="template-section-title">Add to To-Do List</h3>
+        <div className="template-columns">
+          <div className="template-col">
+            <span className="template-col-label natalie-label">Natalie</span>
+            <div className="template-todo-list">
+              <div className="template-todo-input-row">
+                <input
+                  className="template-todo-input"
+                  value={natalieTodo}
+                  onChange={e => setNatalieTodo(e.target.value)}
+                  placeholder="New to-do..."
+                  onKeyDown={e => { if (e.key === 'Enter') addTodoItem('natalie', natalieTodo) }}
+                />
+                <button
+                  className="template-todo-add"
+                  onClick={() => addTodoItem('natalie', natalieTodo)}
+                  title="Add to-do"
+                >+</button>
+              </div>
+            </div>
+          </div>
+          <div className="template-col">
+            <span className="template-col-label grace-label">Grace</span>
+            <div className="template-todo-list">
+              <div className="template-todo-input-row">
+                <input
+                  className="template-todo-input"
+                  value={graceTodo}
+                  onChange={e => setGraceTodo(e.target.value)}
+                  placeholder="New to-do..."
+                  onKeyDown={e => { if (e.key === 'Enter') addTodoItem('grace', graceTodo) }}
+                />
+                <button
+                  className="template-todo-add"
+                  onClick={() => addTodoItem('grace', graceTodo)}
+                  title="Add to-do"
+                >+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

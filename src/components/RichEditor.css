@@ -199,6 +199,32 @@
   text-decoration: underline;
 }
 
+/* Checklist */
+.re-editor .re-checklist {
+  list-style: none;
+  padding-left: 4px;
+  margin: 8px 0;
+}
+.re-editor .re-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 2px 0;
+  margin: 0;
+}
+.re-editor .re-check-box {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  accent-color: var(--pink-deep);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.re-editor .re-check-item:has(.re-check-box:checked) {
+  color: var(--ink-light);
+  text-decoration: line-through;
+}
+
 /* Placeholder */
 .re-placeholder {
   position: absolute;

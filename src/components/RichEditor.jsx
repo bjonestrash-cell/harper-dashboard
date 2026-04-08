@@ -94,7 +94,7 @@ export default function RichEditor({ content, onChange, placeholder }) {
       }
     }
 
-    // Enter in empty list item — exit list instead of deleting
+    // Enter in list/checklist items
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
@@ -102,11 +102,31 @@ export default function RichEditor({ content, onChange, placeholder }) {
         if (li && li.textContent.trim() === '') {
           // Empty list item — exit the list
           e.preventDefault()
-          document.execCommand('insertUnorderedList', false, null) // toggle off
-          if (document.queryCommandState('insertOrderedList')) {
-            document.execCommand('insertOrderedList', false, null)
+          const inChecklist = li.closest('.re-checklist')
+          if (inChecklist) {
+            // Exit checklist
+            const p = document.createElement('p')
+            p.innerHTML = '<br>'
+            inChecklist.parentNode.insertBefore(p, inChecklist.nextSibling)
+            li.remove()
+            if (inChecklist.children.length === 0) inChecklist.remove()
+            const range = document.createRange()
+            range.setStart(p, 0)
+            sel.removeAllRanges()
+            sel.addRange(range)
+          } else {
+            document.execCommand('insertUnorderedList', false, null)
+            if (document.queryCommandState('insertOrderedList')) {
+              document.execCommand('insertOrderedList', false, null)
+            }
+            document.execCommand('formatBlock', false, '<p>')
           }
-          document.execCommand('formatBlock', false, '<p>')
+        } else if (li && li.classList.contains('re-check-item')) {
+          // New checklist item
+          e.preventDefault()
+          document.execCommand('insertHTML', false,
+            '</li><li class="re-check-item"><input type="checkbox" class="re-check-box" onclick="this.toggleAttribute(\'checked\')"/> '
+          )
         }
       }
     }
@@ -193,6 +213,26 @@ export default function RichEditor({ content, onChange, placeholder }) {
           <ToolbarBtn label="1." title="Numbered list" command="insertOrderedList"
             active={activeFormats.insertOrderedList} editorRef={editorRef}
             style={{ fontSize: 11 }} />
+          <button
+            className={`re-toolbar-btn ${activeFormats.checklist ? 're-btn-active' : ''}`}
+            title="Checklist"
+            onMouseDown={e => {
+              e.preventDefault()
+              editorRef.current?.focus()
+              const sel = window.getSelection()
+              const inChecklist = sel?.anchorNode?.parentElement?.closest?.('.re-checklist') ||
+                sel?.anchorNode?.closest?.('.re-checklist')
+              if (inChecklist) {
+                document.execCommand('formatBlock', false, '<p>')
+              } else {
+                document.execCommand('insertHTML', false,
+                  '<ul class="re-checklist"><li class="re-check-item"><input type="checkbox" class="re-check-box" onclick="this.toggleAttribute(\'checked\')"/> </li></ul>'
+                )
+              }
+              updateActiveFormats()
+            }}
+            style={{ fontSize: 13, lineHeight: 1 }}
+          >&#9745;</button>
         </div>
 
         <div className="re-toolbar-divider" />

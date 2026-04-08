@@ -5,7 +5,7 @@ import {
   isSameMonth, startOfWeek, endOfWeek, isBefore, startOfDay
 } from 'date-fns'
 
-export default function DatePicker({ value, onChange, label, isOpen, onOpen, onClose, minDate }) {
+export default function DatePicker({ value, onChange, label, isOpen, onOpen, onClose, minDate, persistOpen }) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(
     value ? new Date(value + 'T12:00:00') : new Date()
@@ -43,19 +43,21 @@ export default function DatePicker({ value, onChange, label, isOpen, onOpen, onC
         }}>{label}</span>
       )}
 
-      <button
-        onClick={() => open ? handleClose() : handleOpen()}
-        style={{
-          background: 'transparent', border: 'none',
-          borderBottom: '1px solid var(--cream-deep)',
-          padding: '8px 0', fontSize: 14, fontWeight: 300,
-          color: selected ? 'var(--ink)' : 'var(--ink-light)',
-          fontFamily: 'Inter, sans-serif', width: '100%',
-          textAlign: 'left', letterSpacing: 0.3,
-        }}
-      >
-        {selected ? format(selected, 'MMM d, yyyy') : 'Select date'}
-      </button>
+      {isOpen === undefined && (
+        <button
+          onClick={() => open ? handleClose() : handleOpen()}
+          style={{
+            background: 'transparent', border: 'none',
+            borderBottom: '1px solid var(--cream-deep)',
+            padding: '8px 0', fontSize: 14, fontWeight: 300,
+            color: selected ? 'var(--ink)' : 'var(--ink-light)',
+            fontFamily: 'Inter, sans-serif', width: '100%',
+            textAlign: 'left', letterSpacing: 0.3,
+          }}
+        >
+          {selected ? format(selected, 'MMM d, yyyy') : 'Select date'}
+        </button>
+      )}
 
       {open && (
         <>
@@ -99,7 +101,7 @@ export default function DatePicker({ value, onChange, label, isOpen, onOpen, onC
                     onClick={() => {
                       if (isDisabled) return
                       onChange(format(day, 'yyyy-MM-dd'))
-                      handleClose()
+                      if (!persistOpen) handleClose()
                     }}
                     disabled={isDisabled}
                     style={{
