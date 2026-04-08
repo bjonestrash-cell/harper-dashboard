@@ -533,7 +533,51 @@ function TemplateField({ field, html, onChange, placeholder, bgColor }) {
   )
 }
 
+const TEMPLATE_EMOJIS = [
+  '🤍', '💕', '✨', '💎', '🪩', '🫶', '💅', '🌸', '🦋', '☁️',
+  '🔥', '💫', '⭐', '🌙', '🤎', '💛', '🩷', '💜', '🖤', '🤍',
+  '📌', '📝', '📎', '🗓️', '📊', '📈', '💡', '🎯', '🏷️', '📦',
+  '💌', '🎁', '🛍️', '💍', '📸', '🎬', '🎨', '✏️', '🖊️', '📋',
+  '👏', '🙌', '💪', '🤞', '✅', '❌', '⚡', '🚀', '👀', '💬',
+  '🌿', '🌺', '🌷', '🌻', '🍂', '☀️', '🌈', '❄️', '🌊', '🍃',
+]
+
 function TemplateToolbar() {
+  const [showEmoji, setShowEmoji] = useState(false)
+  const emojiRef = useRef(null)
+  const savedRange = useRef(null)
+
+  const saveCursorPosition = () => {
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      savedRange.current = sel.getRangeAt(0).cloneRange()
+    }
+  }
+
+  const insertEmoji = (emoji) => {
+    // Restore cursor into the last-focused template field
+    if (savedRange.current) {
+      const sel = window.getSelection()
+      sel.removeAllRanges()
+      sel.addRange(savedRange.current)
+    }
+    document.execCommand('insertText', false, emoji)
+    savedRange.current = null
+    setShowEmoji(false)
+  }
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    if (!showEmoji) return
+    const handleClick = (e) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target)) {
+        setShowEmoji(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showEmoji])
+
   const execCmd = (e, cmd, arg) => {
     e.preventDefault()
     document.execCommand(cmd, false, arg || null)
@@ -589,6 +633,28 @@ function TemplateToolbar() {
         <button className="re-toolbar-btn" title="Align left" onMouseDown={e => execCmd(e, 'justifyLeft')} style={{ fontSize: 14 }}>&#8676;</button>
         <button className="re-toolbar-btn" title="Align center" onMouseDown={e => execCmd(e, 'justifyCenter')} style={{ fontSize: 14 }}>&#8801;</button>
         <button className="re-toolbar-btn" title="Align right" onMouseDown={e => execCmd(e, 'justifyRight')} style={{ fontSize: 14 }}>&#8677;</button>
+      </div>
+      <div className="re-toolbar-divider" />
+      <div className="re-toolbar-group" ref={emojiRef} style={{ position: 'relative' }}>
+        <button
+          className={`re-toolbar-btn re-emoji-trigger ${showEmoji ? 're-btn-active' : ''}`}
+          onMouseDown={e => { e.preventDefault(); saveCursorPosition(); setShowEmoji(!showEmoji) }}
+          title="Emoji"
+        >&#9786;</button>
+
+        {showEmoji && (
+          <div className="re-emoji-picker">
+            <div className="re-emoji-grid">
+              {TEMPLATE_EMOJIS.map((emoji, i) => (
+                <button
+                  key={i}
+                  className="re-emoji-btn"
+                  onClick={() => insertEmoji(emoji)}
+                >{emoji}</button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div className="re-toolbar-divider" />
       <div className="re-toolbar-group">
