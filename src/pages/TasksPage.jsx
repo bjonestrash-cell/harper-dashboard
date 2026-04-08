@@ -32,6 +32,11 @@ export default function TasksPage() {
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
   const [isMobile] = useState(() => window.innerWidth < 768)
 
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   const [draggedTask, setDraggedTask] = useState(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
@@ -107,6 +112,29 @@ export default function TasksPage() {
     const { error } = await supabase.from('todos').delete().eq('id', todo.id)
     if (!error) setTodos(prev => prev.filter(t => t.id !== todo.id))
   }
+
+  const handleStarTodo = async (todo) => {
+    const starred = !todo.starred
+    setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, starred } : t))
+    await supabase.from('todos').update({ starred }).eq('id', todo.id)
+  }
+
+  const handleTodoDragEnd = (event) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setTodos(prev => {
+      const oldIndex = prev.findIndex(t => t.id === active.id)
+      const newIndex = prev.findIndex(t => t.id === over.id)
+      return arrayMove(prev, oldIndex, newIndex)
+    })
+  }
+
+  // Sort: starred first, then rest in original order
+  const sortedTodos = [...todos].sort((a, b) => {
+    if (a.starred && !b.starred) return -1
+    if (!a.starred && b.starred) return 1
+    return 0
+  })
 
   const handleAddTodo = async () => {
     const text = todoInput.trim()
@@ -213,12 +241,23 @@ export default function TasksPage() {
 
           {/* Checklist items */}
           <div className="checklist-items">
-            {todos.length === 0 && (
+            {sortedTodos.length === 0 && (
               <p className="checklist-empty">Nothing here yet.</p>
             )}
-            {todos.map(todo => (
-              <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
-            ))}
+            <DndContext
+              sensors={dndSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleTodoDragEnd}
+            >
+              <SortableContext
+                items={sortedTodos.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {sortedTodos.map(todo => (
+                  <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} onStar={handleStarTodo} />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         </div>
       </div>
