@@ -52,14 +52,26 @@
 .drag-handle {
   cursor: grab;
   color: var(--cream-deep);
-  font-size: 14px;
+  font-size: 16px;
   user-select: none;
   line-height: 1;
   touch-action: none;
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
 }
-
+.drag-handle:hover {
+  color: var(--ink-light);
+}
 .drag-handle:active {
   cursor: grabbing;
+}
+.task-card.dragging {
+  box-shadow: 0 8px 32px rgba(26,20,18,0.15);
+  border-color: var(--pink);
 }
 
 .task-card-body {

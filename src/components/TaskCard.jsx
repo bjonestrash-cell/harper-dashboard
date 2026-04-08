@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import './TaskCard.css'
 
-export default function TaskCard({ task, onToggle, onClick, onDelete, onStar }) {
+export default function TaskCard({ task, onToggle, onClick, onDelete, onStar, dragDisabled }) {
   const isDone = task.status === 'done'
   const isOverdue = task.due_date && isPast(new Date(task.due_date + 'T23:59:59')) && !isDone
   const isDueToday = task.due_date && isToday(new Date(task.due_date + 'T00:00:00'))
@@ -12,24 +12,25 @@ export default function TaskCard({ task, onToggle, onClick, onDelete, onStar }) 
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id })
+  } = useSortable({ id: task.id, disabled: dragDisabled })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : undefined,
+    zIndex: isDragging ? 999 : undefined,
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`task-card ${isDone ? 'done' : ''} ${task.starred ? 'task-starred' : ''}`}
+      className={`task-card ${isDone ? 'done' : ''} ${task.starred ? 'task-starred' : ''} ${isDragging ? 'dragging' : ''}`}
       onClick={(e) => {
-        // Don't open modal if clicking star, delete, or checkbox
         if (e.target.closest('.task-star, .task-delete-btn, .checkbox, .drag-handle')) return
         onClick(task)
       }}
@@ -44,7 +45,23 @@ export default function TaskCard({ task, onToggle, onClick, onDelete, onStar }) 
         >&times;</button>
       )}
       <div className="task-card-left">
-        <span className="drag-handle" {...attributes} {...listeners}>&#x2807;</span>
+        <button
+          ref={setActivatorNodeRef}
+          className="drag-handle"
+          {...attributes}
+          {...listeners}
+          type="button"
+          tabIndex={-1}
+        >
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+            <circle cx="2.5" cy="2.5" r="1.5"/>
+            <circle cx="7.5" cy="2.5" r="1.5"/>
+            <circle cx="2.5" cy="8" r="1.5"/>
+            <circle cx="7.5" cy="8" r="1.5"/>
+            <circle cx="2.5" cy="13.5" r="1.5"/>
+            <circle cx="7.5" cy="13.5" r="1.5"/>
+          </svg>
+        </button>
         <button
           className={`checkbox ${isDone ? 'checked' : ''}`}
           onClick={(e) => {

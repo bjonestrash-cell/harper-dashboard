@@ -258,7 +258,7 @@ export default function TasksPage() {
                   <div className="done-column-tasks">
                     {doneNatalie.length === 0 && <p className="done-empty">All clear</p>}
                     {doneNatalie.map(task => (
-                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
+                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} dragDisabled />
                     ))}
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export default function TasksPage() {
                   <div className="done-column-tasks">
                     {doneGrace.length === 0 && <p className="done-empty">All clear</p>}
                     {doneGrace.map(task => (
-                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} />
+                      <TaskCard key={task.id} task={task} onToggle={handleToggleTask} onClick={handleTaskClick} onDelete={deleteTask} onStar={handleStarTask} dragDisabled />
                     ))}
                   </div>
                 </div>
@@ -279,28 +279,43 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Monthly Progress */}
+        {/* Monthly Progress — two columns */}
         <div className="monthly-progress">
           <h2 className="checklist-title">Monthly Progress</h2>
-          <div className="progress-stats">
-            <div className="progress-card">
-              <span className="progress-number">{activeTasks(natalieTasks).length + activeTasks(graceTasks).length}</span>
-              <span className="progress-label">Open</span>
-            </div>
-            <div className="progress-card">
-              <span className="progress-number">{totalDone}</span>
-              <span className="progress-label">Done</span>
-            </div>
-            <div className="progress-card">
-              <span className="progress-number">{tasks.length}</span>
-              <span className="progress-label">Total</span>
-            </div>
-            <div className="progress-card">
-              <div className="progress-bar-wrap">
-                <div className="progress-bar-fill" style={{ width: `${tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0}%` }} />
-              </div>
-              <span className="progress-label">{tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0}% Complete</span>
-            </div>
+          <div className="progress-columns">
+            {[
+              { user: 'natalie', label: 'Natalie', tasks: natalieTasks },
+              { user: 'grace', label: 'Grace', tasks: graceTasks },
+            ].map(({ user, label, tasks: userTasks }) => {
+              const open = activeTasks(userTasks).length
+              const done = doneTasks(userTasks).length
+              const total = userTasks.length
+              const pct = total > 0 ? Math.round((done / total) * 100) : 0
+              return (
+                <div key={user} className="progress-col">
+                  <div className="progress-col-header">
+                    <span className={`avatar ${user}`} style={{ width: 22, height: 22, fontSize: 9 }}>{label[0]}</span>
+                    <span className="progress-col-name">{label}</span>
+                  </div>
+                  <div className="progress-stats">
+                    <div className="progress-card">
+                      <span className="progress-number">{open}</span>
+                      <span className="progress-label">Open</span>
+                    </div>
+                    <div className="progress-card">
+                      <span className="progress-number">{done}</span>
+                      <span className="progress-label">Done</span>
+                    </div>
+                  </div>
+                  <div className="progress-bar-section">
+                    <div className="progress-bar-wrap">
+                      <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="progress-pct">{pct}%</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
