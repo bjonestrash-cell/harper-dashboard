@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { logAudit } from '../lib/audit'
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks,
   format, isSameMonth, isSameDay, isToday, isWeekend, parseISO,
@@ -130,8 +131,12 @@ export default function CalendarPage() {
   }
 
   const deletePost = async (id) => {
+    const post = posts.find(p => p.id === id)
     const { error } = await supabase.from('calendar_posts').delete().eq('id', id)
-    if (!error) setPosts(prev => prev.filter(p => p.id !== id))
+    if (!error) {
+      logAudit({ table: 'calendar_posts', action: 'delete', recordId: id, summary: `Deleted calendar post: ${post?.platform || '?'} — "${(post?.caption || '').slice(0, 50)}"` })
+      setPosts(prev => prev.filter(p => p.id !== id))
+    }
   }
 
   const [draggedPost, setDraggedPost] = useState(null)
@@ -900,11 +905,13 @@ function PostModal({ date: initialDate, post, currentUser, setPosts, onClose }) 
         const { data, error } = await supabase.from('calendar_posts').update(payload).eq('id', post.id).select()
         if (error) { console.error('Error updating:', error); setSaveError(error.message || 'Failed to save'); return }
         const updated = data?.[0] || { ...post, ...payload }
+        logAudit({ table: 'calendar_posts', action: 'update', recordId: post.id, summary: `Updated ${payload.platform || 'post'} on ${date}`, details: payload })
         setPosts(prev => prev.map(p => p.id === post.id ? updated : p))
       } else {
         const { data, error } = await supabase.from('calendar_posts').insert([payload]).select()
         if (error) { console.error('Error inserting:', error); setSaveError(error.message || 'Failed to save'); return }
         const newPost = data?.[0] || { id: crypto.randomUUID(), ...payload }
+        logAudit({ table: 'calendar_posts', action: 'insert', recordId: newPost.id, summary: `Created ${payload.platform || 'post'} on ${date}`, details: payload })
         setPosts(prev => prev.find(p => p.id === newPost.id) ? prev : [...prev, newPost])
       }
       onClose()

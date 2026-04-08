@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { logAudit } from '../lib/audit'
 import { sendNotification } from '../components/Notifications'
 import SwipeToDelete from '../components/SwipeToDelete'
 import { useMonth } from '../hooks/useMonth'
@@ -63,18 +64,28 @@ export default function PromotionsPage() {
   const handleDuplicate = async (promo) => {
     const { id, created_at, ...rest } = promo
     const { data, error } = await supabase.from('promotions').insert({ ...rest, name: `${rest.name} (Copy)` }).select()
-    if (!error && data?.[0]) setPromotions(prev => [...prev, data[0]])
+    if (!error && data?.[0]) {
+      logAudit({ table: 'promotions', action: 'insert', recordId: data[0].id, summary: `Duplicated promotion: "${rest.name} (Copy)"` })
+      setPromotions(prev => [...prev, data[0]])
+    }
   }
 
   const handleArchive = async (promo) => {
     const { data, error } = await supabase.from('promotions').update({ status: 'ended' }).eq('id', promo.id).select()
-    if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
+    if (!error && data?.[0]) {
+      logAudit({ table: 'promotions', action: 'update', recordId: promo.id, summary: `Archived promotion: "${promo.name}"` })
+      setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
+    }
   }
 
   const deletePromotion = async (id) => {
     if (!window.confirm('Delete this promotion?')) return
+    const promo = promotions.find(p => p.id === id)
     const { error } = await supabase.from('promotions').delete().eq('id', id)
-    if (!error) setPromotions(prev => prev.filter(p => p.id !== id))
+    if (!error) {
+      logAudit({ table: 'promotions', action: 'delete', recordId: id, summary: `Deleted promotion: "${promo?.name || '?'}"` })
+      setPromotions(prev => prev.filter(p => p.id !== id))
+    }
   }
 
   const handleAddOrder = () => {
@@ -309,10 +320,14 @@ function PromoModal({ promo, setPromotions, onClose }) {
     try {
       if (promo) {
         const { data, error } = await supabase.from('promotions').update(form).eq('id', promo.id).select()
-        if (!error && data?.[0]) setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
+        if (!error && data?.[0]) {
+          logAudit({ table: 'promotions', action: 'update', recordId: promo.id, summary: `Updated promotion: "${form.name}"`, details: form })
+          setPromotions(prev => prev.map(p => p.id === promo.id ? data[0] : p))
+        }
       } else {
         const { data, error } = await supabase.from('promotions').insert(form).select()
         if (!error && data?.[0]) {
+          logAudit({ table: 'promotions', action: 'insert', recordId: data[0].id, summary: `Created promotion: "${form.name}"`, details: form })
           setPromotions(prev => [...prev, data[0]])
           // Notify the other user about new promotion
           const currentUser = localStorage.getItem('harper-user') || 'natalie'

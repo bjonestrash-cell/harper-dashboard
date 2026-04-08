@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, parseISO, subDays } from 'date-fns'
 import { supabase, createChannel } from '../lib/supabase'
+import { logAudit } from '../lib/audit'
 import PageHeader from '../components/PageHeader'
 import DatePicker from '../components/DatePicker'
 import SwipeToDelete from '../components/SwipeToDelete'
@@ -123,8 +124,10 @@ export default function NotesPage() {
 
   const deleteMeeting = async (id) => {
     if (!window.confirm('Delete this meeting note?')) return
+    const meeting = meetings.find(m => m.id === id)
     const { error } = await supabase.from('notes').delete().eq('id', id)
     if (!error) {
+      logAudit({ table: 'notes', action: 'delete', recordId: id, summary: `Deleted note: ${meeting?.title || 'Untitled'}` })
       setMeetings(prev => prev.filter(m => m.id !== id))
       if (selectedMeeting?.id === id) setSelectedMeeting(null)
     }
@@ -206,6 +209,7 @@ export default function NotesPage() {
       console.error('Failed to save meeting:', error.message)
     }
     if (data) {
+      logAudit({ table: 'notes', action: 'insert', recordId: data.id, summary: `Created meeting note (${mode})`, details: { mode, month: newMeeting.month } })
       setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
       setSelectedMeeting(data)
     }

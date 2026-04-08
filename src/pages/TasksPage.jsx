@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { logAudit } from '../lib/audit'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
 import PageHeader from '../components/PageHeader'
@@ -222,8 +223,12 @@ export default function TasksPage() {
   }
 
   const deleteTask = async (id) => {
+    const task = tasks.find(t => t.id === id)
     const { error } = await supabase.from('tasks').delete().eq('id', id)
-    if (!error) setTasks(prev => prev.filter(t => t.id !== id))
+    if (!error) {
+      logAudit({ table: 'tasks', action: 'delete', recordId: id, summary: `Deleted task: "${task?.title || '?'}"` })
+      setTasks(prev => prev.filter(t => t.id !== id))
+    }
   }
 
   const handleDrop = async (e, targetUser) => {
@@ -241,7 +246,10 @@ export default function TasksPage() {
     const title = quickAdd[user].trim()
     if (!title) return
     const { data, error } = await supabase.from('tasks').insert({ title, assigned_to: user, month: monthStr, status: 'todo' }).select()
-    if (!error && data?.[0]) setTasks(prev => [...prev, data[0]])
+    if (!error && data?.[0]) {
+      logAudit({ table: 'tasks', action: 'insert', recordId: data[0].id, summary: `Added task: "${title}" for ${user}` })
+      setTasks(prev => [...prev, data[0]])
+    }
     setQuickAdd(prev => ({ ...prev, [user]: '' }))
   }
 
@@ -457,6 +465,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         if (!dbUpdateForm.description) dbUpdateForm.description = null
         const { data, error } = await supabase.from('tasks').update(dbUpdateForm).eq('id', task.id).select()
         if (!error && data?.[0]) {
+          logAudit({ table: 'tasks', action: 'update', recordId: task.id, summary: `Updated task: "${form.title}"`, details: form })
           setTasks(prev => prev.map(t => t.id === task.id ? data[0] : t))
         } else {
           setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...form } : t))
@@ -467,6 +476,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         if (!dbForm.description) dbForm.description = null
         const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
         if (!error && data?.[0]) {
+          logAudit({ table: 'tasks', action: 'insert', recordId: data[0].id, summary: `Created task: "${form.title}" for ${form.assigned_to}`, details: form })
           setTasks(prev => [...prev, data[0]])
         } else {
           const newTask = { ...form, month, id: crypto.randomUUID(), created_at: new Date().toISOString() }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useMonth } from './hooks/useMonth'
 import Sidebar from './components/Sidebar'
 import LiveIndicator from './components/LiveIndicator'
@@ -10,6 +10,7 @@ import TasksPage from './pages/TasksPage'
 import IdeasPage from './pages/IdeasPage'
 import FeedPage from './pages/FeedPage'
 import NotesPage from './pages/NotesPage'
+import AdminPage from './pages/AdminPage'
 import { usePresence } from './hooks/usePresence'
 import Modal from './components/Modal'
 import CustomCursor from './components/CustomCursor'
@@ -59,6 +60,40 @@ export default function App() {
       return !prev
     })
   }
+
+  // Admin gate
+  const [showAdminInput, setShowAdminInput] = useState(false)
+  const [adminCode, setAdminCode] = useState('')
+  const adminInputRef = useRef(null)
+  const adminWrapRef = useRef(null)
+  const nav = useNavigate()
+
+  const handleAdminSubmit = (e) => {
+    e.preventDefault()
+    if (adminCode.toLowerCase() === 'harper') {
+      sessionStorage.setItem('harper-admin', 'true')
+      setShowAdminInput(false)
+      setAdminCode('')
+      nav('/admin')
+    } else {
+      setAdminCode('')
+      adminInputRef.current?.focus()
+    }
+  }
+
+  // Close admin input on outside click
+  useEffect(() => {
+    if (!showAdminInput) return
+    const handleClick = (e) => {
+      if (adminWrapRef.current && !adminWrapRef.current.contains(e.target)) {
+        setShowAdminInput(false)
+        setAdminCode('')
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    setTimeout(() => adminInputRef.current?.focus(), 50)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showAdminInput])
 
   // Enable spellcheck/autocorrect on all inputs globally
   useEffect(() => {
@@ -138,11 +173,38 @@ export default function App() {
       )}
 
       <div className="app-layout">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} onCalendarClick={goToToday} />
-        <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {location.pathname !== '/admin' && (
+          <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} currentUser={currentUser} onNotifClick={() => setShowNotifications(true)} onCalendarClick={goToToday} />
+        )}
+        <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${location.pathname === '/admin' ? 'no-sidebar' : ''}`}>
           <div className="global-status">
             <div className="mobile-bell-only">
               <NotificationBell onClick={() => setShowNotifications(true)} />
+            </div>
+            <div className="admin-gate-wrap" ref={adminWrapRef}>
+              <button
+                className="admin-gate-btn"
+                onClick={() => setShowAdminInput(prev => !prev)}
+                title=""
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+              {showAdminInput && (
+                <form className="admin-gate-dropdown" onSubmit={handleAdminSubmit}>
+                  <input
+                    ref={adminInputRef}
+                    className="admin-gate-input"
+                    type="password"
+                    value={adminCode}
+                    onChange={e => setAdminCode(e.target.value)}
+                    placeholder="Code"
+                    autoComplete="off"
+                  />
+                </form>
+              )}
             </div>
             <LiveIndicator />
           </div>
@@ -155,6 +217,7 @@ export default function App() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/ideas" element={<IdeasPage />} />
             <Route path="/notes" element={<NotesPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/calendar" replace />} />
           </Routes>
           <div className="forme-footer">powered by forme</div>
