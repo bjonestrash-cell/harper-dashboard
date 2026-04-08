@@ -10,6 +10,19 @@ import './NotesPage.css'
 
 function stripHtml(html) {
   if (!html) return ''
+  // If template JSON, extract readable text from it
+  try {
+    const parsed = JSON.parse(html)
+    if (parsed.goOver !== undefined) {
+      const parts = [parsed.goOver]
+      if (parsed.natalieActions) parts.push(parsed.natalieActions)
+      if (parsed.graceActions) parts.push(parsed.graceActions)
+      if (parsed.natalieTodos?.length) parts.push(parsed.natalieTodos.map(t => t.text).join(', '))
+      if (parsed.graceTodos?.length) parts.push(parsed.graceTodos.map(t => t.text).join(', '))
+      const combined = parts.filter(Boolean).join(' ').trim()
+      return combined || ''
+    }
+  } catch { /* not JSON, treat as HTML */ }
   return new DOMParser().parseFromString(html, 'text/html').body.textContent || ''
 }
 
@@ -357,9 +370,16 @@ export default function NotesPage() {
 function MeetingTemplate({ meeting, currentUser, onContentChange }) {
   const parseTemplate = (content) => {
     try {
-      return JSON.parse(content)
+      const parsed = JSON.parse(content)
+      return {
+        goOver: parsed.goOver || '',
+        natalieActions: parsed.natalieActions || '',
+        graceActions: parsed.graceActions || '',
+        natalieTodos: parsed.natalieTodos || [],
+        graceTodos: parsed.graceTodos || [],
+      }
     } catch {
-      return { goOver: '', natalieActions: '', graceActions: '' }
+      return { goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] }
     }
   }
 
@@ -380,15 +400,76 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
   const addTodoItem = async (assignedTo, text) => {
     if (!text.trim()) return
     const month = format(new Date(), 'yyyy-MM-01')
-    await supabase.from('todos').insert([{
-      text: text.trim(),
-      month,
-      assigned_to: assignedTo,
-      completed: false,
-      starred: false,
-    }])
+    const todoText = text.trim()
+
+    // Save to Supabase todos table (same shape as TasksPage)
+    const { data: saved, error } = await supabase
+      .from('todos')
+      .insert({ text: todoText, month, assigned_to: assignedTo, priority: 'normal' })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Failed to save todo:', error.message)
+    }
+
+    // Add to template's visible list and persist in note content
+    const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
+    const newItem = { text: todoText, id: saved?.id || crypto.randomUUID(), added: true }
+    const updatedList = [...(data[listKey] || []), newItem]
+    const updated = { ...data, [listKey]: updatedList }
+    setData(updated)
+    onContentChange(JSON.stringify(updated))
+
     if (assignedTo === 'natalie') setNatalieTodo('')
     else setGraceTodo('')
+  }
+
+  const removeTodoFromList = (assignedTo, index) => {
+    const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
+    const updatedList = [...(data[listKey] || [])]
+    updatedList.splice(index, 1)
+    const updated = { ...data, [listKey]: updatedList }
+    setData(updated)
+    onContentChange(JSON.stringify(updated))
+  }
+
+  const renderTodoColumn = (assignedTo, inputVal, setInputVal, label, labelClass) => {
+    const listKey = assignedTo === 'natalie' ? 'natalieTodos' : 'graceTodos'
+    const items = data[listKey] || []
+
+    return (
+      <div className="template-col">
+        <span className={`template-col-label ${labelClass}`}>{label}</span>
+        <div className="template-todo-list">
+          {items.map((item, i) => (
+            <div key={item.id || i} className="template-todo-item">
+              <span className="template-todo-check">&#10003;</span>
+              <span className="template-todo-text">{item.text}</span>
+              <button
+                className="template-todo-remove"
+                onClick={() => removeTodoFromList(assignedTo, i)}
+                title="Remove"
+              >&times;</button>
+            </div>
+          ))}
+          <div className="template-todo-input-row">
+            <input
+              className="template-todo-input"
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value)}
+              placeholder="New to-do..."
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTodoItem(assignedTo, inputVal) } }}
+            />
+            <button
+              className="template-todo-add"
+              onClick={() => addTodoItem(assignedTo, inputVal)}
+              title="Add to-do"
+            >+</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -430,44 +511,8 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
       <div className="template-section">
         <h3 className="template-section-title">Add to To-Do List</h3>
         <div className="template-columns">
-          <div className="template-col">
-            <span className="template-col-label natalie-label">Natalie</span>
-            <div className="template-todo-list">
-              <div className="template-todo-input-row">
-                <input
-                  className="template-todo-input"
-                  value={natalieTodo}
-                  onChange={e => setNatalieTodo(e.target.value)}
-                  placeholder="New to-do..."
-                  onKeyDown={e => { if (e.key === 'Enter') addTodoItem('natalie', natalieTodo) }}
-                />
-                <button
-                  className="template-todo-add"
-                  onClick={() => addTodoItem('natalie', natalieTodo)}
-                  title="Add to-do"
-                >+</button>
-              </div>
-            </div>
-          </div>
-          <div className="template-col">
-            <span className="template-col-label grace-label">Grace</span>
-            <div className="template-todo-list">
-              <div className="template-todo-input-row">
-                <input
-                  className="template-todo-input"
-                  value={graceTodo}
-                  onChange={e => setGraceTodo(e.target.value)}
-                  placeholder="New to-do..."
-                  onKeyDown={e => { if (e.key === 'Enter') addTodoItem('grace', graceTodo) }}
-                />
-                <button
-                  className="template-todo-add"
-                  onClick={() => addTodoItem('grace', graceTodo)}
-                  title="Add to-do"
-                >+</button>
-              </div>
-            </div>
-          </div>
+          {renderTodoColumn('natalie', natalieTodo, setNatalieTodo, 'Natalie', 'natalie-label')}
+          {renderTodoColumn('grace', graceTodo, setGraceTodo, 'Grace', 'grace-label')}
         </div>
       </div>
     </div>

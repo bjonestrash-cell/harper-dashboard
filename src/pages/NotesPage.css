@@ -408,6 +408,50 @@
   color: var(--cream-deep);
 }
 
+.template-todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cream-mid);
+  animation: todoFadeIn 0.2s ease;
+}
+@keyframes todoFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.template-todo-check {
+  color: var(--pink-deep);
+  font-size: 11px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+.template-todo-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.template-todo-remove {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--cream-deep);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+  padding: 0 2px;
+  line-height: 1;
+}
+.template-todo-item:hover .template-todo-remove {
+  opacity: 1;
+}
+.template-todo-remove:hover {
+  color: #B85450;
+}
+
 .template-todo-add {
   width: 28px;
   height: 28px;
