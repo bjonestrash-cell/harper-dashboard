@@ -108,31 +108,36 @@ export default function RichEditor({ content, onChange, placeholder }) {
       }
     }
 
-    // Enter key in lists
+    // Enter on empty list item = exit the list (like Word/Google Docs)
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
         const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
-        if (!li) return // not in a list, let browser handle
+        if (!li) return
 
-        const ul = li.closest('ul, ol')
-        const isChecklist = ul?.classList.contains('re-checklist')
-
-        if (li.textContent.trim() === '') {
-          // Empty item — exit the list
+        // Check if the list item is empty (may contain <br> or zero-width space)
+        const text = li.textContent.replace(/\u200B/g, '').trim()
+        if (text === '') {
           e.preventDefault()
+          const ul = li.closest('ul, ol')
           li.remove()
           if (ul && ul.children.length === 0) ul.remove()
-          document.execCommand('insertParagraph')
-          if (!isChecklist) {
-            if (document.queryCommandState('insertUnorderedList'))
-              document.execCommand('insertUnorderedList', false, null)
-            if (document.queryCommandState('insertOrderedList'))
-              document.execCommand('insertOrderedList', false, null)
+          // Insert a clean paragraph after the list
+          const p = document.createElement('p')
+          p.innerHTML = '<br>'
+          if (ul && ul.parentNode) {
+            ul.parentNode.insertBefore(p, ul.nextSibling)
+          } else {
+            editorRef.current.appendChild(p)
           }
+          // Move cursor into the new paragraph
+          const range = document.createRange()
+          range.setStart(p, 0)
+          range.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(range)
+          handleInput()
         }
-        // For non-empty checklist items, let the browser handle Enter naturally
-        // (it creates a new <li> inside the same <ul>, preserving the re-checklist class)
       }
     }
   }

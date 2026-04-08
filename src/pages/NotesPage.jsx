@@ -216,7 +216,7 @@ export default function NotesPage() {
                       {capitalize(m.updated_by || 'unknown')}
                     </span>
                     <span className="meeting-item-preview">
-                      {generateSummary(m.content) || 'Empty'}
+                      {m.title || generateSummary(m.content) || 'Empty'}
                     </span>
                   </div>
                 </div>
@@ -246,6 +246,20 @@ export default function NotesPage() {
             <>
               <div className="meeting-detail-header">
                 <div>
+                  {/* Editable title */}
+                  <input
+                    className="meeting-title-input"
+                    value={selectedMeeting.title || ''}
+                    onChange={(e) => {
+                      const title = e.target.value
+                      setSelectedMeeting(prev => ({ ...prev, title }))
+                      setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, title } : m))
+                    }}
+                    onBlur={async () => {
+                      await supabase.from('notes').update({ title: selectedMeeting.title || '' }).eq('id', selectedMeeting.id)
+                    }}
+                    placeholder="Name this meeting..."
+                  />
                   {/* Editable date — click to open calendar picker */}
                   <div style={{ position: 'relative' }}>
                     <h2
@@ -417,17 +431,31 @@ function TemplateField({ field, html, onChange, placeholder }) {
   }
 
   const handleKeyDown = (e) => {
-    // Enter in empty list item — exit list
+    // Enter on empty list item = exit the list (like Word)
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel?.rangeCount > 0) {
         const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
-        if (li && li.textContent.trim() === '') {
+        if (!li) return
+        const text = li.textContent.replace(/\u200B/g, '').trim()
+        if (text === '') {
           e.preventDefault()
           const ul = li.closest('ul, ol')
           li.remove()
           if (ul && ul.children.length === 0) ul.remove()
-          document.execCommand('insertParagraph')
+          const p = document.createElement('p')
+          p.innerHTML = '<br>'
+          if (ul && ul.parentNode) {
+            ul.parentNode.insertBefore(p, ul.nextSibling)
+          } else {
+            ref.current.appendChild(p)
+          }
+          const range = document.createRange()
+          range.setStart(p, 0)
+          range.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(range)
+          handleInput()
         }
       }
     }
