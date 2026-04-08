@@ -398,6 +398,35 @@ function TemplateField({ field, html, onChange, placeholder }) {
     onChange(field, ref.current?.innerHTML || '')
   }
 
+  const handleClick = (e) => {
+    const li = e.target.closest?.('li')
+    if (li && li.parentElement?.classList.contains('re-checklist')) {
+      const rect = li.getBoundingClientRect()
+      if (e.clientX < rect.left + 30) {
+        e.preventDefault()
+        li.classList.toggle('re-checked')
+        handleInput()
+      }
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    // Enter in empty list item — exit list
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const sel = window.getSelection()
+      if (sel?.rangeCount > 0) {
+        const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
+        if (li && li.textContent.trim() === '') {
+          e.preventDefault()
+          const ul = li.closest('ul, ol')
+          li.remove()
+          if (ul && ul.children.length === 0) ul.remove()
+          document.execCommand('insertParagraph')
+        }
+      }
+    }
+  }
+
   const isEmpty = !html || html === '' || html === '<br>'
 
   return (
@@ -408,6 +437,8 @@ function TemplateField({ field, html, onChange, placeholder }) {
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
         spellCheck="true"
       />
       {isEmpty && <div className="template-editable-placeholder">{placeholder}</div>}
@@ -439,18 +470,15 @@ function TemplateToolbar() {
           const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
           const ul = li?.closest('ul')
           if (ul) {
-            // Toggle checklist class on existing list
             ul.classList.toggle('re-checklist')
           } else {
-            // Not in a list — create a new checklist
             document.execCommand('insertUnorderedList', false, null)
-            setTimeout(() => {
-              const s = window.getSelection()
-              const newLi = s?.anchorNode?.closest?.('li') || s?.anchorNode?.parentElement?.closest?.('li')
-              if (newLi?.parentElement?.tagName === 'UL') {
-                newLi.parentElement.classList.add('re-checklist')
-              }
-            }, 0)
+            // Find the last UL without checklist class in the active field
+            const field = document.activeElement?.closest?.('.template-editable') || document.activeElement
+            if (field) {
+              const allUls = field.querySelectorAll('ul:not(.re-checklist)')
+              if (allUls.length > 0) allUls[allUls.length - 1].classList.add('re-checklist')
+            }
           }
         }} style={{ fontSize: 13, lineHeight: 1 }}>&#9745;</button>
       </div>

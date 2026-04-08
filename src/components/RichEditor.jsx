@@ -69,13 +69,14 @@ export default function RichEditor({ content, onChange, placeholder }) {
   const handleKeyUp = () => updateActiveFormats()
   const handleMouseUp = () => updateActiveFormats()
 
-  // Click on checklist bullet to toggle checked
+  // Click on checklist checkbox to toggle checked
   const handleEditorClick = (e) => {
     const li = e.target.closest?.('li')
     if (li && li.parentElement?.classList.contains('re-checklist')) {
-      // Only toggle if clicking the bullet area (left edge)
+      // Toggle if clicking the checkbox area (left side, where ::before renders)
       const rect = li.getBoundingClientRect()
-      if (e.clientX < rect.left + 28) {
+      if (e.clientX < rect.left + 30) {
+        e.preventDefault()
         li.classList.toggle('re-checked')
         handleInput()
       }
@@ -107,27 +108,31 @@ export default function RichEditor({ content, onChange, placeholder }) {
       }
     }
 
-    // Enter in empty list item — exit list
+    // Enter key in lists
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
         const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
-        if (li && li.textContent.trim() === '') {
+        if (!li) return // not in a list, let browser handle
+
+        const ul = li.closest('ul, ol')
+        const isChecklist = ul?.classList.contains('re-checklist')
+
+        if (li.textContent.trim() === '') {
+          // Empty item — exit the list
           e.preventDefault()
-          const ul = li.closest('ul, ol')
-          const wasChecklist = ul?.classList.contains('re-checklist')
-          // Remove empty li and exit list
           li.remove()
           if (ul && ul.children.length === 0) ul.remove()
           document.execCommand('insertParagraph')
-          // If we were in a regular list, just toggle it off
-          if (!wasChecklist) {
+          if (!isChecklist) {
             if (document.queryCommandState('insertUnorderedList'))
               document.execCommand('insertUnorderedList', false, null)
             if (document.queryCommandState('insertOrderedList'))
               document.execCommand('insertOrderedList', false, null)
           }
         }
+        // For non-empty checklist items, let the browser handle Enter naturally
+        // (it creates a new <li> inside the same <ul>, preserving the re-checklist class)
       }
     }
   }
@@ -225,18 +230,15 @@ export default function RichEditor({ content, onChange, placeholder }) {
               const li = sel?.anchorNode?.closest?.('li') || sel?.anchorNode?.parentElement?.closest?.('li')
               const ul = li?.closest('ul')
               if (ul) {
-                // Toggle checklist class on existing list
                 ul.classList.toggle('re-checklist')
               } else {
-                // Not in a list — create bullet list then add checklist class
+                // Create a new list, then mark it as checklist
                 document.execCommand('insertUnorderedList', false, null)
-                setTimeout(() => {
-                  const s = window.getSelection()
-                  const newLi = s?.anchorNode?.closest?.('li') || s?.anchorNode?.parentElement?.closest?.('li')
-                  if (newLi?.parentElement?.tagName === 'UL') {
-                    newLi.parentElement.classList.add('re-checklist')
-                  }
-                }, 0)
+                // Find any UL without re-checklist class and add it
+                const allUls = editor.querySelectorAll('ul:not(.re-checklist)')
+                if (allUls.length > 0) {
+                  allUls[allUls.length - 1].classList.add('re-checklist')
+                }
               }
               handleInput()
             }}
