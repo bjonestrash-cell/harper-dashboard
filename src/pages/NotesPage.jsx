@@ -12,8 +12,7 @@ function isTemplateMode(meeting) {
   if (!meeting?.content) return false
   try {
     const parsed = JSON.parse(meeting.content)
-    // Detect template by _mode flag or by presence of template fields
-    return parsed._mode === 'template' || parsed.goOver !== undefined
+    return parsed._mode === 'template'
   } catch { return false }
 }
 
@@ -22,7 +21,7 @@ function stripHtml(html) {
   // If template JSON, extract readable text from it
   try {
     const parsed = JSON.parse(html)
-    if (parsed.goOver !== undefined) {
+    if (parsed._mode === 'template') {
       const strip = (s) => s ? new DOMParser().parseFromString(s, 'text/html').body.textContent || '' : ''
       const parts = [strip(parsed.goOver)]
       if (parsed.natalieActions) parts.push(strip(parsed.natalieActions))

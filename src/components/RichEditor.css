@@ -129,6 +129,19 @@
   outline: none;
   min-height: 400px;
   cursor: text;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.re-editor table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.re-editor td, .re-editor th {
+  vertical-align: top;
+  padding: 4px 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Typography within editor */

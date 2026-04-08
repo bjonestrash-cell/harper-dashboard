@@ -172,6 +172,9 @@
 .meeting-content-area {
   padding: 0 40px;
   flex: 1;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Editable title */
@@ -376,6 +379,10 @@
   padding: 10px 0;
   outline: none;
   min-height: 60px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .template-editable:empty + .template-editable-placeholder {
   display: block;
@@ -396,6 +403,13 @@
 .template-editable ol {
   padding-left: 28px;
   margin: 4px 0;
+}
+/* Handle orphan <li> elements pasted from Google Docs */
+.template-editable > li {
+  display: list-item;
+  list-style: disc;
+  margin-left: 20px;
+  margin-bottom: 2px;
 }
 .template-editable ul { list-style-type: disc; }
 .template-editable ol { list-style-type: decimal; }
@@ -445,6 +459,7 @@
 .template-col {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .template-col-label {
