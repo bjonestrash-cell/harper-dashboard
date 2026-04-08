@@ -36,13 +36,17 @@ function stripHtml(html) {
   return new DOMParser().parseFromString(html, 'text/html').body.textContent || ''
 }
 
-async function generateSummary(text) {
+function generateSummary(text) {
   const plain = stripHtml(text).trim()
   if (!plain) return ''
-  // Extract first two meaningful words as a quick summary
-  const words = plain.split(/\s+/).filter(w => w.length > 1)
+  // Extract up to 5 meaningful words, skip tiny filler words
+  const filler = new Set(['the','a','an','and','or','to','in','on','at','of','for','is','it','be','as','by','we','i'])
+  const words = plain.split(/\s+/).filter(w => w.length > 1 && !filler.has(w.toLowerCase()))
   if (words.length === 0) return ''
-  return words.slice(0, 2).join(' ')
+  // Capitalize first word, take up to 5 words
+  const summary = words.slice(0, 5)
+  summary[0] = summary[0].charAt(0).toUpperCase() + summary[0].slice(1)
+  return summary.join(' ')
 }
 
 export default function NotesPage() {
@@ -190,7 +194,7 @@ export default function NotesPage() {
           </button>
 
           <div className="meeting-list">
-            {meetings.map(m => (
+            {[...meetings].sort((a, b) => (b.month || '').localeCompare(a.month || '')).map(m => (
               <SwipeToDelete key={m.id} onDelete={() => deleteMeeting(m.id)}>
                 <div
                   className={`meeting-item ${selectedMeeting?.id === m.id ? 'active' : ''}`}
@@ -206,7 +210,7 @@ export default function NotesPage() {
                       {capitalize(m.updated_by || 'unknown')}
                     </span>
                     <span className="meeting-item-preview">
-                      {m.summary || stripHtml(m.content) || 'Empty'}
+                      {generateSummary(m.content) || 'Empty'}
                     </span>
                   </div>
                 </div>
