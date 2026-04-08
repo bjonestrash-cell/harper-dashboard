@@ -448,7 +448,7 @@ export default function NotesPage() {
   )
 }
 
-function TemplateField({ field, html, onChange, placeholder }) {
+function TemplateField({ field, html, onChange, placeholder, bgColor }) {
   const ref = useRef(null)
   const isInternal = useRef(false)
 
@@ -512,7 +512,7 @@ function TemplateField({ field, html, onChange, placeholder }) {
   const isEmpty = !html || html === '' || html === '<br>'
 
   return (
-    <div className="template-field-wrap">
+    <div className="template-field-wrap" style={bgColor ? { background: bgColor } : undefined}>
       <div
         ref={ref}
         className="template-editable"
@@ -588,7 +588,15 @@ function TemplateToolbar() {
       <div className="re-toolbar-divider" />
       <div className="re-toolbar-group">
         <button className="re-toolbar-btn" title="Horizontal rule" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<hr style="border:none;border-top:1px solid #E8E0D5;margin:16px 0" />') }} style={{ fontSize: 10, letterSpacing: 2 }}>&mdash;</button>
-        <button className="re-toolbar-btn" title="Clear formatting" onMouseDown={e => execCmd(e, 'removeFormat')} style={{ fontSize: 10 }}>&times;</button>
+        <button className="re-toolbar-btn" title="Clear formatting" onMouseDown={e => {
+          e.preventDefault()
+          document.execCommand('removeFormat')
+          if (document.queryCommandState('insertUnorderedList'))
+            document.execCommand('insertUnorderedList', false, null)
+          if (document.queryCommandState('insertOrderedList'))
+            document.execCommand('insertOrderedList', false, null)
+          document.execCommand('formatBlock', false, '<p>')
+        }} style={{ fontSize: 10 }}>&times;</button>
       </div>
     </div>
   )
@@ -699,31 +707,70 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
     )
   }
 
+  const SECTION_COLORS = [
+    { id: 'cream', bg: '#FAF7F2', dot: '#EDE6DA' },
+    { id: 'blush', bg: '#FDF0F3', dot: '#F4A7B9' },
+    { id: 'sage', bg: '#F0F4EF', dot: '#B5C4B1' },
+    { id: 'lavender', bg: '#F3F0F8', dot: '#C4A8D4' },
+  ]
+
+  const getSectionColor = (section) => {
+    const colorId = data[`${section}_color`] || 'cream'
+    return SECTION_COLORS.find(c => c.id === colorId) || SECTION_COLORS[0]
+  }
+
+  const setSectionColor = (section, colorId) => {
+    updateField(`${section}_color`, colorId)
+  }
+
+  const renderColorPicker = (section) => (
+    <div className="section-color-picker">
+      {SECTION_COLORS.slice(1).map(c => (
+        <button
+          key={c.id}
+          className={`section-color-dot ${getSectionColor(section).id === c.id ? 'active' : ''}`}
+          style={{ backgroundColor: c.dot }}
+          onClick={() => setSectionColor(section, getSectionColor(section).id === c.id ? 'cream' : c.id)}
+          title={c.id}
+        />
+      ))}
+    </div>
+  )
+
   return (
     <div className="meeting-template">
       <TemplateToolbar />
 
-      <div className="template-section">
-        <h3 className="template-section-title">Things to Go Over</h3>
-        <TemplateField field="goOver" html={data.goOver} onChange={updateField} placeholder="Topics, questions, updates..." />
+      <div className="template-section" style={{ borderColor: getSectionColor('goOver').dot + '40' }}>
+        <div className="template-section-header">
+          <h3 className="template-section-title">Things to Go Over</h3>
+          {renderColorPicker('goOver')}
+        </div>
+        <TemplateField field="goOver" html={data.goOver} onChange={updateField} placeholder="Topics, questions, updates..." bgColor={getSectionColor('goOver').bg} />
       </div>
 
-      <div className="template-section">
-        <h3 className="template-section-title">Action Items</h3>
+      <div className="template-section" style={{ borderColor: getSectionColor('actions').dot + '40' }}>
+        <div className="template-section-header">
+          <h3 className="template-section-title">Action Items</h3>
+          {renderColorPicker('actions')}
+        </div>
         <div className="template-columns">
           <div className="template-col">
             <span className="template-col-label natalie-label">Natalie</span>
-            <TemplateField field="natalieActions" html={data.natalieActions} onChange={updateField} placeholder="Action items..." />
+            <TemplateField field="natalieActions" html={data.natalieActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('actions').bg} />
           </div>
           <div className="template-col">
             <span className="template-col-label grace-label">Grace</span>
-            <TemplateField field="graceActions" html={data.graceActions} onChange={updateField} placeholder="Action items..." />
+            <TemplateField field="graceActions" html={data.graceActions} onChange={updateField} placeholder="Action items..." bgColor={getSectionColor('actions').bg} />
           </div>
         </div>
       </div>
 
-      <div className="template-section">
-        <h3 className="template-section-title">Add to To-Do List</h3>
+      <div className="template-section" style={{ borderColor: getSectionColor('todos').dot + '40' }}>
+        <div className="template-section-header">
+          <h3 className="template-section-title">Add to To-Do List</h3>
+          {renderColorPicker('todos')}
+        </div>
         <div className="template-columns">
           {renderTodoColumn('natalie', natalieTodo, setNatalieTodo, 'Natalie', 'natalie-label')}
           {renderTodoColumn('grace', graceTodo, setGraceTodo, 'Grace', 'grace-label')}

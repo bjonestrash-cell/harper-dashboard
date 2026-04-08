@@ -344,6 +344,14 @@ export default function RichEditor({ content, onChange, placeholder }) {
               e.preventDefault()
               editorRef.current?.focus()
               document.execCommand('removeFormat')
+              // Also exit lists if in one
+              if (document.queryCommandState('insertUnorderedList'))
+                document.execCommand('insertUnorderedList', false, null)
+              if (document.queryCommandState('insertOrderedList'))
+                document.execCommand('insertOrderedList', false, null)
+              document.execCommand('formatBlock', false, '<p>')
+              updateActiveFormats()
+              handleInput()
             }}
             style={{ fontSize: 10 }}
           >✕</button>
