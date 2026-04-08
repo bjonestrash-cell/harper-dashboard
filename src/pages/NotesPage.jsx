@@ -64,6 +64,7 @@ export default function NotesPage() {
   const [editingDate, setEditingDate] = useState(false)
   const [showNewChoice, setShowNewChoice] = useState(false)
   const saveTimer = useRef(null)
+  const titleTimer = useRef(null)
   const selectedMeetingRef = useRef(null)
 
   // Load meetings for current user only
@@ -180,18 +181,29 @@ export default function NotesPage() {
       ? JSON.stringify({ _mode: 'template', goOver: '', natalieActions: '', graceActions: '', natalieTodos: [], graceTodos: [] })
       : ''
     // Insert to Supabase first, then set local state with the real ID
-    const { data, error } = await supabase.from('notes').insert([{
+    const newMeeting = {
+      id: crypto.randomUUID(),
       month: format(new Date(), 'yyyy-MM-dd'),
       content: initialContent,
+      title: '',
       updated_by: currentUser,
       updated_at: new Date().toISOString(),
+    }
+    // Show immediately so user can start working
+    setMeetings(prev => [newMeeting, ...prev])
+    setSelectedMeeting(newMeeting)
+    // Save to Supabase and swap in the real record
+    const { data, error } = await supabase.from('notes').insert([{
+      month: newMeeting.month,
+      content: initialContent,
+      updated_by: currentUser,
+      updated_at: newMeeting.updated_at,
     }]).select().single()
     if (error) {
       console.error('Failed to save meeting:', error.message)
-      return
     }
     if (data) {
-      setMeetings(prev => [data, ...prev])
+      setMeetings(prev => prev.map(m => m.id === newMeeting.id ? data : m))
       setSelectedMeeting(data)
     }
   }
@@ -263,9 +275,13 @@ export default function NotesPage() {
                       const title = e.target.value
                       setSelectedMeeting(prev => ({ ...prev, title }))
                       setMeetings(prev => prev.map(m => m.id === selectedMeeting.id ? { ...m, title } : m))
-                    }}
-                    onBlur={async () => {
-                      await supabase.from('notes').update({ title: selectedMeeting.title || '' }).eq('id', selectedMeeting.id)
+                      // Auto-save title with debounce
+                      if (titleTimer.current) clearTimeout(titleTimer.current)
+                      titleTimer.current = setTimeout(async () => {
+                        const id = selectedMeetingRef.current?.id
+                        if (!id) return
+                        await supabase.from('notes').update({ title }).eq('id', id)
+                      }, 800)
                     }}
                     placeholder="Name this meeting..."
                   />
