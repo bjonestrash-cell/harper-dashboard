@@ -183,6 +183,9 @@
 /* Filled slot */
 .feed-slot-filled {
   background: var(--cream-mid);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .feed-slot-image {
   width: 100%;
@@ -190,6 +193,10 @@
   object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
 }
 .feed-slot-filled:hover .feed-slot-image {
   transform: scale(1.03);

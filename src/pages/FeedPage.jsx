@@ -215,6 +215,7 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
       onDrop={handleFileDrop}
       onDragLeave={() => setShowActions(false)}
       onDragEnd={() => setShowActions(false)}
+      onContextMenu={e => e.preventDefault()}
       onMouseEnter={() => !isDragging.current && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       onTouchStart={handleTouchStart}
