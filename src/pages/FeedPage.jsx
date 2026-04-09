@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase, createChannel } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import './FeedPage.css'
@@ -595,8 +596,8 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* Floating ghost for touch drag */}
-        {touchDragIndex !== null && ghostPos && slots[touchDragIndex] && (
+        {/* Floating ghost for touch drag — portaled to body to avoid transform offset */}
+        {touchDragIndex !== null && ghostPos && slots[touchDragIndex] && createPortal(
           <div
             className="feed-drag-ghost"
             style={{
@@ -609,7 +610,8 @@ export default function FeedPage() {
               alt=""
               draggable={false}
             />
-          </div>
+          </div>,
+          document.body
         )}
 
       </div>
