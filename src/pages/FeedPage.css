@@ -202,8 +202,11 @@
   background: var(--pink-light) !important;
 }
 .feed-slot-filled.is-dragging {
-  opacity: 0.4;
-  transform: scale(0.95);
+  opacity: 0.35;
+  transform: scale(0.9);
+  box-shadow: inset 0 0 0 3px var(--pink);
+  transition: all 0.15s ease;
+  touch-action: none;
 }
 .feed-slot-filled[draggable] {
   cursor: grab;

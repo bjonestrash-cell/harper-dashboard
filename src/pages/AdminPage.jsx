@@ -75,14 +75,36 @@ export default function AdminPage() {
   // Fetch all data
   useEffect(() => {
     fetchAll()
-    // Realtime for audit_log
+    // Realtime for all tables
+    const watchedTables = ['audit_log', 'notes', 'calendar_posts', 'tasks', 'promotions', 'daily_notes', 'notifications']
     const channel = createChannel('admin-audit')
-    channel
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log' }, (payload) => {
-        const entry = { ...payload.new, _table: 'audit_log', _ts: payload.new.created_at }
+    watchedTables.forEach(table => {
+      channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table }, (payload) => {
+        const record = payload.new
+        const entry = {
+          ...record,
+          _table: table,
+          _ts: getTimestamp(table, record),
+          _summary: summarizeRecord(table, record),
+        }
         setEntries(prev => [entry, ...prev])
       })
-      .subscribe()
+      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table }, (payload) => {
+        const record = payload.new
+        setEntries(prev => prev.map(e =>
+          e._table === table && e.id === record.id
+            ? { ...record, _table: table, _ts: getTimestamp(table, record), _summary: summarizeRecord(table, record) }
+            : e
+        ))
+      })
+      channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, (payload) => {
+        const old = payload.old
+        if (old?.id) {
+          setEntries(prev => prev.filter(e => !(e._table === table && e.id === old.id)))
+        }
+      })
+    })
+    channel.subscribe()
     channelRef.current = channel
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current) }
   }, [])

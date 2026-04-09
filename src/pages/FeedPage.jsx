@@ -140,9 +140,11 @@ function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver, onFileDrop }
 
 function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged, onFileDrop }) {
   const inputRef = useRef(null)
+  const slotRef = useRef(null)
   const [showActions, setShowActions] = useState(false)
   const longPressTimer = useRef(null)
   const isDragging = useRef(false)
+  const touchStartPos = useRef(null)
 
   const handleFileDrop = (e) => {
     e.preventDefault()
@@ -154,30 +156,48 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
     onDrop(e, index)
   }
 
+  // Attach touchmove with { passive: false } so preventDefault() actually works
+  useEffect(() => {
+    const el = slotRef.current
+    if (!el) return
+
+    const onTouchMove = (e) => {
+      if (isDragging.current) {
+        e.preventDefault()
+        const touch = e.touches[0]
+        onTouchDragMove?.(touch.clientX, touch.clientY)
+      } else {
+        // Cancel long press if finger moves more than 10px (it's a scroll)
+        if (touchStartPos.current) {
+          const touch = e.touches[0]
+          const dx = Math.abs(touch.clientX - touchStartPos.current.x)
+          const dy = Math.abs(touch.clientY - touchStartPos.current.y)
+          if (dx > 10 || dy > 10) {
+            clearTimeout(longPressTimer.current)
+          }
+        }
+      }
+    }
+
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => el.removeEventListener('touchmove', onTouchMove)
+  }, [onTouchDragMove])
+
   const handleTouchStart = (e) => {
+    const touch = e.touches[0]
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
     // Long press to start drag on mobile
     longPressTimer.current = setTimeout(() => {
       isDragging.current = true
       setShowActions(false)
       onTouchDragStart?.(index)
-      // Vibrate if available
       navigator.vibrate?.(30)
     }, 300)
   }
 
-  const handleTouchMove = (e) => {
-    if (isDragging.current) {
-      e.preventDefault()
-      const touch = e.touches[0]
-      onTouchDragMove?.(touch.clientX, touch.clientY)
-    } else {
-      // Cancel long press if finger moves
-      clearTimeout(longPressTimer.current)
-    }
-  }
-
   const handleTouchEnd = (e) => {
     clearTimeout(longPressTimer.current)
+    touchStartPos.current = null
     if (isDragging.current) {
       isDragging.current = false
       const touch = e.changedTouches[0]
@@ -187,6 +207,7 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
 
   return (
     <div
+      ref={slotRef}
       className={`feed-slot feed-slot-filled ${dragOver ? 'drag-over' : ''} ${isBeingDragged ? 'is-dragging' : ''}`}
       draggable
       onDragStart={e => onDragStart(e, index)}
@@ -197,7 +218,6 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
       onMouseEnter={() => !isDragging.current && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       data-index={index}
     >
