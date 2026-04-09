@@ -280,6 +280,7 @@ export default function FeedPage() {
   const [dragIndex, setDragIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const [touchDragIndex, setTouchDragIndex] = useState(null)
+  const [ghostPos, setGhostPos] = useState(null)
   const gridRef = useRef(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
@@ -466,6 +467,7 @@ export default function FeedPage() {
   }, [])
 
   const handleTouchDragMove = useCallback((x, y) => {
+    setGhostPos({ x, y })
     if (!gridRef.current) return
     // Find which slot we're over
     const els = gridRef.current.querySelectorAll('.feed-slot')
@@ -509,6 +511,7 @@ export default function FeedPage() {
 
     setTouchDragIndex(null)
     setDragOverIndex(null)
+    setGhostPos(null)
   }, [touchDragIndex, updateSlots])
 
   const filledCount = slots.filter(Boolean).length
@@ -591,6 +594,23 @@ export default function FeedPage() {
             ))}
           </div>
         </div>
+
+        {/* Floating ghost for touch drag */}
+        {touchDragIndex !== null && ghostPos && slots[touchDragIndex] && (
+          <div
+            className="feed-drag-ghost"
+            style={{
+              left: ghostPos.x,
+              top: ghostPos.y,
+            }}
+          >
+            <img
+              src={slots[touchDragIndex].image_url}
+              alt=""
+              draggable={false}
+            />
+          </div>
+        )}
 
       </div>
     </div>
