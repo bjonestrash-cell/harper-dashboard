@@ -132,6 +132,9 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
+.re-editor, .re-editor * {
+  font-family: 'Inter', sans-serif !important;
+}
 .re-editor table {
   width: 100%;
   table-layout: fixed;

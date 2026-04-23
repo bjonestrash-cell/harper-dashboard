@@ -457,6 +457,9 @@
   overflow-wrap: break-word;
   max-width: 100%;
   overflow-x: hidden;
+}
+.template-editable, .template-editable * {
+  font-family: 'Inter', sans-serif !important;
   border-radius: 6px;
 }
 .template-editable:empty + .template-editable-placeholder {

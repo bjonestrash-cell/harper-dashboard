@@ -7,6 +7,7 @@ import DatePicker from '../components/DatePicker'
 import SwipeToDelete from '../components/SwipeToDelete'
 import RichEditor from '../components/RichEditor'
 import Modal from '../components/Modal'
+import { sanitizePastedHtml } from '../lib/sanitizePastedHtml'
 import './NotesPage.css'
 
 function isTemplateMode(meeting) {
@@ -523,6 +524,13 @@ function TemplateField({ field, html, onChange, placeholder, bgColor }) {
 
   const isEmpty = !html || html === '' || html === '<br>'
 
+  const handlePaste = (e) => {
+    const html = e.clipboardData.getData('text/html')
+    if (!html) return
+    e.preventDefault()
+    document.execCommand('insertHTML', false, sanitizePastedHtml(html))
+  }
+
   return (
     <div className="template-field-wrap" style={bgColor ? { background: bgColor } : undefined}>
       <div
@@ -533,6 +541,7 @@ function TemplateField({ field, html, onChange, placeholder, bgColor }) {
         onInput={handleInput}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         spellCheck="true"
       />
       {isEmpty && <div className="template-editable-placeholder">{placeholder}</div>}

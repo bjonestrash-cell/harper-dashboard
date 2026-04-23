@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import './RichEditor.css'
+import { sanitizePastedHtml } from '../lib/sanitizePastedHtml'
 
 const EMOJIS = [
   // Favorites / reactions
@@ -180,16 +181,12 @@ export default function RichEditor({ content, onChange, placeholder }) {
 
   const handlePaste = (e) => {
     e.preventDefault()
-    const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain')
-    if (e.clipboardData.getData('text/html')) {
-      // Clean pasted HTML - keep basic formatting only
-      const temp = document.createElement('div')
-      temp.innerHTML = text
-      // Remove scripts, styles, etc
-      temp.querySelectorAll('script,style,meta,link').forEach(el => el.remove())
-      document.execCommand('insertHTML', false, temp.innerHTML)
+    const html = e.clipboardData.getData('text/html')
+    const plain = e.clipboardData.getData('text/plain')
+    if (html) {
+      document.execCommand('insertHTML', false, sanitizePastedHtml(html))
     } else {
-      document.execCommand('insertText', false, text)
+      document.execCommand('insertText', false, plain)
     }
   }
 
