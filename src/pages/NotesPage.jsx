@@ -492,7 +492,7 @@ function TemplateField({ field, html, onChange, placeholder, bgColor }) {
   }
 
   const handleKeyDown = (e) => {
-    // Enter on empty list item = exit the list (like Word)
+    // Enter on empty bullet = indent into a sub-bullet
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel?.rangeCount > 0) {
@@ -501,21 +501,7 @@ function TemplateField({ field, html, onChange, placeholder, bgColor }) {
         const text = li.textContent.replace(/\u200B/g, '').trim()
         if (text === '') {
           e.preventDefault()
-          const ul = li.closest('ul, ol')
-          li.remove()
-          if (ul && ul.children.length === 0) ul.remove()
-          const p = document.createElement('p')
-          p.innerHTML = '<br>'
-          if (ul && ul.parentNode) {
-            ul.parentNode.insertBefore(p, ul.nextSibling)
-          } else {
-            ref.current.appendChild(p)
-          }
-          const range = document.createRange()
-          range.setStart(p, 0)
-          range.collapse(true)
-          sel.removeAllRanges()
-          sel.addRange(range)
+          document.execCommand('indent')
           handleInput()
         }
       }

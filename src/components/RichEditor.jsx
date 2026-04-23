@@ -109,34 +109,16 @@ export default function RichEditor({ content, onChange, placeholder }) {
       }
     }
 
-    // Enter on empty list item = exit the list (like Word/Google Docs)
+    // Enter on empty bullet = indent into a sub-bullet (Enter-Enter for nesting)
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
         const li = sel.anchorNode?.closest?.('li') || sel.anchorNode?.parentElement?.closest?.('li')
         if (!li) return
-
-        // Check if the list item is empty (may contain <br> or zero-width space)
         const text = li.textContent.replace(/\u200B/g, '').trim()
         if (text === '') {
           e.preventDefault()
-          const ul = li.closest('ul, ol')
-          li.remove()
-          if (ul && ul.children.length === 0) ul.remove()
-          // Insert a clean paragraph after the list
-          const p = document.createElement('p')
-          p.innerHTML = '<br>'
-          if (ul && ul.parentNode) {
-            ul.parentNode.insertBefore(p, ul.nextSibling)
-          } else {
-            editorRef.current.appendChild(p)
-          }
-          // Move cursor into the new paragraph
-          const range = document.createRange()
-          range.setStart(p, 0)
-          range.collapse(true)
-          sel.removeAllRanges()
-          sel.addRange(range)
+          document.execCommand('indent')
           handleInput()
         }
       }
