@@ -259,7 +259,11 @@ export default function TasksPage() {
   const handleStarTask = async (task) => {
     const starred = !task.starred
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, starred } : t))
-    await supabase.from('tasks').update({ starred }).eq('id', task.id)
+    const { error } = await supabase.from('tasks').update({ starred }).eq('id', task.id)
+    if (error) {
+      console.error('Failed to save star:', error.message)
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, starred: task.starred } : t))
+    }
   }
 
   const handleTaskDragEnd = (event) => {
@@ -449,7 +453,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     description: task?.description || '',
     assigned_to: task?.assigned_to || defaultUser,
     due_date: task?.due_date || '',
-    priority: task?.priority || '#F4A7B9',
+    color: task?.color || '#F4A7B9',
     status: task?.status || 'todo',
   })
   const [saving, setSaving] = useState(false)
@@ -460,7 +464,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
     setSaving(true)
     try {
       if (task) {
-        const { priority: _p, ...dbUpdateForm } = form
+        const dbUpdateForm = { ...form }
         if (!dbUpdateForm.due_date) dbUpdateForm.due_date = null
         if (!dbUpdateForm.description) dbUpdateForm.description = null
         const { data, error } = await supabase.from('tasks').update(dbUpdateForm).eq('id', task.id).select()
@@ -471,7 +475,7 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
           setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...form } : t))
         }
       } else {
-        const { priority, ...dbForm } = form
+        const dbForm = { ...form }
         if (!dbForm.due_date) dbForm.due_date = null
         if (!dbForm.description) dbForm.description = null
         const { data, error } = await supabase.from('tasks').insert({ ...dbForm, month }).select()
@@ -531,13 +535,13 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
           <label className="form-label">Color</label>
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             {['#F4A7B9', '#B5C4B1', '#A8C4D4', '#D4B896', '#C4A8D4', '#1A1412'].map(c => (
-              <button key={c} onClick={() => update('priority', c)}
+              <button key={c} onClick={() => update('color', c)}
                 style={{
                   width: 28, height: 28, borderRadius: '50%', border: 'none',
                   backgroundColor: c, cursor: 'pointer', transition: 'all 200ms ease',
-                  outline: form.priority === c ? `2px solid ${c}` : 'none',
+                  outline: form.color === c ? `2px solid ${c}` : 'none',
                   outlineOffset: 3,
-                  transform: form.priority === c ? 'scale(1.15)' : 'scale(1)',
+                  transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
                 }} />
             ))}
           </div>

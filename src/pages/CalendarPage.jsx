@@ -8,6 +8,7 @@ import {
 import { supabase, createChannel } from '../lib/supabase'
 import { useMonth } from '../hooks/useMonth'
 import { useRealtime } from '../hooks/useRealtime'
+import HARPER_MOMENTS_2026 from '../lib/harperMoments2026'
 import PageHeader from '../components/PageHeader'
 import MonthSelector from '../components/MonthSelector'
 import PostPill from '../components/PostPill'
@@ -68,9 +69,32 @@ export default function CalendarPage() {
   const { data: posts, setData: setPosts, loading: postsLoading } = useRealtime('calendar_posts', fetchPosts, [format(currentMonth, 'yyyy-MM')])
   const { data: promotions, loading: promosLoading } = useRealtime('promotions', fetchPromos, [format(currentMonth, 'yyyy-MM')])
 
+  // Seed Harper moments into Supabase — v2 wipes old seed and replaces with current list
+  useEffect(() => {
+    const SEED_VERSION = 'harper-moments-seeded-v3'
+    const seeded = sessionStorage.getItem(SEED_VERSION)
+    if (seeded) return
+    sessionStorage.setItem(SEED_VERSION, '1')
+    ;(async () => {
+      // Delete all auto-seeded entries — assigned_to: 'both' marks them as seeded, not user-created
+      await supabase.from('calendar_posts').delete().eq('assigned_to', 'both').eq('platform', 'holiday')
+      await supabase.from('calendar_posts').delete().eq('assigned_to', 'both').eq('platform', 'moment')
+      // Insert the current curated list
+      const toInsert = HARPER_MOMENTS_2026.map(m => ({
+        date: m.date,
+        platform: 'holiday',
+        content_type: 'holiday',
+        caption: m.caption,
+        status: m.angle,
+        assigned_to: 'both',
+      }))
+      await supabase.from('calendar_posts').insert(toInsert)
+    })()
+  }, [])
+
   const filteredPosts = posts.filter(p => {
-    if (calendarView === 'mine' && p.assigned_to !== currentUser) return false
-    if (calendarView === 'theirs' && p.assigned_to !== otherUser) return false
+    if (calendarView === 'mine' && p.assigned_to !== currentUser && p.platform !== 'holiday') return false
+    if (calendarView === 'theirs' && p.assigned_to !== otherUser && p.platform !== 'holiday') return false
     if (legendFilter !== 'all') {
       const pType = p.platform === 'meeting' ? 'meeting' : p.platform === 'holiday' ? 'holiday' : p.platform === 'other-event' ? 'other' : 'post'
       if (pType !== legendFilter) return false

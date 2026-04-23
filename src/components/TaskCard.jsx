@@ -23,6 +23,7 @@ export default function TaskCard({ task, onToggle, onClick, onDelete, onStar, dr
     transition,
     opacity: isDragging ? 0.4 : undefined,
     zIndex: isDragging ? 999 : undefined,
+    borderLeft: task.color ? `3px solid ${task.color}` : undefined,
   }
 
   return (
