@@ -841,6 +841,7 @@ function MeetingTemplate({ meeting, currentUser, onContentChange }) {
         <div className="template-section-header">
           <h3 className="template-section-title">Action Items</h3>
         </div>
+        <TemplateToolbar />
         <div className="template-columns">
           <div className="template-col">
             <div className="template-col-header">
