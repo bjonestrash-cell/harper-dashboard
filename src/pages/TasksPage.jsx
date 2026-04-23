@@ -521,7 +521,14 @@ function TaskModal({ task, defaultUser, month, setTasks, onClose }) {
         </div>
         <div style={{ marginBottom: 28 }}>
           <label className="form-label">Description</label>
-          <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Details..." />
+          <textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => update('description', e.target.value)}
+            placeholder="Details..."
+            ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }}
+            style={{ overflow: 'hidden', resize: 'none', minHeight: 72 }}
+          />
         </div>
         <div style={{ marginBottom: 28 }}>
           <label className="form-label">Assigned to</label>
