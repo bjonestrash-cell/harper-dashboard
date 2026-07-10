@@ -76,7 +76,7 @@ export default function NotesPage() {
         .from('notes')
         .select('*')
         .eq('updated_by', currentUser)
-        .neq('month', '9999-01-01')
+        .lt('month', '8000-01-01') // exclude feed sync (9999-*) and photo vault (8xxx-*) rows
         .order('month', { ascending: false })
       setMeetings(data || [])
     }

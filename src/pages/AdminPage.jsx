@@ -112,8 +112,10 @@ export default function AdminPage() {
   const fetchAll = async () => {
     setLoading(true)
     const tables = [
-      { name: 'audit_log', query: supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(500) },
-      { name: 'notes', query: supabase.from('notes').select('*').order('updated_at', { ascending: false }).limit(200) },
+      // Vault rows carry full-size photo payloads — keep them out of this view
+      { name: 'audit_log', query: supabase.from('audit_log').select('*').neq('table_name', 'feed_photo_vault').order('created_at', { ascending: false }).limit(500) },
+      // Feed sync (9999-*) and photo vault (8xxx-*) rows hold megabytes of photo data — exclude them
+      { name: 'notes', query: supabase.from('notes').select('*').lt('month', '8000-01-01').order('updated_at', { ascending: false }).limit(200) },
       { name: 'calendar_posts', query: supabase.from('calendar_posts').select('*').order('created_at', { ascending: false }).limit(200) },
       { name: 'tasks', query: supabase.from('tasks').select('*').order('created_at', { ascending: false }).limit(200) },
       { name: 'promotions', query: supabase.from('promotions').select('*').order('created_at', { ascending: false }).limit(200) },

@@ -1,23 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase, createChannel } from '../lib/supabase'
+import { logAudit } from '../lib/audit'
+import { fetchVaultPhotos, vaultPhotos, isVaulted, vaultWritesInFlight } from '../lib/feedVault'
 import PageHeader from '../components/PageHeader'
+import PhotoLightbox from '../components/PhotoLightbox'
 import './FeedPage.css'
 
 /*
-  Supabase table:
-  create table feed_posts (
-    id uuid default gen_random_uuid() primary key,
-    position int not null,
-    image_url text,
-    caption text,
-    created_at timestamptz default now()
-  );
+  Persistence:
+  - Photo data lives in the photo vault (src/lib/feedVault.js): one small,
+    insert-only row per photo. The app never updates or deletes vault rows,
+    so every photo ever added stays recoverable forever.
+  - Grid layout lives in the ORDER_SYNC_KEY notes row: just photo ids in
+    slot order plus the ids people explicitly removed. Tiny, written on
+    every change, so edits save instantly and survive refresh.
+  - The PHOTOS_SYNC_KEY notes row is the LEGACY store (all photos inside one
+    ~6MB row). It is still read and merged from — so nothing an old client
+    saves is ever lost — but never written: updating it had started hitting
+    Postgres statement timeouts, which is how changes were getting lost.
+  Any stored photo not referenced by the order row (and not explicitly
+  removed) is appended to the grid, never dropped.
 */
 
 const MIN_GRID = 12 // start with 4 rows
 const STORAGE_KEY = 'harper-feed-grid'
-const FEED_SYNC_KEY = '9999-01-01'
+const PHOTOS_SYNC_KEY = '9999-01-01'
+const ORDER_SYNC_KEY = '9999-01-02'
 
 // Ensure grid size is always a multiple of 3 and at least MIN_GRID
 function ensureGridSize(slots) {
@@ -51,47 +60,140 @@ function loadFeedLocal() {
   return null
 }
 
-// Sync feed via the existing 'notes' table
-async function syncFeedToSupabase(slots) {
-  try {
-    const serializable = slots.map(s => s ? { position: s.position, image_url: s.image_url, caption: s.caption } : null)
-    const content = JSON.stringify(serializable)
+function serializePhotos(slots) {
+  return slots.map(s => s ? { id: s.id, position: s.position, image_url: s.image_url, caption: s.caption } : null)
+}
 
-    // Use upsert pattern — check with maybeSingle to avoid .single() throwing
-    const { data: existing } = await supabase
-      .from('notes')
-      .select('id')
-      .eq('month', FEED_SYNC_KEY)
-      .maybeSingle()
+// Ids of photos a person explicitly removed (kept in the order row so every
+// device knows). Distinguishes "deliberately deleted" from "missing because
+// a stale device overwrote the row" — only the former may drop a photo.
+const removedPhotoIds = new Set()
 
-    if (existing) {
-      await supabase.from('notes')
-        .update({ content, updated_at: new Date().toISOString(), updated_by: 'feed' })
-        .eq('id', existing.id)
-    } else {
-      await supabase.from('notes')
-        .insert([{ month: FEED_SYNC_KEY, content, updated_by: 'feed' }])
-    }
-  } catch (e) {
-    console.warn('Feed sync failed:', e.message)
+function serializeOrder(slots) {
+  return {
+    order: slots.map(s => s ? s.id || null : null),
+    removed: [...removedPhotoIds].slice(-300),
   }
 }
 
-async function loadFeedFromSupabase() {
-  try {
-    const { data } = await supabase
-      .from('notes')
-      .select('content')
-      .eq('month', FEED_SYNC_KEY)
-      .maybeSingle()
-    if (data?.content) {
-      const parsed = JSON.parse(data.content)
-      while (parsed.length < MIN_GRID) parsed.push(null)
-      return parsed
-    }
-  } catch (e) {}
+// Order row content: legacy plain array, or { order, removed }
+function parseOrderContent(content) {
+  if (Array.isArray(content)) return { order: content, removed: [] }
+  if (content && Array.isArray(content.order)) {
+    return { order: content.order, removed: Array.isArray(content.removed) ? content.removed : [] }
+  }
   return null
 }
+
+// ---- Reliable, serialized writes to the 'notes' sync rows ----
+// One write in flight per row; newer content replaces anything still queued
+// (last-write-wins), failed writes retry, and callers can observe how many
+// writes are outstanding (for the Saving indicator + close-tab warning).
+const noteRowIds = {}
+const writeQueues = {}
+let activeWrites = 0
+const writeListeners = new Set()
+const notifyWriteListeners = () => writeListeners.forEach(fn => fn(activeWrites))
+
+async function writeNoteRow(month, content) {
+  if (!noteRowIds[month]) {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('id')
+      .eq('month', month)
+      .maybeSingle()
+    if (error) throw error
+    if (data) noteRowIds[month] = data.id
+  }
+  if (noteRowIds[month]) {
+    const { error } = await supabase.from('notes')
+      .update({ content, updated_at: new Date().toISOString(), updated_by: 'feed' })
+      .eq('id', noteRowIds[month])
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('notes')
+      .insert([{ month, content, updated_by: 'feed' }])
+    if (error) throw error
+  }
+}
+
+function queueNoteWrite(month, content, onError) {
+  const q = writeQueues[month] || (writeQueues[month] = { pending: null, running: false })
+  q.pending = { content, onError }
+  if (q.running) return
+  q.running = true
+  activeWrites++
+  notifyWriteListeners()
+  ;(async () => {
+    while (q.pending) {
+      const job = q.pending
+      q.pending = null
+      let done = false
+      for (let attempt = 0; attempt < 3 && !done; attempt++) {
+        try {
+          await writeNoteRow(month, job.content)
+          done = true
+        } catch (e) {
+          console.warn('Feed sync attempt failed:', month, e.message)
+          if (q.pending) break // newer content queued — write that instead
+          await new Promise(r => setTimeout(r, 1500 * (attempt + 1)))
+        }
+      }
+      if (!done && !q.pending) job.onError?.()
+    }
+    q.running = false
+    activeWrites--
+    notifyWriteListeners()
+  })()
+}
+
+// Returns { ok, content } so callers can tell "row is empty" apart from
+// "fetch failed" — we must never treat a failed fetch as an empty feed.
+// Retries with backoff: the database occasionally cancels big reads under
+// load ("statement timeout").
+async function fetchNoteContent(month, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('content')
+        .eq('month', month)
+        .maybeSingle()
+      if (error) throw error
+      return { ok: true, content: data?.content ? JSON.parse(data.content) : null }
+    } catch (e) {
+      console.warn('Feed load failed:', month, e.message)
+      if (i < attempts - 1) await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+    }
+  }
+  return { ok: false, content: null }
+}
+
+// Trim trailing empty rows, pad to MIN_GRID, keep an empty top row, reindex.
+function normalizeGrid(arr) {
+  let lastFilled = -1
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i]) { lastFilled = i; break }
+  }
+  let end = lastFilled === -1 ? MIN_GRID : Math.ceil((lastFilled + 1) / 3) * 3
+  if (end < MIN_GRID) end = MIN_GRID
+  let out = arr.slice(0, end)
+  while (out.length < MIN_GRID) out.push(null)
+  out = ensureGridSize(out)
+  return out.map((s, i) => s ? { ...s, position: i } : null)
+}
+
+function ensureIds(slots) {
+  let added = false
+  const out = slots.map(s => {
+    if (!s) return null
+    if (s.id) return s
+    added = true
+    return { ...s, id: crypto.randomUUID() }
+  })
+  return { slots: out, added }
+}
+
 
 function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver, onFileDrop }) {
   const inputRef = useRef(null)
@@ -139,13 +241,16 @@ function EmptySlot({ index, onUpload, onDragOver, onDrop, dragOver, onFileDrop }
   )
 }
 
-function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged, onFileDrop }) {
+function FilledSlot({ slot, index, onOpen, onReplace, onRemove, onDragStart, onDragOver, onDrop, dragOver, onTouchDragStart, onTouchDragMove, onTouchDragEnd, isBeingDragged, onFileDrop }) {
   const inputRef = useRef(null)
   const slotRef = useRef(null)
   const [showActions, setShowActions] = useState(false)
   const longPressTimer = useRef(null)
   const isDragging = useRef(false)
   const touchStartPos = useRef(null)
+  // A tap opens the lightbox, but a hold-drag must never — the browser can
+  // fire a synthetic click after touchend, so suppress it when a drag ran.
+  const suppressClick = useRef(false)
 
   const handleFileDrop = (e) => {
     e.preventDefault()
@@ -190,6 +295,7 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
     // Long press to start drag on mobile
     longPressTimer.current = setTimeout(() => {
       isDragging.current = true
+      suppressClick.current = true
       setShowActions(false)
       onTouchDragStart?.(index)
       navigator.vibrate?.(30)
@@ -203,7 +309,14 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
       isDragging.current = false
       const touch = e.changedTouches[0]
       onTouchDragEnd?.(touch.clientX, touch.clientY)
+      // Swallow the synthetic click the browser may fire after this touchend
+      setTimeout(() => { suppressClick.current = false }, 500)
     }
+  }
+
+  const handleClick = () => {
+    if (suppressClick.current || isDragging.current) return
+    onOpen?.(index)
   }
 
   return (
@@ -211,11 +324,12 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
       ref={slotRef}
       className={`feed-slot feed-slot-filled ${dragOver ? 'drag-over' : ''} ${isBeingDragged ? 'is-dragging' : ''}`}
       draggable
-      onDragStart={e => onDragStart(e, index)}
+      onClick={handleClick}
+      onDragStart={e => { suppressClick.current = true; onDragStart(e, index) }}
       onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; onDragOver(e, index) }}
       onDrop={handleFileDrop}
       onDragLeave={() => setShowActions(false)}
-      onDragEnd={() => setShowActions(false)}
+      onDragEnd={() => { setShowActions(false); setTimeout(() => { suppressClick.current = false }, 300) }}
       onContextMenu={e => e.preventDefault()}
       onMouseEnter={() => !isDragging.current && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -241,7 +355,7 @@ function FilledSlot({ slot, index, onReplace, onRemove, onDragStart, onDragOver,
         }}
       />
       {showActions && !isBeingDragged && (
-        <div className="feed-slot-actions" onClick={e => e.stopPropagation()}>
+        <div className="feed-slot-actions">
           <button
             className="feed-action-btn"
             onClick={e => { e.stopPropagation(); inputRef.current?.click() }}
@@ -278,68 +392,185 @@ export default function FeedPage() {
     return ensureGridSize(local)
   })
   const [saving, setSaving] = useState(false)
+  const [writeCount, setWriteCount] = useState(0)
+  const [syncError, setSyncError] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const [touchDragIndex, setTouchDragIndex] = useState(null)
   const [ghostPos, setGhostPos] = useState(null)
+  const [lightboxIndex, setLightboxIndex] = useState(null)
   const gridRef = useRef(null)
+  const slotsRef = useRef(slots)
+  const pendingPersistRef = useRef(null)
   const currentUser = localStorage.getItem('harper-user') || 'natalie'
 
-  // Load from Supabase on mount (cross-device sync)
-  useEffect(() => {
-    const load = async () => {
-      const remote = await loadFeedFromSupabase()
-      const local = loadFeedLocal()
-      const localHasData = local && local.some(s => s !== null)
-      const remoteHasData = remote && remote.some(s => s !== null)
+  useEffect(() => { slotsRef.current = slots }, [slots])
 
-      if (remoteHasData) {
-        // Compact: trim trailing empties, keep at least MIN_GRID
-        let lastFilled = -1
-        for (let i = remote.length - 1; i >= 0; i--) {
-          if (remote[i] !== null) { lastFilled = i; break }
-        }
-        // Snap to end of that row
-        let endRow = lastFilled === -1 ? MIN_GRID : Math.ceil((lastFilled + 1) / 3) * 3
-        if (endRow < MIN_GRID) endRow = MIN_GRID
-        let compacted = remote.slice(0, endRow)
-        while (compacted.length < MIN_GRID) compacted.push(null)
-        // Auto-grow if top row is filled
-        compacted = ensureGridSize(compacted)
-        setSlots(compacted)
-        saveFeedLocal(compacted)
-        if (compacted.length !== remote.length) syncFeedToSupabase(compacted)
-      } else if (localHasData) {
-        // Local has data but remote doesn't — push local to Supabase
-        // This handles the case where someone uploaded before sync was deployed
-        syncFeedToSupabase(local)
+  // Save to Supabase: the tiny order row, plus vault copies of any photos
+  // not yet vaulted (re-offered every time, so failed vault writes
+  // self-heal). Failures surface via the syncError banner.
+  const [vaultBusy, setVaultBusy] = useState(false)
+  const persistSlots = useCallback((slotsToSave) => {
+    saveFeedLocal(slotsToSave)
+    setSyncError(false)
+    queueNoteWrite(ORDER_SYNC_KEY, JSON.stringify(serializeOrder(slotsToSave)), () => setSyncError(true))
+    const unvaulted = slotsToSave.filter(s => s && s.id && s.image_url && !isVaulted(s.id))
+    if (unvaulted.length) {
+      setVaultBusy(true)
+      vaultPhotos(unvaulted)
+        .catch(() => setSyncError(true))
+        .finally(() => setVaultBusy(false))
+    }
+  }, [])
+
+  // Show "Saving..." while writes are outstanding, and warn before the tab
+  // closes mid-save so a refresh can't silently discard a change.
+  useEffect(() => {
+    const onWrites = (n) => setWriteCount(n)
+    writeListeners.add(onWrites)
+    const onBeforeUnload = (e) => {
+      if (activeWrites > 0 || vaultWritesInFlight() > 0) {
+        e.preventDefault()
+        e.returnValue = ''
       }
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      writeListeners.delete(onWrites)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  }, [])
+
+  // Load from Supabase on mount (cross-device sync).
+  // Assemble the grid from: order row (layout) + vault (photo data) +
+  // legacy row (photo data saved by older clients), then rescue anything
+  // stored but unreferenced. Nothing readable is ever dropped.
+  useEffect(() => {
+    const assembleGrid = (parsedOrder, photoMap, fallbackOrder) => {
+      const orderArr = parsedOrder ? parsedOrder.order : (fallbackOrder || [])
+      const used = new Set()
+      const grid = orderArr.map(id => {
+        if (id && photoMap.has(id) && !used.has(id)) {
+          used.add(id)
+          return { ...photoMap.get(id) }
+        }
+        return null
+      })
+      // Rescue: stored photos nobody explicitly removed always get a slot
+      for (const [id, p] of photoMap) {
+        if (!used.has(id) && !removedPhotoIds.has(id)) grid.push({ ...p })
+      }
+      return { grid: normalizeGrid(grid), rescuedCount: grid.filter(Boolean).length - used.size }
+    }
+
+    // Read the legacy giant row and fold unknown photos into the map.
+    // Returns its slot layout (used as order fallback for first-ever run).
+    const foldInLegacy = async (photoMap) => {
+      const legacyRes = await fetchNoteContent(PHOTOS_SYNC_KEY)
+      if (!Array.isArray(legacyRes.content)) return { ok: legacyRes.ok, order: null }
+      const { slots: withIds } = ensureIds(legacyRes.content)
+      withIds.forEach(s => {
+        if (s && s.image_url && !photoMap.has(s.id)) {
+          photoMap.set(s.id, { id: s.id, image_url: s.image_url, caption: s.caption || '' })
+        }
+      })
+      return { ok: true, order: withIds.map(s => s ? s.id : null) }
+    }
+
+    const load = async () => {
+      const [orderRes, vaultMap] = await Promise.all([
+        fetchNoteContent(ORDER_SYNC_KEY),
+        fetchVaultPhotos(),
+      ])
+      const parsedOrder = parseOrderContent(orderRes.content)
+      parsedOrder?.removed.forEach(id => removedPhotoIds.add(id))
+      const photoMap = vaultMap ? new Map(vaultMap) : new Map()
+
+      // Targeted lookup for any ordered photo the primary vault didn't have
+      if (parsedOrder) {
+        const missing = parsedOrder.order.filter(id => id && !photoMap.has(id))
+        if (missing.length) {
+          const extra = await fetchVaultPhotos(missing)
+          extra?.forEach((p, id) => photoMap.set(id, p))
+        }
+      }
+
+      // First paint from the fast reads alone — the legacy giant row is
+      // slow and timeout-prone, so it must never delay the grid.
+      let painted = null
+      if (parsedOrder && photoMap.size > 0) {
+        const { grid, rescuedCount } = assembleGrid(parsedOrder, photoMap, null)
+        painted = grid
+        setSlots(grid)
+        saveFeedLocal(grid)
+        // Insurance backfill: offer everything to the vault (deduped there)
+        vaultPhotos(grid.filter(Boolean)).catch(() => {})
+        if (rescuedCount > 0) persistSlots(grid)
+      }
+
+      // Fold in the legacy row afterwards — it can only ADD photos (ones
+      // saved by an old client that nothing else knows about).
+      const legacy = await foldInLegacy(photoMap)
+
+      if (photoMap.size > 0) {
+        const { grid, rescuedCount } = assembleGrid(parsedOrder, photoMap, legacy.order)
+        const changed = !painted ||
+          JSON.stringify(serializePhotos(grid)) !== JSON.stringify(serializePhotos(painted))
+        if (changed) {
+          setSlots(grid)
+          saveFeedLocal(grid)
+          vaultPhotos(grid.filter(Boolean)).catch(() => {})
+          if (!parsedOrder || rescuedCount > 0) persistSlots(grid)
+        }
+      } else if (legacy.ok && orderRes.ok) {
+        // Everything readable and genuinely empty — push local up if we have it
+        const local = loadFeedLocal()
+        if (local && local.some(Boolean)) {
+          const { slots: withIds } = ensureIds(local)
+          const grid = normalizeGrid(withIds)
+          setSlots(grid)
+          persistSlots(grid)
+        }
+      }
+      // Otherwise: fetches failed — keep the local paint, never wipe
     }
     load()
 
-    // Real-time subscription for cross-device updates
+    // Real-time: when another device changes the order row (every edit
+    // touches it), rebuild the grid, fetching only photos we don't have.
+    // The legacy row subscription catches uploads from not-yet-refreshed
+    // old clients.
+    const onRemoteChange = async () => {
+      if (activeWrites > 0 || vaultWritesInFlight() > 0) return // our own echo
+      const orderRes = await fetchNoteContent(ORDER_SYNC_KEY)
+      const parsedOrder = parseOrderContent(orderRes.content)
+      if (!parsedOrder) return
+      parsedOrder.removed.forEach(id => removedPhotoIds.add(id))
+
+      const photoMap = new Map(slotsRef.current.filter(Boolean).map(s => [s.id, s]))
+      const missing = parsedOrder.order.filter(id => id && !photoMap.has(id))
+      if (missing.length) {
+        const fetched = await fetchVaultPhotos(missing)
+        fetched?.forEach((p, id) => photoMap.set(id, p))
+        if (!fetched || missing.some(id => !photoMap.has(id))) await foldInLegacy(photoMap)
+      }
+      const { grid } = assembleGrid(parsedOrder, photoMap, null)
+      setSlots(prev => {
+        if (JSON.stringify(serializePhotos(prev)) === JSON.stringify(serializePhotos(grid))) return prev
+        saveFeedLocal(grid)
+        return grid
+      })
+    }
     const channel = createChannel('feed-sync')
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${FEED_SYNC_KEY}` },
-        async (payload) => {
-          if (payload.new?.content && payload.new?.updated_by === 'feed') {
-            try {
-              const remote = JSON.parse(payload.new.content)
-              let lf = -1
-              for (let i = remote.length - 1; i >= 0; i--) { if (remote[i] !== null) { lf = i; break } }
-              let end = lf === -1 ? MIN_GRID : Math.ceil((lf + 1) / 3) * 3
-              if (end < MIN_GRID) end = MIN_GRID
-              let compacted = remote.slice(0, end)
-              while (compacted.length < MIN_GRID) compacted.push(null)
-              setSlots(compacted)
-              saveFeedLocal(compacted)
-            } catch (e) {}
-          }
-        }
-      )
+        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${PHOTOS_SYNC_KEY}` },
+        onRemoteChange)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'notes', filter: `month=eq.${ORDER_SYNC_KEY}` },
+        onRemoteChange)
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [])
+  }, [persistSlots])
 
   const fileToDataUrl = (file) => new Promise((resolve, reject) => {
     // Resize to 540x675 (half of 1080x1350) for storage efficiency
@@ -376,18 +607,25 @@ export default function FeedPage() {
     reader.readAsDataURL(file)
   })
 
-  // Helper to update slots + persist + auto-grow
+  // Helper to update slots + persist + auto-grow. State updaters must stay
+  // pure, so the persist is handed off via ref and flushed in the effect below.
   const updateSlots = useCallback((updater) => {
     setSlots(prev => {
       let next = typeof updater === 'function' ? updater(prev) : updater
       // Auto-grow: if top row (first 3 slots) has any filled slot, add empty row above
       next = ensureGridSize(next)
       while (next.length < MIN_GRID) next.push(null)
-      saveFeedLocal(next)
-      syncFeedToSupabase(next)
+      pendingPersistRef.current = { slots: next }
       return next
     })
   }, [])
+
+  useEffect(() => {
+    const pending = pendingPersistRef.current
+    if (!pending) return
+    pendingPersistRef.current = null
+    persistSlots(pending.slots)
+  }, [slots, persistSlots])
 
   const handleUpload = useCallback(async (position, file) => {
     setSaving(true)
@@ -399,6 +637,7 @@ export default function FeedPage() {
         next[position] = newSlot
         return next
       })
+      logAudit({ table: 'feed', action: 'insert', recordId: newSlot.id, summary: `Added feed photo at slot ${position + 1}` })
     } catch (err) {
       console.error('Upload failed:', err)
     }
@@ -409,12 +648,17 @@ export default function FeedPage() {
     setSaving(true)
     try {
       const dataUrl = await fileToDataUrl(file)
+      // A replacement is a new photo: new id, so the old photo's vault copy
+      // stays untouched and the new one gets its own.
+      const newSlot = { id: crypto.randomUUID(), position, image_url: dataUrl, caption: '' }
       updateSlots(prev => {
         const next = [...prev]
         const existing = next[position]
-        next[position] = { ...(existing || {}), id: existing?.id || crypto.randomUUID(), position, image_url: dataUrl }
+        if (existing?.id) removedPhotoIds.add(existing.id)
+        next[position] = { ...newSlot, caption: existing?.caption || '' }
         return next
       })
+      logAudit({ table: 'feed', action: 'update', recordId: newSlot.id, summary: `Replaced feed photo at slot ${position + 1}` })
     } catch (err) {
       console.error('Replace failed:', err)
     }
@@ -422,6 +666,11 @@ export default function FeedPage() {
   }, [updateSlots])
 
   const handleRemove = useCallback((position) => {
+    const removed = slotsRef.current[position]
+    if (removed?.id) {
+      removedPhotoIds.add(removed.id)
+      logAudit({ table: 'feed', action: 'delete', recordId: removed.id, summary: `Removed feed photo from slot ${position + 1} (vault copy kept)` })
+    }
     updateSlots(prev => {
       const next = [...prev]
       next[position] = null
@@ -448,11 +697,9 @@ export default function FeedPage() {
 
     updateSlots(prev => {
       const next = [...prev]
-      const fromSlot = next[dragIndex]
-      const toSlot = next[toIndex]
-      // Swap positions
-      if (fromSlot) fromSlot.position = toIndex
-      if (toSlot) toSlot.position = dragIndex
+      // Swap (copies — never mutate previous state)
+      const fromSlot = next[dragIndex] ? { ...next[dragIndex], position: toIndex } : null
+      const toSlot = next[toIndex] ? { ...next[toIndex], position: dragIndex } : null
       next[toIndex] = fromSlot
       next[dragIndex] = toSlot
       return next
@@ -500,10 +747,8 @@ export default function FeedPage() {
     if (dropIndex !== null && dropIndex !== touchDragIndex) {
       updateSlots(prev => {
         const next = [...prev]
-        const fromSlot = next[touchDragIndex]
-        const toSlot = next[dropIndex]
-        if (fromSlot) fromSlot.position = dropIndex
-        if (toSlot) toSlot.position = touchDragIndex
+        const fromSlot = next[touchDragIndex] ? { ...next[touchDragIndex], position: dropIndex } : null
+        const toSlot = next[dropIndex] ? { ...next[dropIndex], position: touchDragIndex } : null
         next[dropIndex] = fromSlot
         next[touchDragIndex] = toSlot
         return next
@@ -515,6 +760,9 @@ export default function FeedPage() {
     setGhostPos(null)
   }, [touchDragIndex, updateSlots])
 
+  const openLightbox = useCallback((index) => setLightboxIndex(index), [])
+  const closeLightbox = useCallback(() => setLightboxIndex(null), [])
+
   const filledCount = slots.filter(Boolean).length
 
   return (
@@ -522,13 +770,22 @@ export default function FeedPage() {
       <PageHeader title="Feed Planner">
         <div className="feed-header-meta">
           <span className="feed-counter">{filledCount} / {slots.length}</span>
-          {saving && <span className="feed-saving">Saving...</span>}
+          {(saving || writeCount > 0 || vaultBusy) && !syncError && <span className="feed-saving">Saving...</span>}
+          {syncError && (
+            <button
+              className="feed-sync-error"
+              onClick={() => persistSlots(slotsRef.current)}
+              title="The last change couldn't be saved. Tap to try again."
+            >
+              Not saved — retry
+            </button>
+          )}
         </div>
       </PageHeader>
 
       <div className="page-container">
         <div className="feed-intro">
-          <span className="feed-intro-sub">Tap to add. Hold and drag to reorder. Auto-cropped to 4:5.</span>
+          <span className="feed-intro-sub">Tap a photo for caption ideas & saving. Hold and drag to reorder. Auto-cropped to 4:5.</span>
         </div>
 
         {/* Instagram-style phone frame */}
@@ -569,6 +826,7 @@ export default function FeedPage() {
                   key={slot.id || i}
                   slot={slot}
                   index={i}
+                  onOpen={openLightbox}
                   onReplace={handleReplace}
                   onRemove={handleRemove}
                   onDragStart={handleDragStart}
@@ -612,6 +870,17 @@ export default function FeedPage() {
             />
           </div>,
           document.body
+        )}
+
+        {/* Tap-to-enlarge lightbox: save photo + rotating caption ideas */}
+        {lightboxIndex !== null && slots[lightboxIndex] && (
+          <PhotoLightbox
+            slot={slots[lightboxIndex]}
+            position={lightboxIndex}
+            onClose={closeLightbox}
+            onReplace={handleReplace}
+            onRemove={handleRemove}
+          />
         )}
 
       </div>
